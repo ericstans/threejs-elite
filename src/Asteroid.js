@@ -40,9 +40,16 @@ export class Asteroid {
     
     positions.needsUpdate = true;
     
-    // Random asteroid color (brownish/grayish)
-    const colors = [0x8B4513, 0x696969, 0x2F4F4F, 0x654321, 0x708090];
-    const color = colors[Math.floor(Math.random() * colors.length)];
+    // Random asteroid color - gradient between grey and tan, weighted toward grey
+    const greyColor = new THREE.Color(0x696969); // Medium grey
+    const tanColor = new THREE.Color(0xD2B48C);  // Tan color
+    
+    // Weight toward grey (0.7 = 70% grey, 30% tan)
+    const greyWeight = 0.7;
+    const randomFactor = Math.random() * greyWeight;
+    
+    // Interpolate between grey and tan
+    const color = greyColor.clone().lerp(tanColor, randomFactor);
     
     const material = new THREE.MeshLambertMaterial({ 
       color: color,
