@@ -74,6 +74,15 @@ export class Controls {
         }
       }
     }
+    
+    // Targeting
+    if (this.keys['KeyT']) {
+      if (this.onTarget) {
+        this.onTarget();
+      }
+      // Clear the key to prevent repeated targeting
+      this.keys['KeyT'] = false;
+    }
   }
 
   setOnShoot(callback) {
@@ -82,5 +91,9 @@ export class Controls {
 
   setOnResize(callback) {
     this.onResize = callback;
+  }
+
+  setOnTarget(callback) {
+    this.onTarget = callback;
   }
 }

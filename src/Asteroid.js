@@ -16,6 +16,11 @@ export class Asteroid {
     this.health = this.maxHealth;
     this.isDestroyed = false;
     
+    // Targeting system
+    this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
+    this.mass = size * size * size; // Approximate mass based on volume
+    this.isTargeted = false;
+    
     this.mesh = this.createAsteroidMesh();
     this.mesh.position.copy(this.position);
   }
@@ -97,5 +102,21 @@ export class Asteroid {
 
   getSize() {
     return this.size;
+  }
+
+  getId() {
+    return this.id;
+  }
+
+  getMass() {
+    return this.mass;
+  }
+
+  setTargeted(targeted) {
+    this.isTargeted = targeted;
+  }
+
+  isTarget() {
+    return this.isTargeted;
   }
 }

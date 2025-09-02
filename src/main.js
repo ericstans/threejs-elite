@@ -7,6 +7,7 @@ import { UI } from './UI.js';
 import { Laser } from './Laser.js';
 import { Asteroid } from './Asteroid.js';
 import { Explosion } from './Explosion.js';
+import { SoundManager } from './SoundManager.js';
 
 class Game {
   constructor() {
@@ -14,9 +15,11 @@ class Game {
     this.spaceship = new Spaceship();
     this.controls = new Controls(this.spaceship);
     this.ui = new UI();
+    this.soundManager = new SoundManager();
     this.lasers = [];
     this.asteroids = [];
     this.explosions = [];
+    this.currentTarget = null;
     
     this.setupGame();
     this.setupControls();
@@ -73,6 +76,11 @@ class Game {
       this.shootLaser();
     });
 
+    // Handle targeting
+    this.controls.setOnTarget(() => {
+      this.targetNearestAsteroid();
+    });
+
     // Handle window resize
     this.controls.setOnResize(() => {
       this.gameEngine.resize();
@@ -95,6 +103,9 @@ class Game {
     const laser = new Laser(laserStartPos, forward);
     this.lasers.push(laser);
     this.gameEngine.addEntity(laser);
+    
+    // Play laser sound
+    this.soundManager.playLaserSound();
   }
 
   update(deltaTime) {
@@ -112,6 +123,9 @@ class Game {
     
     // Check for laser-asteroid collisions
     this.checkCollisions();
+    
+    // Update target information
+    this.updateTargetInfo();
     
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
@@ -184,6 +198,9 @@ class Game {
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       
+      // Play explosion sound
+      this.soundManager.playExplosionSound();
+      
       // Remove asteroid
       this.gameEngine.removeEntity(asteroid);
       this.asteroids.splice(asteroidIndex, 1);
@@ -198,6 +215,62 @@ class Game {
       const explosion = new Explosion(hitPosition, 0.3, 0.3);
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
+      
+      // Play hit sound
+      this.soundManager.playHitSound();
+    }
+  }
+
+  targetNearestAsteroid() {
+    // Clear current target
+    if (this.currentTarget) {
+      this.currentTarget.setTargeted(false);
+      this.currentTarget = null;
+    }
+
+    // Find nearest asteroid
+    const spaceshipPos = this.spaceship.getPosition();
+    let nearestAsteroid = null;
+    let nearestDistance = Infinity;
+
+    for (const asteroid of this.asteroids) {
+      if (!asteroid.isAlive()) continue;
+      
+      const distance = spaceshipPos.distanceTo(asteroid.getPosition());
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestAsteroid = asteroid;
+      }
+    }
+
+    // Set new target
+    if (nearestAsteroid) {
+      this.currentTarget = nearestAsteroid;
+      this.currentTarget.setTargeted(true);
+    }
+  }
+
+  updateTargetInfo() {
+    if (this.currentTarget && this.currentTarget.isAlive()) {
+      // Update target information in UI
+      const spaceshipPos = this.spaceship.getPosition();
+      const targetPos = this.currentTarget.getPosition();
+      const distance = spaceshipPos.distanceTo(targetPos);
+      
+      this.ui.updateTargetInfo({
+        id: this.currentTarget.getId(),
+        mass: this.currentTarget.getMass(),
+        distance: distance,
+        health: this.currentTarget.getHealth(),
+        maxHealth: this.currentTarget.getMaxHealth()
+      }, targetPos, this.gameEngine.camera);
+    } else {
+      // Clear target if destroyed or invalid
+      if (this.currentTarget) {
+        this.currentTarget.setTargeted(false);
+        this.currentTarget = null;
+      }
+      this.ui.clearTargetInfo();
     }
   }
 
