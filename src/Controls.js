@@ -3,6 +3,10 @@ export class Controls {
     this.spaceship = spaceship;
     this.keys = {};
     this.setupEventListeners();
+    
+    // Laser cooldown system
+    this.laserCooldown = 0.6; // 600ms cooldown
+    this.lastLaserTime = 0;
   }
 
   setupEventListeners() {
@@ -44,10 +48,10 @@ export class Controls {
     
     // Q and E for roll
     if (this.keys['KeyQ']) {
-      this.spaceship.roll(-sensitivity * deltaTime);
+      this.spaceship.roll(sensitivity * deltaTime);
     }
     if (this.keys['KeyE']) {
-      this.spaceship.roll(sensitivity * deltaTime);
+      this.spaceship.roll(-sensitivity * deltaTime);
     }
     
     // Throttle controls
@@ -60,10 +64,14 @@ export class Controls {
       this.spaceship.setThrottle(currentThrottle - 0.5 * deltaTime);
     }
     
-    // Shooting
+    // Shooting with cooldown
     if (this.keys['Space']) {
-      if (this.onShoot) {
-        this.onShoot();
+      const currentTime = performance.now() / 1000; // Convert to seconds
+      if (currentTime - this.lastLaserTime >= this.laserCooldown) {
+        if (this.onShoot) {
+          this.onShoot();
+          this.lastLaserTime = currentTime;
+        }
       }
     }
   }
