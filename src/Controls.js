@@ -1,0 +1,78 @@
+export class Controls {
+  constructor(spaceship) {
+    this.spaceship = spaceship;
+    this.keys = {};
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    // Keyboard events
+    document.addEventListener('keydown', (event) => {
+      this.keys[event.code] = true;
+      event.preventDefault();
+    });
+
+    document.addEventListener('keyup', (event) => {
+      this.keys[event.code] = false;
+      event.preventDefault();
+    });
+
+    // Window resize
+    window.addEventListener('resize', () => {
+      if (this.onResize) {
+        this.onResize();
+      }
+    });
+  }
+
+  update(deltaTime) {
+    const sensitivity = 1.0;
+    
+    // WASD movement
+    if (this.keys['KeyW']) {
+      this.spaceship.pitch(-sensitivity * deltaTime);
+    }
+    if (this.keys['KeyS']) {
+      this.spaceship.pitch(sensitivity * deltaTime);
+    }
+    if (this.keys['KeyA']) {
+      this.spaceship.yaw(sensitivity * deltaTime);
+    }
+    if (this.keys['KeyD']) {
+      this.spaceship.yaw(-sensitivity * deltaTime);
+    }
+    
+    // Q and E for roll
+    if (this.keys['KeyQ']) {
+      this.spaceship.roll(-sensitivity * deltaTime);
+    }
+    if (this.keys['KeyE']) {
+      this.spaceship.roll(sensitivity * deltaTime);
+    }
+    
+    // Throttle controls
+    if (this.keys['KeyC']) {
+      const currentThrottle = this.spaceship.getThrottle();
+      this.spaceship.setThrottle(currentThrottle + 0.5 * deltaTime);
+    }
+    if (this.keys['KeyX']) {
+      const currentThrottle = this.spaceship.getThrottle();
+      this.spaceship.setThrottle(currentThrottle - 0.5 * deltaTime);
+    }
+    
+    // Shooting
+    if (this.keys['Space']) {
+      if (this.onShoot) {
+        this.onShoot();
+      }
+    }
+  }
+
+  setOnShoot(callback) {
+    this.onShoot = callback;
+  }
+
+  setOnResize(callback) {
+    this.onResize = callback;
+  }
+}
