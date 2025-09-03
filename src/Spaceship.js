@@ -118,11 +118,19 @@ export class Spaceship {
       return;
     }
     
-    // Apply throttle to forward movement
-    const forwardForce = this.throttle * this.acceleration * deltaTime;
-    const forward = new THREE.Vector3(0, 0, -1);
-    forward.applyQuaternion(this.quaternion);
-    this.velocity.add(forward.multiplyScalar(forwardForce));
+    // Apply throttle as target speed (0-1 throttle = 0-maxSpeed target)
+    const targetSpeed = this.throttle * this.maxSpeed;
+    const currentSpeed = this.getSpeed();
+    const speedDifference = targetSpeed - currentSpeed;
+    
+    // Apply acceleration/deceleration based on speed difference
+    if (Math.abs(speedDifference) > 0.1) {
+      const accelerationDirection = Math.sign(speedDifference);
+      const forwardForce = accelerationDirection * this.acceleration * deltaTime;
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyQuaternion(this.quaternion);
+      this.velocity.add(forward.multiplyScalar(forwardForce));
+    }
     
     // Apply velocity to position
     this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
@@ -135,9 +143,9 @@ export class Spaceship {
     // Update Euler rotation for mesh display
     this.rotation.setFromQuaternion(this.quaternion);
     
-    // Apply drag
-    this.velocity.multiplyScalar(0.98);
-    this.angularVelocity.multiplyScalar(0.9);
+    // Apply drag (minimal in space)
+    this.velocity.multiplyScalar(0.999);
+    this.angularVelocity.multiplyScalar(0.99);
     
     // Update mesh
     this.mesh.position.copy(this.position);
