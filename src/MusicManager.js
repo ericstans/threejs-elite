@@ -176,9 +176,11 @@ export class MusicManager {
       name: 'ambient',
       instrumentType: 71,  // bassoon
       instruments: [
-        { midiNote: 45, velocity: 30, duration: 2.0 }, // A2 - Low bass note
-        { midiNote: 57, velocity: 25, duration: 2.5 }, // A3 - Mid bass note  
-        { midiNote: 69, velocity: 20, duration: 3.0 }  // A4 - Higher note
+        { midiNote: 45, velocity: 30, duration: 4.0 }, // A2 - Low bass note
+        { midiNote: 57, velocity: 25, duration: 5 }, // A3 - Mid bass note  
+        { midiNote: 61, velocity: 25, duration: 5 }, // C#3 - Mid bass note  
+        { midiNote: 69, velocity: 20, duration: 6 },  // A4 - Higher note
+        { midiNote: 71, velocity: 16, duration: 2 }  // B4 - Higher note
       ],
       duration: 16 // 16 seconds per cycle
     };
@@ -322,7 +324,7 @@ export class MusicManager {
       const playSustainedNote = () => {
         if (this.isPlaying && this.currentTrack === 'ambient') {
           playMIDINote(instrument.midiNote, instrument.duration, instrument.velocity);
-          setTimeout(playSustainedNote, instrument.duration * 1000 + (index * 500)); // Stagger the notes
+          setTimeout(playSustainedNote, instrument.duration * 2000 + (index * 500)); // Stagger the notes
         }
       };
       
