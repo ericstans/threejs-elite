@@ -6,6 +6,8 @@
     "preview": "npx vite preview"
   },
   "dependencies": {
+    "jzz": "^1.9.4",
+    "jzz-synth-tiny": "^1.4.3",
     "three": "^0.179.1"
   },
   "devDependencies": {

@@ -55,7 +55,7 @@ export class ConversationSystem {
              ]
            },
            'mining_tech': {
-             response: "We use advanced plasma cutting technology and automated drones for extraction. Our systems can process up to 500 tons of ore per day with minimal environmental impact.",
+             response: "We use advanced plasma cutting technology and automated drones for extraction. Our systems can process up to 500 tons of ore per day.",
              options: [
                { id: 'back_mining', text: 'Back to mining information.' },
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
