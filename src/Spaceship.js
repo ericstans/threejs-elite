@@ -126,10 +126,22 @@ export class Spaceship {
     // Apply acceleration/deceleration based on speed difference
     if (Math.abs(speedDifference) > 0.1) {
       const accelerationDirection = Math.sign(speedDifference);
-      const forwardForce = accelerationDirection * this.acceleration * deltaTime;
       const forward = new THREE.Vector3(0, 0, -1);
       forward.applyQuaternion(this.quaternion);
-      this.velocity.add(forward.multiplyScalar(forwardForce));
+      const forwardNorm = forward.clone().normalize();
+      const vForward = this.velocity.dot(forwardNorm);
+      const forwardForce = accelerationDirection * this.acceleration * deltaTime;
+      this.velocity.add(forward.clone().multiplyScalar(forwardForce));
+      // Prevent overshoot into reverse if throttle is zero or positive
+      if (this.throttle >= 0) {
+        const newVForward = this.velocity.dot(forwardNorm);
+        // If we were moving forward and now would move backward, clamp to zero
+        if (vForward > 0 && newVForward < 0) {
+          // Remove forward component, keep any lateral velocity
+          const lateral = this.velocity.clone().sub(forwardNorm.clone().multiplyScalar(newVForward));
+          this.velocity.copy(lateral);
+        }
+      }
     }
     
     // Apply velocity to position
