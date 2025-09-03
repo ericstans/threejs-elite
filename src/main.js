@@ -169,6 +169,9 @@ class Game {
     // Update UI
     this.ui.updateThrottle(this.spaceship.getThrottle(), this.spaceship.getSpeedPerMinute());
     
+    // Update debug flags display (only in dev mode)
+    this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
+    
     // Update and cleanup lasers
     this.updateLasers(deltaTime);
     
