@@ -263,11 +263,24 @@ export class ConversationSystem {
     
     // Process options with inline conditional logic
     if (node.options) {
-      const processedOptions = node.options
+      // node.options can itself be: (a) an array, (b) a function returning an array, (c) array containing functions.
+      let rawOptions = node.options;
+      if (typeof rawOptions === 'function') {
+        try {
+          rawOptions = rawOptions(playerFlags) || [];
+        } catch (e) {
+          console.warn('ConversationSystem: option function threw', e);
+          rawOptions = [];
+        }
+      }
+      if (!Array.isArray(rawOptions)) {
+        console.warn('ConversationSystem: node.options is not an array after evaluation', nodeId, rawOptions);
+        rawOptions = [];
+      }
+      const processedOptions = rawOptions
         .map(option => {
-          // If option is a function, call it with playerFlags
           if (typeof option === 'function') {
-            return option(playerFlags);
+            try { return option(playerFlags); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
           }
           return option;
         })
