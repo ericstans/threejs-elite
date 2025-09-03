@@ -3,7 +3,6 @@ import { DebugFlagsUI } from './ui/DebugFlagsUI.js';
 import { ControlsUI } from './ui/ControlsUI.js';
 import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
-import { CommunicationsUI } from './ui/CommunicationsUI.js';
 
 export class UI {
   constructor() {
@@ -30,7 +29,6 @@ export class UI {
     this.controlsUI = new ControlsUI(this.uiContainer);
     this.targetUI = new TargetUI(this.uiContainer);
     this.navTargetUI = new NavTargetUI(this.uiContainer);
-    this.communicationsUI = new CommunicationsUI();
 
 
 
@@ -80,8 +78,65 @@ export class UI {
     this.autoAimCone.style.opacity = '0.5';
     this.uiContainer.appendChild(this.autoAimCone);
 
+    // Communications modal (initially hidden)
+    this.commsModal = document.createElement('div');
+    this.commsModal.style.position = 'fixed';
+    this.commsModal.style.top = '0';
+    this.commsModal.style.left = '0';
+    this.commsModal.style.width = '100%';
+    this.commsModal.style.height = '100%';
+    this.commsModal.style.background = 'rgba(0, 0, 0, 0.8)';
+    this.commsModal.style.display = 'none';
+    this.commsModal.style.zIndex = '2000';
+    this.commsModal.style.pointerEvents = 'auto';
+    document.body.appendChild(this.commsModal);
 
+    // Comms modal content
+    this.commsContent = document.createElement('div');
+    this.commsContent.style.position = 'absolute';
+    this.commsContent.style.top = '50%';
+    this.commsContent.style.left = '50%';
+    this.commsContent.style.transform = 'translate(-50%, -50%)';
+    this.commsContent.style.background = 'rgba(0, 0, 0, 0.9)';
+    this.commsContent.style.border = '2px solid #00ff00';
+    this.commsContent.style.padding = '20px';
+    this.commsContent.style.minWidth = '400px';
+    this.commsContent.style.maxWidth = '600px';
+    this.commsContent.style.fontFamily = 'monospace';
+    this.commsContent.style.color = '#00ff00';
+    this.commsContent.style.fontSize = '14px';
+    this.commsContent.style.lineHeight = '1.6';
+    this.commsModal.appendChild(this.commsContent);
 
+    // Comms modal title
+    this.commsTitle = document.createElement('div');
+    this.commsTitle.style.fontSize = '18px';
+    this.commsTitle.style.fontWeight = 'bold';
+    this.commsTitle.style.marginBottom = '15px';
+    this.commsTitle.style.textAlign = 'center';
+    this.commsTitle.style.borderBottom = '1px solid #00ff00';
+    this.commsTitle.style.paddingBottom = '10px';
+    this.commsContent.appendChild(this.commsTitle);
+
+    // Comms modal message
+    this.commsMessage = document.createElement('div');
+    this.commsMessage.style.marginBottom = '20px';
+    this.commsMessage.style.textAlign = 'center';
+    this.commsMessage.style.fontStyle = 'italic';
+    this.commsContent.appendChild(this.commsMessage);
+
+    // Comms modal options
+    this.commsOptions = document.createElement('div');
+    this.commsOptions.style.marginBottom = '20px';
+    this.commsContent.appendChild(this.commsOptions);
+
+    // Comms modal close instruction
+    this.commsClose = document.createElement('div');
+    this.commsClose.style.textAlign = 'center';
+    this.commsClose.style.fontSize = '12px';
+    this.commsClose.style.color = '#666';
+    this.commsClose.textContent = 'Press ESC to close';
+    this.commsContent.appendChild(this.commsClose);
   }
 
 
@@ -273,27 +328,7 @@ export class UI {
   }
 
   updateFlagsDisplay(playerFlags, globalFlags) {
-    if (!this.isDevMode || !this.flagsDisplay) {
-      return;
-    }
-
-    // Update player flags
-    this.playerFlagsContent.innerHTML = '';
-    for (const [flagName, value] of Object.entries(playerFlags)) {
-      const flagElement = document.createElement('div');
-      flagElement.textContent = `${flagName}: ${value}`;
-      flagElement.style.color = value ? '#00ff00' : '#666666';
-      this.playerFlagsContent.appendChild(flagElement);
-    }
-
-    // Update global flags
-    this.globalFlagsContent.innerHTML = '';
-    for (const [flagName, value] of Object.entries(globalFlags)) {
-      const flagElement = document.createElement('div');
-      flagElement.textContent = `${flagName}: ${value}`;
-      flagElement.style.color = value ? '#ffff00' : '#666666';
-      this.globalFlagsContent.appendChild(flagElement);
-    }
+    this.debugFlagsUI.updateFlagsDisplay(playerFlags, globalFlags);
   }
 
   // Docking UI methods

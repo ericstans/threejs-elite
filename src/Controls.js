@@ -55,11 +55,11 @@ export class Controls {
     }
     
     // Throttle controls (faster rate than ship acceleration)
-    if (this.keys['KeyC']) {
+    if (this.keys['KeyX']) {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle + 1.0 * deltaTime);
     }
-    if (this.keys['KeyX']) {
+    if (this.keys['KeyZ']) {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle - 1.0 * deltaTime);
     }

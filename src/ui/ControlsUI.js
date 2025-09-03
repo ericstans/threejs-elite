@@ -21,7 +21,7 @@ export class ControlsUI {
       <div style="margin-bottom: 5px; font-weight: bold;">CONTROLS</div>
       <div>WASD - Pitch/Yaw</div>
       <div>Q/E - Roll</div>
-      <div>C/X - Throttle</div>
+      <div>Z/X - Throttle</div>
       <div>SPACE - Shoot</div>
       <div>T - Target</div>
       <div>Y - Nav Target</div>

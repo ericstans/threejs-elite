@@ -5,13 +5,14 @@ Simple prototype for an Elite- or Privateer-esque game
 ### 🎮 Controls
 - **WASD** - Pitch and yaw controls
 - **Q/E** - Roll controls  
-- **C/X** - Throttle control (with on-screen display)
-- **Space** - Fire lasers (600ms cooldown)
+- **Z/X** - Throttle control 
+- **Space** - Fire lasers
 - **T** - Target nearest asteroid
 - **Y** - Nav target nearest planet
 - **C** - Open communications with nav target
 - **ESC** - Close communications modal
-- **1-9** - Select conve
+- **1-9** - Select conversation topic
+
 ## Getting Started
 
 ### Prerequisites
