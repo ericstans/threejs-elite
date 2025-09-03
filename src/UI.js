@@ -141,8 +141,8 @@ export class UI {
 
 
 
-  updateThrottle(throttle, speedPerMinute) {
-    this.throttleUI.updateThrottle(throttle, speedPerMinute);
+  updateThrottle(targetSpeed, currentSpeed, maxSpeed) {
+    this.throttleUI.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
   }
 
   updateTargetInfo(targetInfo, targetPosition, camera) {

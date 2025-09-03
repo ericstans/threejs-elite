@@ -72,18 +72,15 @@ export class ThrottleUI {
     this.throttleContainer.appendChild(this.throttleLegend);
   }
 
-  updateThrottle(throttle, speedPerMinute) {
-    // Throttle now represents target speed percentage (0-100% of max speed)
-    const targetSpeedPercentage = Math.round(throttle * 100);
-    const actualSpeedPercentage = Math.round((speedPerMinute / 3000) * 100); // 3000 = maxSpeed * 60
-    
+  updateThrottle(targetSpeed, currentSpeed, maxSpeed) {
+    // Compute percentages for bar heights
+    const targetPct = maxSpeed > 0 ? Math.round((targetSpeed / maxSpeed) * 100) : 0;
+    const actualPct = maxSpeed > 0 ? Math.round((currentSpeed / maxSpeed) * 100) : 0;
     // Update throttle bar (green) - shows target speed
-    this.throttleFill.style.height = `${targetSpeedPercentage}%`;
-    
+    this.throttleFill.style.height = `${targetPct}%`;
     // Update speed bar (yellow, behind throttle) - shows actual speed
-    this.speedFill.style.height = `${actualSpeedPercentage}%`;
-    
-    // Update speed display above throttle container
-    this.speedDisplay.textContent = `${speedPerMinute.toFixed(1)}/min`;
+    this.speedFill.style.height = `${actualPct}%`;
+    // Update speed display above throttle container (units/min)
+    this.speedDisplay.textContent = `${(currentSpeed * 60).toFixed(1)}/min`;
   }
 }
