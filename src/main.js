@@ -264,8 +264,8 @@ class Game {
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       
-      // Play explosion sound
-      this.soundManager.playExplosionSound();
+      // Play spatial explosion sound
+      this.gameEngine.createSpatialExplosion(asteroid.getPosition());
       
       // Remove asteroid
       this.gameEngine.removeEntity(asteroid);
@@ -282,8 +282,8 @@ class Game {
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       
-      // Play hit sound
-      this.soundManager.playHitSound();
+      // Play spatial hit sound
+      this.gameEngine.createSpatialLaserHit(hitPosition);
     }
   }
 
