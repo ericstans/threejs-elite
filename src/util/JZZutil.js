@@ -6,33 +6,63 @@ let compressor = null;
 let midiReady = false;
 
 // Initialize MIDI when JZZ is available
-function initMIDI() {
-	if (window.JZZ && window.JZZ.synth && !midiOut) {
+async function initMIDI() {
+	if (window.JZZ && !midiOut) {
 		try {
-			// Use the built-in software synth
-			JZZ.synth.Tiny.register('WebAudioTinySynth');
-			midiOut = JZZ().openMidiOut('WebAudioTinySynth');
+			// List all available MIDI ports first
+			console.log('Listing all available MIDI ports:');
+			const ports = JZZ().info().ports;
+			ports.forEach((port, index) => {
+				console.log(`  ${index}: ${port.name} (${port.type})`);
+			});
+			
+			// Try Microsoft GS Wavetable Synth first
+			console.log('Attempting to use Microsoft GS Wavetable Synth...');
+			midiOut = await JZZ().openMidiOut(/Microsoft/);
+			
 			if (midiOut) {
 				midiReady = true;
 				// Test with a program change to ensure it's working
 				midiOut.program(0, 0); // Set to Acoustic Grand Piano
+				console.log('Successfully initialized Microsoft GS Wavetable Synth');
 			} else {
-				console.error('Failed to open MIDI output');
-				midiReady = false;
+				throw new Error('Microsoft GS Wavetable Synth not available');
 			}
 		} catch (error) {
-			console.error('Failed to initialize MIDI:', error);
-			midiReady = false;
+			console.warn('Microsoft GS Wavetable Synth failed, falling back to Tiny synthesizer:', error.message);
+			
+			// Fallback to Tiny synthesizer
+			try {
+				if (window.JZZ.synth) {
+					JZZ.synth.Tiny.register('WebAudioTinySynth');
+					midiOut = JZZ().openMidiOut('WebAudioTinySynth');
+					if (midiOut) {
+						midiReady = true;
+						// Test with a program change to ensure it's working
+						midiOut.program(0, 0); // Set to Acoustic Grand Piano
+						console.log('Successfully initialized Tiny synthesizer as fallback');
+					} else {
+						console.error('Failed to open Tiny synthesizer');
+						midiReady = false;
+					}
+				} else {
+					console.error('JZZ.synth not available for fallback');
+					midiReady = false;
+				}
+			} catch (fallbackError) {
+				console.error('Failed to initialize Tiny synthesizer fallback:', fallbackError);
+				midiReady = false;
+			}
 		}
 	} else if (!window.JZZ) {
 		console.warn('JZZ not available');
-	} else if (!window.JZZ.synth) {
-		console.warn('JZZ.synth not available');
+	} else if (midiOut) {
+		console.log('MIDI already initialized');
 	}
 }
 
 // Try to initialize MIDI immediately if JZZ is available
-if (window.JZZ && window.JZZ.synth) {
+if (window.JZZ) {
 	initMIDI();
 } else {
 	// Wait for JZZ to load

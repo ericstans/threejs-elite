@@ -40,9 +40,9 @@ export class MusicManager {
   async init() {
     console.log('MusicManager: init() called');
     try {
-      // Initialize MIDI using JZZutil
+      // Initialize MIDI using JZZutil (now async)
       console.log('MusicManager: Initializing MIDI');
-      initMIDI();
+      await initMIDI();
       console.log('MusicManager: MIDI initialized');
       
       // Set initial volume
@@ -456,13 +456,13 @@ export class MusicManager {
       player.onEnd = () => {
         console.log('MusicManager: Current MIDI track finished');
         if (this.isPlaying && this.currentTrack === 'ambient') {
-          console.log('MusicManager: Queueing next random ambient MIDI track with 1 second delay');
-          // Load and play the next random MIDI file after a 1 second delay
+          console.log('MusicManager: Queueing next random ambient MIDI track with 15 second delay');
+          // Load and play the next random MIDI file after a 15 second delay
           setTimeout(() => {
             if (this.isPlaying && this.currentTrack === 'ambient') {
               this.playNextRandomAmbientMidi();
             }
-          }, 1000);
+          }, 15000);
         }
       };
       
