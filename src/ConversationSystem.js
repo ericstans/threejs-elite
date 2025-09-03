@@ -201,7 +201,7 @@ export class ConversationSystem {
                { id: 'back_docking', text: 'Back to docking information.' },
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
-           },
+           }, 
            'research_species': {
              response: "We've discovered bioluminescent fish that can survive in extreme pressure, coral-like organisms that build underwater cities, and intelligent cephalopods with complex communication systems.",
              options: [
