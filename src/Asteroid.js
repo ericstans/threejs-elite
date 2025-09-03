@@ -20,6 +20,7 @@ export class Asteroid {
     this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
     this.mass = size * size * size; // Approximate mass based on volume
     this.isTargeted = false;
+    this.isCommable = false; // No asteroids are commable for now
     
     this.mesh = this.createAsteroidMesh();
     this.mesh.position.copy(this.position);
@@ -118,5 +119,9 @@ export class Asteroid {
 
   isTarget() {
     return this.isTargeted;
+  }
+
+  isCommable() {
+    return this.isCommable;
   }
 }

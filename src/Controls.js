@@ -92,6 +92,36 @@ export class Controls {
       // Clear the key to prevent repeated targeting
       this.keys['KeyY'] = false;
     }
+    
+    // Communications
+    if (this.keys['KeyC']) {
+      if (this.onComms) {
+        this.onComms();
+      }
+      // Clear the key to prevent repeated calls
+      this.keys['KeyC'] = false;
+    }
+    
+    // ESC to close comms modal
+    if (this.keys['Escape']) {
+      if (this.onCloseComms) {
+        this.onCloseComms();
+      }
+      // Clear the key to prevent repeated calls
+      this.keys['Escape'] = false;
+    }
+
+    // Number keys for conversation options (1-9)
+    for (let i = 1; i <= 9; i++) {
+      const keyName = `Digit${i}`;
+      if (this.keys[keyName]) {
+        if (this.onCommsOption) {
+          this.onCommsOption(i);
+        }
+        // Clear the key to prevent repeated calls
+        this.keys[keyName] = false;
+      }
+    }
   }
 
   setOnShoot(callback) {
@@ -108,5 +138,17 @@ export class Controls {
 
   setOnNavTarget(callback) {
     this.onNavTarget = callback;
+  }
+
+  setOnComms(callback) {
+    this.onComms = callback;
+  }
+
+  setOnCloseComms(callback) {
+    this.onCloseComms = callback;
+  }
+
+  setOnCommsOption(callback) {
+    this.onCommsOption = callback;
   }
 }

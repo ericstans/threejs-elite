@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 
 export class Planet {
-  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = "Planet") {
+  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = "Planet", greeting = "Thank you for contacting us.") {
     this.radius = radius;
     this.position = position;
     this.color = color;
     this.name = name;
+    this.greeting = greeting;
     this.rotationSpeed = 0.1;
     this.currentRotation = 0;
     
@@ -13,6 +14,7 @@ export class Planet {
     this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
     this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
     this.isNavTargeted = false;
+    this.isCommable = true; // All planets are commable
     
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
@@ -59,5 +61,13 @@ export class Planet {
 
   getPosition() {
     return this.position.clone();
+  }
+
+  isCommable() {
+    return this.isCommable;
+  }
+
+  getGreeting() {
+    return this.greeting;
   }
 }

@@ -135,6 +135,15 @@ export class UI {
     this.targetHealth = document.createElement('div');
     this.targetPanel.appendChild(this.targetHealth);
 
+    // Target commable indicator
+    this.targetCommableIndicator = document.createElement('div');
+    this.targetCommableIndicator.style.position = 'absolute';
+    this.targetCommableIndicator.style.left = '-50px';
+    this.targetCommableIndicator.style.top = '10px';
+    this.targetCommableIndicator.style.fontSize = '16px';
+    this.targetCommableIndicator.style.display = 'none';
+    this.targetPanel.appendChild(this.targetCommableIndicator);
+
     // Nav target panel (initially hidden)
     this.navTargetPanel = document.createElement('div');
     this.navTargetPanel.style.position = 'absolute';
@@ -166,6 +175,15 @@ export class UI {
     this.navTargetDistance = document.createElement('div');
     this.navTargetPanel.appendChild(this.navTargetDistance);
 
+    // Nav target commable indicator
+    this.navCommableIndicator = document.createElement('div');
+    this.navCommableIndicator.style.position = 'absolute';
+    this.navCommableIndicator.style.left = '-50px';
+    this.navCommableIndicator.style.top = '10px';
+    this.navCommableIndicator.style.fontSize = '16px';
+    this.navCommableIndicator.style.display = 'none';
+    this.navTargetPanel.appendChild(this.navCommableIndicator);
+
     // Target indicator (red rectangle around targeted asteroid)
     this.targetIndicator = document.createElement('div');
     this.targetIndicator.style.position = 'absolute';
@@ -185,6 +203,66 @@ export class UI {
     this.navTargetIndicator.style.display = 'none'; // Initially hidden
     this.navTargetIndicator.style.zIndex = '1000';
     this.uiContainer.appendChild(this.navTargetIndicator);
+
+    // Communications modal (initially hidden)
+    this.commsModal = document.createElement('div');
+    this.commsModal.style.position = 'fixed';
+    this.commsModal.style.top = '0';
+    this.commsModal.style.left = '0';
+    this.commsModal.style.width = '100%';
+    this.commsModal.style.height = '100%';
+    this.commsModal.style.background = 'rgba(0, 0, 0, 0.8)';
+    this.commsModal.style.display = 'none';
+    this.commsModal.style.zIndex = '2000';
+    this.commsModal.style.pointerEvents = 'auto';
+    document.body.appendChild(this.commsModal);
+
+    // Comms modal content
+    this.commsContent = document.createElement('div');
+    this.commsContent.style.position = 'absolute';
+    this.commsContent.style.top = '50%';
+    this.commsContent.style.left = '50%';
+    this.commsContent.style.transform = 'translate(-50%, -50%)';
+    this.commsContent.style.background = 'rgba(0, 0, 0, 0.9)';
+    this.commsContent.style.border = '2px solid #00ff00';
+    this.commsContent.style.padding = '20px';
+    this.commsContent.style.minWidth = '400px';
+    this.commsContent.style.maxWidth = '600px';
+    this.commsContent.style.fontFamily = 'monospace';
+    this.commsContent.style.color = '#00ff00';
+    this.commsContent.style.fontSize = '14px';
+    this.commsContent.style.lineHeight = '1.6';
+    this.commsModal.appendChild(this.commsContent);
+
+    // Comms modal title
+    this.commsTitle = document.createElement('div');
+    this.commsTitle.style.fontSize = '18px';
+    this.commsTitle.style.fontWeight = 'bold';
+    this.commsTitle.style.marginBottom = '15px';
+    this.commsTitle.style.textAlign = 'center';
+    this.commsTitle.style.borderBottom = '1px solid #00ff00';
+    this.commsTitle.style.paddingBottom = '10px';
+    this.commsContent.appendChild(this.commsTitle);
+
+    // Comms modal message
+    this.commsMessage = document.createElement('div');
+    this.commsMessage.style.marginBottom = '20px';
+    this.commsMessage.style.textAlign = 'center';
+    this.commsMessage.style.fontStyle = 'italic';
+    this.commsContent.appendChild(this.commsMessage);
+
+    // Comms modal options
+    this.commsOptions = document.createElement('div');
+    this.commsOptions.style.marginBottom = '20px';
+    this.commsContent.appendChild(this.commsOptions);
+
+    // Comms modal close instruction
+    this.commsClose = document.createElement('div');
+    this.commsClose.style.textAlign = 'center';
+    this.commsClose.style.fontSize = '12px';
+    this.commsClose.style.color = '#666';
+    this.commsClose.textContent = 'Press ESC to close';
+    this.commsContent.appendChild(this.commsClose);
   }
 
   updateThrottle(throttle) {
@@ -199,6 +277,14 @@ export class UI {
     this.targetMass.textContent = `Mass: ${targetInfo.mass.toFixed(1)}`;
     this.targetDistance.textContent = `Distance: ${targetInfo.distance.toFixed(1)}`;
     this.targetHealth.textContent = `Health: ${targetInfo.health}/${targetInfo.maxHealth}`;
+    
+    // Show/hide commable indicator
+    if (targetInfo.isCommable) {
+      this.targetCommableIndicator.style.display = 'block';
+      this.targetCommableIndicator.textContent = '📡V';
+    } else {
+      this.targetCommableIndicator.style.display = 'none';
+    }
     
     // Update target indicator position
     this.updateTargetIndicator(targetPosition, camera);
@@ -235,6 +321,7 @@ export class UI {
   clearTargetInfo() {
     this.targetPanel.style.display = 'none';
     this.targetIndicator.style.display = 'none';
+    this.targetCommableIndicator.style.display = 'none';
   }
 
   updateNavTargetInfo(navTargetInfo, targetPosition, camera) {
@@ -243,6 +330,14 @@ export class UI {
     this.navTargetName.textContent = `Name: ${navTargetInfo.name}`;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
     this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
+    
+    // Show/hide commable indicator
+    if (navTargetInfo.isCommable) {
+      this.navCommableIndicator.style.display = 'block';
+      this.navCommableIndicator.textContent = '📡C';
+    } else {
+      this.navCommableIndicator.style.display = 'none';
+    }
     
     // Update nav target indicator position
     this.updateNavTargetIndicator(targetPosition, camera);
@@ -279,6 +374,79 @@ export class UI {
   clearNavTargetInfo() {
     this.navTargetPanel.style.display = 'none';
     this.navTargetIndicator.style.display = 'none';
+    this.navCommableIndicator.style.display = 'none';
+  }
+
+  showCommsModal(planetName, greeting, options = null) {
+    this.commsTitle.textContent = `COMMUNICATIONS - ${planetName}`;
+    this.commsMessage.textContent = greeting;
+    
+    // Clear previous options
+    this.commsOptions.innerHTML = '';
+    
+    // Add communication options
+    if (options && options.length > 0) {
+      options.forEach((option, index) => {
+        const optionElement = document.createElement('div');
+        optionElement.style.marginBottom = '10px';
+        optionElement.style.padding = '8px';
+        optionElement.style.border = '1px solid #00ff00';
+        optionElement.style.cursor = 'pointer';
+        optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
+        optionElement.dataset.optionId = option.id;
+        this.commsOptions.appendChild(optionElement);
+      });
+    } else {
+      // Default options if none provided
+      const option1 = document.createElement('div');
+      option1.style.marginBottom = '10px';
+      option1.style.padding = '8px';
+      option1.style.border = '1px solid #00ff00';
+      option1.style.cursor = 'pointer';
+      option1.innerHTML = '<span style="color: #ffff00;">1.</span> Information about ' + planetName;
+      option1.dataset.optionId = 'information';
+      this.commsOptions.appendChild(option1);
+      
+      const option2 = document.createElement('div');
+      option2.style.marginBottom = '10px';
+      option2.style.padding = '8px';
+      option2.style.border = '1px solid #00ff00';
+      option2.style.cursor = 'pointer';
+      option2.innerHTML = '<span style="color: #ffff00;">2.</span> Request docking';
+      option2.dataset.optionId = 'docking';
+      this.commsOptions.appendChild(option2);
+    }
+    
+    this.commsModal.style.display = 'block';
+  }
+
+  updateCommsModal(message, options) {
+    this.commsMessage.textContent = message;
+    
+    // Clear previous options
+    this.commsOptions.innerHTML = '';
+    
+    // Add new options
+    if (options && options.length > 0) {
+      options.forEach((option, index) => {
+        const optionElement = document.createElement('div');
+        optionElement.style.marginBottom = '10px';
+        optionElement.style.padding = '8px';
+        optionElement.style.border = '1px solid #00ff00';
+        optionElement.style.cursor = 'pointer';
+        optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
+        optionElement.dataset.optionId = option.id;
+        this.commsOptions.appendChild(optionElement);
+      });
+    }
+  }
+
+  hideCommsModal() {
+    this.commsModal.style.display = 'none';
+  }
+
+  isCommsModalVisible() {
+    return this.commsModal.style.display === 'block';
   }
 
   destroy() {

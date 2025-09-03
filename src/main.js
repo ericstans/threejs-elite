@@ -8,6 +8,7 @@ import { Laser } from './Laser.js';
 import { Asteroid } from './Asteroid.js';
 import { Explosion } from './Explosion.js';
 import { SoundManager } from './SoundManager.js';
+import { ConversationSystem } from './ConversationSystem.js';
 
 class Game {
   constructor() {
@@ -16,6 +17,7 @@ class Game {
     this.controls = new Controls(this.spaceship);
     this.ui = new UI();
     this.soundManager = new SoundManager();
+    this.conversationSystem = new ConversationSystem();
     this.lasers = [];
     this.asteroids = [];
     this.explosions = [];
@@ -35,8 +37,8 @@ class Game {
     this.spaceship.mesh.visible = false;
     
     // Create planets
-    const planet1 = new Planet(2, new THREE.Vector3(20, 0, -50), 0x8B4513, "Aridus Prime"); // Brown planet
-    const planet2 = new Planet(1.5, new THREE.Vector3(-30, 10, -80), 0x4169E1, "Oceanus"); // Blue planet
+    const planet1 = new Planet(2, new THREE.Vector3(20, 0, -50), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet
+    const planet2 = new Planet(1.5, new THREE.Vector3(-30, 10, -80), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
     
     this.planets.push(planet1);
     this.planets.push(planet2);
@@ -88,6 +90,21 @@ class Game {
     // Handle navigation targeting
     this.controls.setOnNavTarget(() => {
       this.targetNearestPlanet();
+    });
+
+    // Handle communications
+    this.controls.setOnComms(() => {
+      this.openComms();
+    });
+
+    // Handle closing communications
+    this.controls.setOnCloseComms(() => {
+      this.closeComms();
+    });
+
+    // Handle conversation option selection
+    this.controls.setOnCommsOption((optionNumber) => {
+      this.selectCommsOption(optionNumber);
     });
 
     // Handle window resize
@@ -304,7 +321,8 @@ class Game {
         mass: this.currentTarget.getMass(),
         distance: distance,
         health: this.currentTarget.getHealth(),
-        maxHealth: this.currentTarget.getMaxHealth()
+        maxHealth: this.currentTarget.getMaxHealth(),
+        isCommable: this.currentTarget.isCommable
       }, targetPos, this.gameEngine.camera);
     } else {
       // Clear target if destroyed or invalid
@@ -368,10 +386,65 @@ class Game {
         id: this.currentNavTarget.getId(),
         name: this.currentNavTarget.getName(),
         mass: this.currentNavTarget.getMass(),
-        distance: distance
+        distance: distance,
+        isCommable: this.currentNavTarget.isCommable
       }, targetPos, this.gameEngine.camera);
     } else {
       this.ui.clearNavTargetInfo();
+    }
+  }
+
+  openComms() {
+    // Only open comms if we have a nav target and it's commable
+    if (this.currentNavTarget && this.currentNavTarget.isCommable) {
+      const planetName = this.currentNavTarget.getName();
+      const greeting = this.conversationSystem.getGreeting(planetName);
+      const initialOptions = this.conversationSystem.getInitialOptions(planetName);
+      this.ui.showCommsModal(planetName, greeting, initialOptions);
+      this.currentConversationNode = 'initial';
+    }
+  }
+
+  closeComms() {
+    this.ui.hideCommsModal();
+    this.currentConversationNode = null;
+  }
+
+  selectCommsOption(optionNumber) {
+    if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
+      return;
+    }
+
+    const planetName = this.currentNavTarget.getName();
+    let options = [];
+    let nodeId = this.currentConversationNode;
+
+    // Get current options from the modal
+    const optionElements = this.ui.commsOptions.children;
+    if (optionNumber <= optionElements.length) {
+      const selectedOption = optionElements[optionNumber - 1];
+      const optionId = selectedOption.dataset.optionId;
+
+      // Handle special cases
+      if (optionId === 'end') {
+        this.closeComms();
+        return;
+      }
+
+      if (optionId === 'back_info') {
+        // Go back to information node
+        nodeId = 'information';
+      } else {
+        // Navigate to the selected conversation node
+        nodeId = optionId;
+      }
+
+      // Get the conversation node
+      const conversationNode = this.conversationSystem.getConversationNode(planetName, nodeId);
+      if (conversationNode) {
+        this.ui.updateCommsModal(conversationNode.response, conversationNode.options);
+        this.currentConversationNode = nodeId;
+      }
     }
   }
 
