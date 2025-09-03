@@ -12,12 +12,15 @@ export class ConversationSystem {
         conversationTree: {
           'information': {
             response: "Aridus Prime is a small outpost established in GY166, and the base of operations for mining operations in the Aridus system.",
-            options: [
+            options: (playerFlags) => [
               { id: 'mining', text: 'Tell me more about mining.' },
               { id: 'planet', text: 'Tell me more about Aridus Prime.' },
               { id: 'system', text: 'Tell me more about the Aridus system.' },
+              playerFlags.commTargetInDockingRange === true ? { id: 'docking', text: 'Request docking.' } : 
+              playerFlags.commTargetInDockingRange === false ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null,
+              playerFlags.hasVisitedOceanus ? { id: 'oceanus_comparison', text: 'How does this compare to Oceanus?' } : null,
               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
-            ]
+            ].filter(option => option !== null)
           },
           'mining': {
             response: "Our mining operations focus on extracting rare minerals from the asteroid fields. We've been operating for over 50 years and have established several automated mining stations throughout the system.",
@@ -52,6 +55,20 @@ export class ConversationSystem {
                { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
                { id: 'docking_services', text: 'What services are available on the planet?' },
                { id: 'cancel_dock', text: 'Actually, never mind. (End conversation)' }
+             ]
+           },
+           'docking_too_far': {
+             response: "You are too far away to dock. Please approach within 200 units of the station before requesting docking clearance.",
+             options: [
+               { id: 'docking_services', text: 'What services are available on the planet?' },
+               { id: 'end', text: 'Understood. (End conversation)' }
+             ]
+           },
+           'oceanus_comparison': {
+             response: "Unlike Oceanus's aquatic research focus, Aridus Prime is purely industrial. We don't have the luxury of studying marine life - we're here to extract resources and keep the system's economy running.",
+             options: [
+               { id: 'back_info', text: 'Back to information about Aridus Prime.' },
+               { id: 'end', text: 'Interesting comparison. (End conversation)' }
              ]
            },
            'mining_tech': {
@@ -233,25 +250,53 @@ export class ConversationSystem {
     return planet ? planet.greeting : "Thank you for contacting us.";
   }
 
-  getConversationNode(planetName, nodeId) {
+  getConversationNode(planetName, nodeId, playerFlags = {}) {
     const planet = this.conversations[planetName];
     if (!planet || !planet.conversationTree) {
       return null;
     }
-    return planet.conversationTree[nodeId];
+    
+    const node = planet.conversationTree[nodeId];
+    if (!node) {
+      return null;
+    }
+    
+    // Process options with inline conditional logic
+    if (node.options) {
+      const processedOptions = node.options
+        .map(option => {
+          // If option is a function, call it with playerFlags
+          if (typeof option === 'function') {
+            return option(playerFlags);
+          }
+          return option;
+        })
+        .filter(option => option !== null && option !== undefined);
+      
+      return {
+        ...node,
+        options: processedOptions
+      };
+    }
+    
+    return node;
   }
 
-  getInitialOptions(planetName) {
+  getInitialOptions(planetName, playerFlags = {}) {
     const planet = this.conversations[planetName];
     if (!planet || !planet.conversationTree) {
       return [];
     }
     
-    // Return the main options (information, docking, etc.)
-    return [
+    // Base options with inline conditional logic
+    const baseOptions = [
       { id: 'information', text: `Information about ${planetName}` },
-      { id: 'docking', text: 'Request docking' }
+      playerFlags.commTargetInDockingRange === true ? { id: 'docking', text: 'Request docking' } : 
+      playerFlags.commTargetInDockingRange === false ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null
     ];
+    
+    // Filter out null/undefined options
+    return baseOptions.filter(option => option !== null && option !== undefined);
   }
 
   addConversation(planetName, conversationData) {

@@ -166,6 +166,9 @@ class Game {
     // Update controls
     this.controls.update(deltaTime);
     
+    // Update spaceship (includes docking logic)
+    this.spaceship.update(deltaTime);
+    
     // Update UI
     this.ui.updateThrottle(this.spaceship.getThrottle(), this.spaceship.getSpeedPerMinute());
     
@@ -418,9 +421,17 @@ class Game {
   openComms() {
     // Only open comms if we have a nav target and it's commable
     if (this.currentNavTarget && this.currentNavTarget.isCommable) {
+      // Set comm target in docking range flag BEFORE generating options
+      const spaceshipPos = this.spaceship.getPosition();
+      const targetPos = this.currentNavTarget.getPosition();
+      const distance = spaceshipPos.distanceTo(targetPos);
+      const inDockingRange = distance <= 200;
+      this.spaceship.setFlag('commTargetInDockingRange', inDockingRange);
+      
       const planetName = this.currentNavTarget.getName();
       const greeting = this.conversationSystem.getGreeting(planetName);
-      const initialOptions = this.conversationSystem.getInitialOptions(planetName);
+      const playerFlags = this.spaceship.getAllFlags();
+      const initialOptions = this.conversationSystem.getInitialOptions(planetName, playerFlags);
       this.ui.showCommsModal(planetName, greeting, initialOptions);
       this.currentConversationNode = 'initial';
     }
@@ -429,6 +440,9 @@ class Game {
   closeComms() {
     this.ui.hideCommsModal();
     this.currentConversationNode = null;
+    
+    // Clear comm target in docking range flag
+    this.spaceship.setFlag('commTargetInDockingRange', null);
   }
 
   // Global flag management methods
@@ -537,7 +551,8 @@ class Game {
       }
 
       // Get the conversation node
-      const conversationNode = this.conversationSystem.getConversationNode(planetName, nodeId);
+      const playerFlags = this.spaceship.getAllFlags();
+      const conversationNode = this.conversationSystem.getConversationNode(planetName, nodeId, playerFlags);
       if (conversationNode) {
         this.ui.updateCommsModal(conversationNode.response, conversationNode.options);
         this.currentConversationNode = nodeId;
