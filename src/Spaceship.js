@@ -118,6 +118,18 @@ export class Spaceship {
     return this.throttle;
   }
 
+  getSpeed() {
+    return this.velocity.length();
+  }
+
+  getSpeedPerMinute() {
+    return this.velocity.length() * 60; // Convert from units/second to units/minute
+  }
+
+  getSpeedPercentage() {
+    return Math.min(this.getSpeed() / this.maxSpeed, 1.0);
+  }
+
   getPosition() {
     return this.position.clone();
   }

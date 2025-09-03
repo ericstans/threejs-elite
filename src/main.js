@@ -36,9 +36,9 @@ class Game {
     // Hide the spaceship mesh since we're in cockpit view
     this.spaceship.mesh.visible = false;
     
-    // Create planets
-    const planet1 = new Planet(2, new THREE.Vector3(20, 0, -50), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet
-    const planet2 = new Planet(1.5, new THREE.Vector3(-30, 10, -80), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
+    // Create planets (10x larger and much farther apart)
+    const planet1 = new Planet(20, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet
+    const planet2 = new Planet(15, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
     
     this.planets.push(planet1);
     this.planets.push(planet2);
@@ -54,10 +54,10 @@ class Game {
   }
 
   createAsteroidField() {
-    // Create asteroid field between the two planets
+    // Create asteroid field between the two planets (scaled up for new planet distances)
     const asteroidCount = 25;
-    const fieldCenter = new THREE.Vector3(-5, 5, -65); // Between the planets
-    const fieldSize = 30; // Size of the asteroid field
+    const fieldCenter = new THREE.Vector3(-50, 50, -650); // Between the planets (scaled up)
+    const fieldSize = 300; // Size of the asteroid field (scaled up)
     
     for (let i = 0; i < asteroidCount; i++) {
       // Random position within the field
@@ -160,7 +160,7 @@ class Game {
     this.controls.update(deltaTime);
     
     // Update UI
-    this.ui.updateThrottle(this.spaceship.getThrottle());
+    this.ui.updateThrottle(this.spaceship.getThrottle(), this.spaceship.getSpeedPerMinute());
     
     // Update and cleanup lasers
     this.updateLasers(deltaTime);

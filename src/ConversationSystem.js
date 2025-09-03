@@ -49,10 +49,9 @@ export class ConversationSystem {
             'docking': {
              response: "Docking requests are processed through our automated system. Please provide your ship registration and cargo manifest. Standard docking fees apply.",
              options: [
-               { id: 'docking_fees', text: 'What are the docking fees?' },
-               { id: 'docking_services', text: 'What services are available?' },
-               { id: 'back_info', text: 'Back to information about Aridus Prime.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
+               { id: 'confirm_dock', text: 'Initiating docking request.' },
+               { id: 'docking_services', text: 'What services are available on the planet?' },
+               { id: 'cancel_dock', text: 'Actually, never mind. (End conversation)' }
              ]
            },
            'mining_tech': {
@@ -97,13 +96,6 @@ export class ConversationSystem {
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
            },
-           'docking_fees': {
-             response: "Standard docking fees are 50 credits per day for small ships, 100 credits for medium ships, and 200 credits for large vessels. Additional services are charged separately.",
-             options: [
-               { id: 'back_docking', text: 'Back to docking information.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
-             ]
-           },
            'docking_services': {
              response: "We offer fuel refueling, basic repairs, cargo storage, and crew accommodations. Our facilities can handle ships up to 200 meters in length.",
              options: [
@@ -137,15 +129,6 @@ export class ConversationSystem {
                { id: 'back_info', text: 'Back to information about Aridus Prime.' },
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
-           },
-           'back_docking': {
-             response: "Docking requests are processed through our automated system. Please provide your ship registration and cargo manifest. Standard docking fees apply.",
-             options: [
-               { id: 'docking_fees', text: 'What are the docking fees?' },
-               { id: 'docking_services', text: 'What services are available?' },
-               { id: 'back_info', text: 'Back to information about Aridus Prime.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
-             ]
            }
         }
       },
@@ -161,13 +144,12 @@ export class ConversationSystem {
               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
             ]
           },
-                     'docking': {
+          'docking': {
              response: "Docking is available at our orbital research station. Please note that surface access is restricted to authorized personnel only.",
              options: [
-               { id: 'docking_restrictions', text: 'What are the restrictions?' },
-               { id: 'docking_services', text: 'What services are available?' },
-               { id: 'back_info', text: 'Back to information about Oceanus.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
+              { id: 'confirm_dock', text: 'Initiating docking request.' },
+              { id: 'docking_services', text: 'What services are available?' },
+              { id: 'cancel_dock', text: 'Actually, never mind. (End conversation)' }
              ]
            },
            'research': {
@@ -191,14 +173,14 @@ export class ConversationSystem {
            'docking_restrictions': {
              response: "Surface access is limited to research personnel with proper clearance. Visitors can access the orbital station's observation deck and basic facilities, but underwater research areas are off-limits.",
              options: [
-               { id: 'back_docking', text: 'Back to docking information.' },
+               { id: 'docking', text: 'Back to docking information.' },
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
            },
            'docking_services': {
              response: "The orbital station offers fuel refueling, basic repairs, and research data access. We also have a small trading post for scientific equipment and samples.",
              options: [
-               { id: 'back_docking', text: 'Back to docking information.' },
+               { id: 'docking', text: 'Back to docking information.' },
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
            }, 
