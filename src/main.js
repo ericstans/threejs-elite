@@ -172,6 +172,12 @@ class Game {
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
     
+    // Handle docking completion
+    if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
+      this.ui.hideDockingStatus();
+      console.log('Docking completed! Ship is now docked on', this.currentNavTarget?.getName());
+    }
+    
     // Update and cleanup lasers
     this.updateLasers(deltaTime);
     
@@ -448,6 +454,11 @@ class Game {
       for (const [flagName, value] of Object.entries(flags.player)) {
         this.spaceship.setFlag(flagName, value);
         console.log(`Set player flag: ${flagName} = ${value}`);
+        
+        // Handle special flag actions
+        if (flagName === 'isDocking' && value === true) {
+          this.startDockingProcess();
+        }
       }
     }
     
@@ -456,6 +467,18 @@ class Game {
         this.setGlobalFlag(flagName, value);
         console.log(`Set global flag: ${flagName} = ${value}`);
       }
+    }
+  }
+
+  startDockingProcess() {
+    if (this.currentNavTarget) {
+      // Show docking UI
+      this.ui.showDockingStatus();
+      
+      // Start docking sequence
+      this.spaceship.startDocking(this.currentNavTarget);
+      
+      console.log('Docking process started with', this.currentNavTarget.getName());
     }
   }
 

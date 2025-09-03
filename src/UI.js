@@ -118,6 +118,24 @@ export class UI {
     this.crosshair.style.background = 'transparent';
     this.uiContainer.appendChild(this.crosshair);
 
+    // Docking status display (initially hidden)
+    this.dockingStatus = document.createElement('div');
+    this.dockingStatus.style.position = 'absolute';
+    this.dockingStatus.style.top = '50%';
+    this.dockingStatus.style.left = '50%';
+    this.dockingStatus.style.transform = 'translate(-50%, -50%)';
+    this.dockingStatus.style.fontFamily = 'monospace';
+    this.dockingStatus.style.fontSize = '24px';
+    this.dockingStatus.style.color = '#ffff00';
+    this.dockingStatus.style.textAlign = 'center';
+    this.dockingStatus.style.background = 'rgba(0, 0, 0, 0.8)';
+    this.dockingStatus.style.padding = '20px';
+    this.dockingStatus.style.border = '2px solid #ffff00';
+    this.dockingStatus.style.display = 'none';
+    this.dockingStatus.style.zIndex = '1500';
+    this.dockingStatus.textContent = 'DOCKING IN PROGRESS';
+    this.uiContainer.appendChild(this.dockingStatus);
+
     // Auto-aim cone indicator (for testing)
     this.autoAimCone = document.createElement('div');
     this.autoAimCone.style.position = 'absolute';
@@ -670,6 +688,19 @@ export class UI {
       flagElement.style.color = value ? '#ffff00' : '#666666';
       this.globalFlagsContent.appendChild(flagElement);
     }
+  }
+
+  // Docking UI methods
+  showDockingStatus() {
+    this.crosshair.style.display = 'none';
+    this.autoAimCone.style.display = 'none';
+    this.dockingStatus.style.display = 'block';
+  }
+
+  hideDockingStatus() {
+    this.crosshair.style.display = 'block';
+    this.autoAimCone.style.display = 'block';
+    this.dockingStatus.style.display = 'none';
   }
 
   destroy() {

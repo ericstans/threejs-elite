@@ -16,9 +16,17 @@ export class Spaceship {
     this.throttle = 0;
     this.maxThrottle = 1;
     
+    // Docking system
+    this.dockingTarget = null;
+    this.dockingProgress = 0; // 0 = not docking, 1 = fully docked
+    this.dockingSpeed = 10; // units per second during docking
+    this.dockingPosition = new THREE.Vector3();
+    this.dockingRotation = new THREE.Quaternion();
+    
     // Player flags
     this.flags = {
       isDocking: false,
+      isDocked: false,
       hasVisitedAridusPrime: false,
       hasVisitedOceanus: false,
       // Add more flags as needed
@@ -73,6 +81,43 @@ export class Spaceship {
   }
 
   update(deltaTime) {
+    // Handle docking
+    this.updateDocking(deltaTime);
+    
+    // If docked, update position to follow planet rotation
+    if (this.flags.isDocked && this.dockingTarget) {
+      // Update the ship's world position to follow the planet's rotation
+      const planetPos = this.dockingTarget.getPosition();
+      const rotatedLandingPoint = this.dockingPosition.clone().applyQuaternion(this.dockingTarget.mesh.quaternion);
+      this.position.copy(planetPos).add(rotatedLandingPoint);
+      
+      // Update the ship's rotation to follow the planet's rotation
+      const planetRotation = this.dockingTarget.mesh.quaternion.clone();
+      this.quaternion.copy(planetRotation).multiply(this.dockingRotation);
+      this.rotation.setFromQuaternion(this.quaternion);
+      
+      // Update mesh position and rotation
+      this.mesh.position.copy(this.dockingPosition);
+      this.mesh.quaternion.copy(this.dockingRotation);
+      this.mesh.rotation.setFromQuaternion(this.dockingRotation);
+      
+      return;
+    }
+    
+    // If docking, set throttle to 0 and let ship coast to stop
+    if (this.flags.isDocking) {
+      this.throttle = 0;
+      // Don't apply normal movement during docking - let updateDocking handle it
+      this.velocity.multiplyScalar(0.98); // Apply drag
+      this.angularVelocity.multiplyScalar(0.9); // Apply angular drag
+      this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+      this.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(this.angularVelocity.clone().normalize(), this.angularVelocity.length() * deltaTime));
+      this.rotation.setFromQuaternion(this.quaternion);
+      this.mesh.position.copy(this.position);
+      this.mesh.rotation.copy(this.rotation);
+      return;
+    }
+    
     // Apply throttle to forward movement
     const forwardForce = this.throttle * this.acceleration * deltaTime;
     const forward = new THREE.Vector3(0, 0, -1);
@@ -157,6 +202,88 @@ export class Spaceship {
 
   getAllFlags() {
     return { ...this.flags };
+  }
+
+  // Docking methods
+  startDocking(targetPlanet) {
+    this.dockingTarget = targetPlanet;
+    this.dockingProgress = 0;
+    
+    // Calculate landing position on planet surface (near equator)
+    const planetPos = targetPlanet.getPosition();
+    const planetRadius = targetPlanet.radius;
+    
+    // Choose a random point on the equator
+    const angle = Math.random() * Math.PI * 2;
+    const landingPoint = new THREE.Vector3(
+      Math.cos(angle) * planetRadius,
+      0, // Equator level
+      Math.sin(angle) * planetRadius
+    );
+    
+    // Store the landing point relative to planet center
+    this.dockingPosition.copy(landingPoint);
+    
+    // Calculate rotation so ship's bottom faces planet surface
+    // The ship's -Y axis should point toward the planet center
+    const directionToPlanet = landingPoint.clone().normalize().negate();
+    this.dockingRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
+  }
+
+  updateDocking(deltaTime) {
+    if (!this.flags.isDocking || !this.dockingTarget) {
+      return;
+    }
+
+    // If ship is still moving, wait for it to stop
+    if (this.velocity.length() > 0.1) {
+      return;
+    }
+
+    // Start automated docking movement
+    const planetPos = this.dockingTarget.getPosition();
+    const targetWorldPosition = planetPos.clone().add(this.dockingPosition);
+    const distanceToTarget = this.position.distanceTo(targetWorldPosition);
+    const moveDistance = this.dockingSpeed * deltaTime;
+    
+    if (distanceToTarget > moveDistance) {
+      // Move towards docking position
+      const direction = targetWorldPosition.clone().sub(this.position).normalize();
+      this.position.add(direction.multiplyScalar(moveDistance));
+      
+      // Only adjust rotation when close to the planet (within 2x planet radius)
+      const distanceToPlanet = this.position.distanceTo(planetPos);
+      const planetRadius = this.dockingTarget.radius;
+      
+      if (distanceToPlanet < planetRadius * 2) {
+        // Rotate so ship's bottom faces the planet center
+        const directionToPlanet = planetPos.clone().sub(this.position).normalize();
+        const targetRotation = new THREE.Quaternion();
+        targetRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
+        
+        // Smoothly interpolate rotation
+        this.quaternion.slerp(targetRotation, 2 * deltaTime);
+        this.rotation.setFromQuaternion(this.quaternion);
+      }
+    } else {
+      // Reached docking position - complete docking
+      this.position.copy(targetWorldPosition);
+      this.quaternion.copy(this.dockingRotation);
+      this.rotation.setFromQuaternion(this.quaternion);
+      
+      // Attach to planet mesh and set correct relative position
+      this.dockingTarget.mesh.add(this.mesh);
+      this.mesh.position.copy(this.dockingPosition); // Position relative to planet
+      this.mesh.quaternion.copy(this.dockingRotation);
+      this.mesh.rotation.setFromQuaternion(this.dockingRotation);
+      
+      // Update flags
+      this.flags.isDocking = false;
+      this.flags.isDocked = true;
+      this.dockingProgress = 1;
+      
+      console.log('Docking completed!');
+    }
   }
 
   getRotation() {
