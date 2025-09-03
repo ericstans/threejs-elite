@@ -18,6 +18,11 @@ export class MusicManager {
     this.sequencer = null;
     this.currentBPM = 120;
     this.fadeTimeout = null;
+
+    this.createCombatTrack();
+    this.createAmbientTrack();
+    this.createDockingTrack();
+    this.createMenuTrack();
   }
 
   // Initialize the music system
@@ -175,7 +180,7 @@ export class MusicManager {
         { midiNote: 57, velocity: 25, duration: 2.5 }, // A3 - Mid bass note  
         { midiNote: 69, velocity: 20, duration: 3.0 }  // A4 - Higher note
       ],
-      duration: 8000 // 8 seconds per cycle
+      duration: 16 // 16 seconds per cycle
     };
     this.loadTrack('ambient', ambientTrack);
   }

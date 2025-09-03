@@ -166,9 +166,8 @@ export class Controls {
         // Initialize music manager
         await this.game.musicManager.init();
         
-        // Create and start combat track
-        this.game.musicManager.createCombatTrack();
-        this.game.musicManager.playTrack('combat');
+        // Start ambient track
+        this.game.musicManager.playTrack('ambient');
         this.game.musicManager.fadeIn(3000); // 3 second fade in
       } catch (error) {
         console.error('Failed to start music system:', error);
