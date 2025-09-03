@@ -47,7 +47,7 @@ export class ConversationSystem {
             ]
           },
             'docking': {
-             response: "Docking requests are processed through our automated system. Please provide your ship registration and cargo manifest. Standard docking fees apply.",
+             response: "You are authorized to dock. Please provide your ship registration and cargo manifest.",
              options: [
                { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
                { id: 'docking_services', text: 'What services are available on the planet?' },
@@ -145,11 +145,9 @@ export class ConversationSystem {
             ]
           },
           'docking': {
-             response: "Docking is available at our orbital research station. Please note that surface access is restricted to authorized personnel only.",
+             response: "Surface access is restricted to authorized personnel only. Docking is available at our orbital research station; you may contact them directly.",
              options: [
-              { id: 'confirm_dock', text: 'Initiating docking request.' },
-              { id: 'docking_services', text: 'What services are available?' },
-              { id: 'cancel_dock', text: 'Actually, never mind. (End conversation)' }
+              { id: 'cancel_dock', text: 'I understand. (End conversation)' }
              ]
            },
            'research': {
@@ -170,20 +168,6 @@ export class ConversationSystem {
                { id: 'end', text: 'Interesting, thanks. (End conversation)' }
              ]
            },
-           'docking_restrictions': {
-             response: "Surface access is limited to research personnel with proper clearance. Visitors can access the orbital station's observation deck and basic facilities, but underwater research areas are off-limits.",
-             options: [
-               { id: 'docking', text: 'Back to docking information.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
-             ]
-           },
-           'docking_services': {
-             response: "The orbital station offers fuel refueling, basic repairs, and research data access. We also have a small trading post for scientific equipment and samples.",
-             options: [
-               { id: 'docking', text: 'Back to docking information.' },
-               { id: 'end', text: 'Interesting, thanks. (End conversation)' }
-             ]
-           }, 
            'research_species': {
              response: "We've discovered bioluminescent fish that can survive in extreme pressure, coral-like organisms that build underwater cities, and intelligent cephalopods with complex communication systems.",
              options: [

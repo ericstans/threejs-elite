@@ -472,6 +472,12 @@ class Game {
 
   startDockingProcess() {
     if (this.currentNavTarget) {
+      // Clear current target when docking (but keep nav target)
+      if (this.currentTarget) {
+        this.currentTarget = null;
+        this.ui.clearTargetInfo();
+      }
+      
       // Show docking UI
       this.ui.showDockingStatus();
       
