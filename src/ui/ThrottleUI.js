@@ -51,7 +51,7 @@ export class ThrottleUI {
     // Speed display (moved above throttle container)
     this.speedDisplay = document.createElement('div');
     this.speedDisplay.style.position = 'absolute';
-    this.speedDisplay.style.bottom = '240px'; // Above the throttle container
+    this.speedDisplay.style.bottom = '282px'; // Above the throttle container
     this.speedDisplay.style.left = '20px';
     this.speedDisplay.style.background = 'rgba(0, 0, 0, 0.7)';
     this.speedDisplay.style.padding = '5px 10px';
@@ -68,7 +68,6 @@ export class ThrottleUI {
     this.throttleLegend.style.marginTop = '5px';
     this.throttleLegend.style.fontSize = '10px';
     this.throttleLegend.style.textAlign = 'center';
-    this.throttleLegend.innerHTML = '<span style="color: #00ff00;">■</span> Target <span style="color: #ffff00;">■</span> Actual';
     this.throttleContainer.appendChild(this.throttleLegend);
   }
 
