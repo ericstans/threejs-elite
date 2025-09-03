@@ -1,530 +1,533 @@
-import { 
-  initMIDI, 
-  playMIDINote, 
-  setMIDIInstrument,
-  setMasterVolume, 
-  getMasterVolume, 
-  isMIDIReady 
-} from './util/JZZutil.js';
+// New MusicManager implementation using soundfont-player + @tonejs/midi
+// No direct MIDI device or JZZ usage; all rendering via WebAudio + soundfonts.
 
-// Import MIDI files as bundled resources
+// We'll dynamically import soundfont-player to avoid ESM/CJS interop issues.
+let _soundfontModulePromise = null;
+let _soundfontInstance = null; // instance bound to current AudioContext
+// Local/remote resolution
+const CDN_SF_BASE = 'https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts/FluidR3_GM';
+let _localSoundfontNames = null; // Set of locally available instrument names (from manifest)
+async function _loadLocalManifestOnce(){
+  if (_localSoundfontNames !== null) return _localSoundfontNames;
+  try {
+    const res = await fetch('/soundfonts/manifest.json', { cache: 'no-cache' });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.instruments)) {
+        _localSoundfontNames = new Set(json.instruments.map(n => n.toLowerCase()));
+        return _localSoundfontNames;
+      }
+    }
+  } catch (_) { /* ignore */ }
+  _localSoundfontNames = new Set();
+  return _localSoundfontNames;
+}
+
+function _localInstrumentUrl(name){
+  return `/soundfonts/${name}-ogg.js`;
+}
+function _cdnInstrumentUrl(name){
+  return `${CDN_SF_BASE}/${name}-ogg.js`;
+}
+
+async function _resolveInstrumentUrl(name){
+  const manifest = await _loadLocalManifestOnce();
+  const lower = name.toLowerCase();
+  if (manifest.has(lower)) return _localInstrumentUrl(lower);
+  return _cdnInstrumentUrl(lower);
+}
+
+// Synchronous fallback resolver used by soundfont-player; it can't await, so we optimistically point to local if we THINK it's there, else CDN.
+// We refine our guess based on manifest (loaded earlier in getSoundfont).
+function _instrumentUrl(name){
+  if (_localSoundfontNames && _localSoundfontNames.has(name.toLowerCase())) return _localInstrumentUrl(name.toLowerCase());
+  return _cdnInstrumentUrl(name.toLowerCase());
+}
+
+// Known instrument filenames present in FluidR3_GM (subset + common). Any not in this set will be remapped.
+const AVAILABLE_INSTRUMENTS = new Set([
+  'acoustic_grand_piano','bright_acoustic_piano','electric_grand_piano','honkytonk_piano','electric_piano_1','electric_piano_2','harpsichord','clavinet',
+  'celesta','glockenspiel','music_box','vibraphone','marimba','xylophone','tubular_bells','dulcimer','drawbar_organ','percussive_organ','rock_organ',
+  'church_organ','reed_organ','accordion','harmonica','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_guitar_clean',
+  'electric_guitar_muted','overdriven_guitar','distortion_guitar','guitar_harmonics','acoustic_bass','electric_bass_finger','electric_bass_pick',
+  'fretless_bass','slap_bass_1','slap_bass_2','synth_bass_1','synth_bass_2','violin','viola','cello','contrabass','tremolo_strings','pizzicato_strings',
+  'orchestral_harp','timpani','string_ensemble_1','string_ensemble_2','synth_strings_1','synth_strings_2','choir_aahs','voice_oohs','synth_choir',
+  'orchestra_hit','trumpet','trombone','tuba','muted_trumpet','french_horn','brass_section','synth_brass_1','synth_brass_2','soprano_sax','alto_sax',
+  'tenor_sax','baritone_sax','oboe','english_horn','bassoon','clarinet','piccolo','flute','recorder','pan_flute','blown_bottle','shakuhachi','whistle',
+  'ocarina','lead_1_square','lead_2_sawtooth','lead_3_calliope','lead_4_chiff','lead_5_charang','lead_6_voice','lead_7_fifths','lead_8_bass_lead',
+  'pad_1_new_age','pad_2_warm','pad_3_polysynth','pad_4_choir','pad_5_bowed','pad_6_metallic','pad_7_halo','pad_8_sweep','fx_1_rain','fx_2_soundtrack',
+  'fx_3_crystal','fx_4_atmosphere','fx_5_brightness','fx_6_goblins','fx_7_echoes','fx_8_sci-fi','sitar','banjo','shamisen','koto','kalimba','bagpipe',
+  'fiddle','shanai','tinkle_bell','agogo','steel_drums','woodblock','taiko_drum','melodic_tom','synth_drum','reverse_cymbal','seashore','bird_tweet'
+]);
+
+// Map uncommon / alias names to available names
+const INSTRUMENT_ALIASES = {
+  'string_ensemble': 'string_ensemble_1',
+  'piano': 'acoustic_grand_piano',
+  'percussion': 'synth_drum'
+};
+
+function sanitizeInstrumentName(name){
+  if (!name) return 'acoustic_grand_piano';
+  const lower = name.toLowerCase();
+  const mapped = INSTRUMENT_ALIASES[lower];
+  if (mapped) return mapped;
+  return AVAILABLE_INSTRUMENTS.has(lower) ? lower : 'acoustic_grand_piano';
+}
+
+async function getSoundfont(ctx) {
+  if (!_soundfontModulePromise) {
+    _soundfontModulePromise = import('soundfont-player').then(mod => mod.default || mod);
+  }
+  const SoundfontCtor = await _soundfontModulePromise;
+  if (!_soundfontInstance || _soundfontInstance.ctx !== ctx) {
+    _soundfontInstance = SoundfontCtor(ctx);
+    // Override global nameToUrl resolver for this instance plus constructor (so further calls reuse it)
+    _soundfontInstance.nameToUrl = _instrumentUrl;
+    if (SoundfontCtor) SoundfontCtor.nameToUrl = _instrumentUrl;
+  // Preload manifest so resolver picks local vs CDN correctly
+  await _loadLocalManifestOnce();
+  }
+  return _soundfontInstance;
+}
+import { Midi } from '@tonejs/midi';
+
+// Ambient MIDI assets (already bundled by Vite)
 import ambient1 from './assets/midi/ambient/ambient1.mid';
 import ambient2 from './assets/midi/ambient/ambient2.mid';
 import ambient3 from './assets/midi/ambient/ambient3.mid';
 import ambient4 from './assets/midi/ambient/ambient4.mid';
-import { JZZ } from 'jzz';
-import { SMF } from 'jzz-midi-smf';
-SMF(JZZ);
-// Array of available ambient MIDI files
+
 const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient4];
+
+// Utility: clamp
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+// Mapping of General MIDI program numbers (0-127) -> soundfont instruments names expected by soundfont-player.
+// soundfont-player uses instrument names (e.g. 'acoustic_grand_piano'). We'll keep a small map; extend as needed.
+// Fallback will be 'acoustic_grand_piano'.
+// Complete General MIDI Level 1 instrument map (0-127) to soundfont-player names.
+const GM_PROGRAM_MAP = {
+  0: 'acoustic_grand_piano',
+  1: 'bright_acoustic_piano',
+  2: 'electric_grand_piano',
+  3: 'honkytonk_piano',
+  4: 'electric_piano_1',
+  5: 'electric_piano_2',
+  6: 'harpsichord',
+  7: 'clavinet',
+  8: 'celesta',
+  9: 'glockenspiel',
+  10: 'music_box',
+  11: 'vibraphone',
+  12: 'marimba',
+  13: 'xylophone',
+  14: 'tubular_bells',
+  15: 'dulcimer',
+  16: 'drawbar_organ',
+  17: 'percussive_organ',
+  18: 'rock_organ',
+  19: 'church_organ',
+  20: 'reed_organ',
+  21: 'accordion',
+  22: 'harmonica',
+  23: 'tango_accordion',
+  24: 'acoustic_guitar_nylon',
+  25: 'acoustic_guitar_steel',
+  26: 'electric_guitar_jazz',
+  27: 'electric_guitar_clean',
+  28: 'electric_guitar_muted',
+  29: 'overdriven_guitar',
+  30: 'distortion_guitar',
+  31: 'guitar_harmonics',
+  32: 'acoustic_bass',
+  33: 'electric_bass_finger',
+  34: 'electric_bass_pick',
+  35: 'fretless_bass',
+  36: 'slap_bass_1',
+  37: 'slap_bass_2',
+  38: 'synth_bass_1',
+  39: 'synth_bass_2',
+  40: 'violin',
+  41: 'viola',
+  42: 'cello',
+  43: 'contrabass',
+  44: 'tremolo_strings',
+  45: 'pizzicato_strings',
+  46: 'orchestral_harp',
+  47: 'timpani',
+  48: 'string_ensemble_1',
+  49: 'string_ensemble_2',
+  50: 'synth_strings_1',
+  51: 'synth_strings_2',
+  52: 'choir_aahs',
+  53: 'voice_oohs',
+  54: 'synth_choir',
+  55: 'orchestra_hit',
+  56: 'trumpet',
+  57: 'trombone',
+  58: 'tuba',
+  59: 'muted_trumpet',
+  60: 'french_horn',
+  61: 'brass_section',
+  62: 'synth_brass_1',
+  63: 'synth_brass_2',
+  64: 'soprano_sax',
+  65: 'alto_sax',
+  66: 'tenor_sax',
+  67: 'baritone_sax',
+  68: 'oboe',
+  69: 'english_horn',
+  70: 'bassoon',
+  71: 'clarinet',
+  72: 'piccolo',
+  73: 'flute',
+  74: 'recorder',
+  75: 'pan_flute',
+  76: 'blown_bottle',
+  77: 'shakuhachi',
+  78: 'whistle',
+  79: 'ocarina',
+  80: 'lead_1_square',
+  81: 'lead_2_sawtooth',
+  82: 'lead_3_calliope',
+  83: 'lead_4_chiff',
+  84: 'lead_5_charang',
+  85: 'lead_6_voice',
+  86: 'lead_7_fifths',
+  87: 'lead_8_bass_lead',
+  88: 'pad_1_new_age',
+  89: 'pad_2_warm',
+  90: 'pad_3_polysynth',
+  91: 'pad_4_choir',
+  92: 'pad_5_bowed',
+  93: 'pad_6_metallic',
+  94: 'pad_7_halo',
+  95: 'pad_8_sweep',
+  96: 'fx_1_rain',
+  97: 'fx_2_soundtrack',
+  98: 'fx_3_crystal',
+  99: 'fx_4_atmosphere',
+  100: 'fx_5_brightness',
+  101: 'fx_6_goblins',
+  102: 'fx_7_echoes',
+  103: 'fx_8_sci-fi',
+  104: 'sitar',
+  105: 'banjo',
+  106: 'shamisen',
+  107: 'koto',
+  108: 'kalimba',
+  109: 'bagpipe',
+  110: 'fiddle',
+  111: 'shanai',
+  112: 'tinkle_bell',
+  113: 'agogo',
+  114: 'steel_drums',
+  115: 'woodblock',
+  116: 'taiko_drum',
+  117: 'melodic_tom',
+  118: 'synth_drum',
+  119: 'reverse_cymbal',
+  120: 'guitar_fret_noise',
+  121: 'breath_noise',
+  122: 'seashore',
+  123: 'bird_tweet',
+  124: 'telephone_ring',
+  125: 'helicopter',
+  126: 'applause',
+  127: 'gunshot'
+};
+
+// Drum channel (10) uses percussive kit; we map notes -> names handled by soundfont-player's percussion bank via 'percussion'.
+const DRUM_CHANNEL = 9; // zero-based channel 9 is MIDI ch 10.
+
+// Attempt to resolve an instrument name from a program number.
+function programToInstrument(programNumber) {
+  return GM_PROGRAM_MAP[programNumber] || 'acoustic_grand_piano';
+}
+
+// Convert MIDI note number to frequency helper (soundfont-player accepts note names or MIDI numbers directly).
 
 export class MusicManager {
   constructor() {
-    // Initialize music manager
     this.isInitialized = false;
+    this.volume = 0.5; // master gain (0-1)
     this.currentTrack = null;
-    this.volume = 0.5;
     this.isPlaying = false;
-    this.tracks = new Map();
-    this.sequencer = null;
-    this.currentBPM = 120;
-    this.fadeTimeout = null;
-
-    this.createCombatTrack();
-    this.createAmbientTrack();
-    this.createDockingTrack();
-    this.createMenuTrack();
+    this._audioCtx = null;
+    this._masterGain = null;
+    this._activeNotes = new Set();
+    this._currentPlayback = null; // { stop: fn, timeoutIds: [] }
+    this._ambientQueue = null; // currently playing ambient midi info
+    this._scheduledNextTimeout = null;
+    this._instrumentsCache = new Map(); // key: instrumentName -> soundfont-player Instrument
+  this._instrumentLoading = new Map(); // in-flight loads
   }
 
-  // Initialize the music system
   async init() {
-    console.log('MusicManager: init() called');
-    try {
-      // Initialize MIDI using JZZutil (now async)
-      console.log('MusicManager: Initializing MIDI');
-      await initMIDI();
-      console.log('MusicManager: MIDI initialized');
-      
-      // Set initial volume
-      console.log('MusicManager: Setting initial volume to', this.volume);
-      setMasterVolume(this.volume);
-      
-      // Create ambient MIDI track
-      console.log('MusicManager: Creating ambient MIDI track');
-      await this.createAmbientTrackMidi();
-      console.log('MusicManager: Ambient MIDI track created');
-      
-      this.isInitialized = true;
-      console.log('MusicManager: Initialization completed successfully');
-    } catch (error) {
-      console.error('MusicManager: Failed to initialize:', error);
-      console.error('MusicManager: Error details:', error.message);
-      console.error('MusicManager: Error stack:', error.stack);
+    if (this.isInitialized) return;
+    // Create AudioContext lazily (user interaction must have happened already via Controls.startMusic)
+    this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    this._masterGain = this._audioCtx.createGain();
+    this._masterGain.gain.value = this.volume;
+    this._masterGain.connect(this._audioCtx.destination);
+    this.isInitialized = true;
+  }
+
+  // Volume handling
+  setVolume(v) {
+    this.volume = clamp(v, 0, 1);
+    if (this._masterGain) this._masterGain.gain.value = this.volume;
+  }
+  getVolume() { return this.volume; }
+  isTrackPlaying() { return this.isPlaying; }
+
+  // Playback API (compatible with existing usage)
+  playTrack(name) {
+    if (!this.isInitialized) return;
+    if (name === 'ambient') {
+      this.stopTrack();
+      this.currentTrack = 'ambient';
+      this.isPlaying = true;
+      this._playRandomAmbientMidi();
+    } else {
+      console.warn('MusicManager: Only ambient MIDI playback implemented in new soundfont version. Requested:', name);
     }
   }
 
-  // Load a music track
-  loadTrack(trackName, trackData) {
-    this.tracks.set(trackName, trackData);
-  }
-
-  // Play a specific track
-  playTrack(trackName) {
-    console.log('MusicManager: playTrack() called with trackName:', trackName);
-    
-    if (!this.isInitialized) {
-      console.warn('MusicManager: Not initialized');
-      return;
-    }
-
-    const track = this.tracks.get(trackName);
-    if (!track) {
-      console.warn(`MusicManager: Track not found: ${trackName}`);
-      return;
-    }
-
-    console.log('MusicManager: Found track:', track);
-
-    this.stopTrack();
-    this.currentTrack = trackName;
-    this.isPlaying = true;
-
-    if (track.type === 'sequence') {
-      console.log('MusicManager: Playing sequence track');
-      this.playSequence(track);
-    } else if (track.type === 'ambient') {
-      console.log('MusicManager: Playing ambient track');
-      this.playAmbient(track);
-    } else if (track.type === 'midi') {
-      console.log('MusicManager: Playing MIDI track');
-      this.playMidiFile(track);
-    }
-  }
-
-  // Stop current track
   stopTrack() {
     this.isPlaying = false;
     this.currentTrack = null;
-
-    // Clear sequencer
-    if (this.sequencer) {
-      clearInterval(this.sequencer);
-      this.sequencer = null;
-    }
-
-    // Stop MIDI player if it exists
-    if (this.midiPlayer) {
-      this.midiPlayer.stop();
-      this.midiPlayer = null;
-    }
-
-    // Clear fade timeout
-    if (this.fadeTimeout) {
-      clearTimeout(this.fadeTimeout);
-      this.fadeTimeout = null;
+    this._cancelCurrentPlayback();
+    if (this._scheduledNextTimeout) {
+      clearTimeout(this._scheduledNextTimeout);
+      this._scheduledNextTimeout = null;
     }
   }
 
-  // Pause current track
-  pauseTrack() {
-    if (this.isPlaying) {
+  pauseTrack() { // simple pause by suspending context
+    if (this._audioCtx && this.isPlaying) {
+      this._audioCtx.suspend();
       this.isPlaying = false;
-      // Note: Web Audio API doesn't have native pause, so we'll stop and remember position
     }
   }
-
-  // Resume current track
   resumeTrack() {
-    if (this.currentTrack && !this.isPlaying) {
+    if (this._audioCtx && !this.isPlaying && this.currentTrack === 'ambient') {
+      this._audioCtx.resume();
       this.isPlaying = true;
-      this.playTrack(this.currentTrack);
     }
   }
 
-  // Set volume (0.0 to 1.0)
-  setVolume(volume) {
-    this.volume = Math.max(0, Math.min(1, volume));
-    setMasterVolume(this.volume);
-  }
-
-  // Get current volume
-  getVolume() {
-    return getMasterVolume();
-  }
-
-
-
-  // Check if music is playing
-  isTrackPlaying() {
-    return this.isPlaying;
-  }
-
-  // Fade in music
   fadeIn(duration = 2000) {
-    const steps = 20;
-    const stepDuration = duration / steps;
-    const volumeStep = this.volume / steps;
-    let currentStep = 0;
-    
-    const fadeInterval = setInterval(() => {
-      currentStep++;
-      const currentVolume = volumeStep * currentStep;
-      setMasterVolume(currentVolume);
-      
-      if (currentStep >= steps) {
-        clearInterval(fadeInterval);
-        setMasterVolume(this.volume);
-      }
-    }, stepDuration);
+    if (!this._masterGain) return;
+    const now = this._audioCtx.currentTime;
+    this._masterGain.gain.cancelScheduledValues(now);
+    this._masterGain.gain.setValueAtTime(0, now);
+    this._masterGain.gain.linearRampToValueAtTime(this.volume, now + duration / 1000);
   }
-
-  // Fade out music
   fadeOut(duration = 2000) {
-    const steps = 20;
-    const stepDuration = duration / steps;
-    const volumeStep = this.volume / steps;
-    let currentStep = 0;
-    
-    const fadeInterval = setInterval(() => {
-      currentStep++;
-      const currentVolume = this.volume - (volumeStep * currentStep);
-      setMasterVolume(Math.max(0, currentVolume));
-      
-      if (currentStep >= steps) {
-        clearInterval(fadeInterval);
-        setMasterVolume(0);
-        this.fadeTimeout = setTimeout(() => {
-          this.stopTrack();
-        }, 100);
-      }
-    }, stepDuration);
+    if (!this._masterGain) return;
+    const now = this._audioCtx.currentTime;
+    const current = this._masterGain.gain.value;
+    this._masterGain.gain.cancelScheduledValues(now);
+    this._masterGain.gain.setValueAtTime(current, now);
+    this._masterGain.gain.linearRampToValueAtTime(0, now + duration / 1000);
+    setTimeout(() => this.stopTrack(), duration + 100);
   }
 
-  // Crossfade between tracks
-  crossfadeToTrack(trackName, duration = 1000) {
-    this.fadeOut(duration / 2);
-    setTimeout(() => {
-      this.playTrack(trackName);
-      this.fadeIn(duration / 2);
-    }, duration / 2);
-  }
-
-
-
-  // Create ambient background music
-  createAmbientTrack() {
-    const ambientTrack = {
-      type: 'ambient',
-      name: 'ambient',
-      instrumentType: 71,  // bassoon
-      instruments: [
-        { midiNote: 45, velocity: 30, duration: 4.0 }, // A2 - Low bass note
-        { midiNote: 57, velocity: 25, duration: 5 }, // A3 - Mid bass note  
-        { midiNote: 61, velocity: 25, duration: 5 }, // C#3 - Mid bass note  
-        { midiNote: 69, velocity: 20, duration: 6 },  // A4 - Higher note
-        { midiNote: 71, velocity: 16, duration: 2 }  // B4 - Higher note
-      ],
-      duration: 16 // 16 seconds per cycle
-    };
-    this.loadTrack('ambient', ambientTrack);
-  }
-
-  async createAmbientTrackMidi(){
-    console.log('MusicManager: createAmbientTrackMidi() called');
-    console.log('MusicManager: Available MIDI files:', ambientMidiFiles.length);
-    
-    // use the midi files in the /midi/ambient/ directory. Play one at a time at random. Midi files will specify their own instruments and may have more than one part.
-    // Select a random MIDI file from the bundled resources
-    const randomMidiUrl = ambientMidiFiles[Math.floor(Math.random() * ambientMidiFiles.length)];
-    console.log('MusicManager: Selected random MIDI file URL:', randomMidiUrl);
-    
-    try {
-      // Fetch the actual MIDI file data from the URL
-      console.log('MusicManager: Fetching MIDI file data...');
-      const response = await fetch(randomMidiUrl);
-      const midiArrayBuffer = await response.arrayBuffer();
-      const midiData = new Uint8Array(midiArrayBuffer);
-      console.log('MusicManager: MIDI file data fetched, size:', midiData.length, 'bytes');
-      
-      // Create MIDI track object with actual binary data
-      const midiTrack = {
-        type: 'midi',
-        name: 'ambient',
-        data: midiData
-      };
-      
-      console.log('MusicManager: Created MIDI track object with binary data');
-      this.loadTrack('ambient', midiTrack);
-      console.log('MusicManager: Loaded ambient track');
-    } catch (error) {
-      console.error('MusicManager: Failed to load MIDI file data:', error);
-      throw error;
+  crossfadeToTrack(name, duration = 1000) {
+    if (name === 'ambient' && this.currentTrack !== 'ambient') {
+      this.fadeOut(duration / 2);
+      setTimeout(() => {
+        this.playTrack('ambient');
+        this.fadeIn(duration / 2);
+      }, duration / 2);
+    } else {
+      this.playTrack(name); // fallback
     }
   }
 
-  // Create combat music
-  createCombatTrack() {
-    const combatTrack = {
-      type: 'sequence',
-      name: 'combat',
-      instrumentType: 81, // Lead 2 (sawtooth)
-      bpm: 2000,
-      pattern: [
-        { note: 60, duration: 0.25, velocity: 0.8 }, 
-        { note: 63, duration: 0.25, velocity: 0.8 }, 
-        { note: 65, duration: 0.25, velocity: 0.8 }, 
-        { note: 72, duration: 0.25, velocity: 0.9 }, 
-        { note: 65, duration: 0.25, velocity: 0.8 }, 
-        { note: 63, duration: 0.25, velocity: 0.8 }, 
-        { note: 65, duration: 0.5, velocity: 0.9 },  
-        { note: 0, duration: 0.25, velocity: 0 }     
-      ],
-      drumPattern: [
-        { note: 0, duration: 0.25, velocity: 0 },    // Rest
-        { note: 0, duration: 0.25, velocity: 0 },    // Rest
-        { note: 36, duration: 0.25, velocity: 0.9 }, // Kick drum
-        { note: 0, duration: 0.25, velocity: 0 },    // Rest
-        { note: 36, duration: 0.25, velocity: 0.9 }, // Kick drum
-        { note: 0, duration: 0.25, velocity: 0 },    // Rest
-        { note: 40, duration: 0.25, velocity: 0.9 }, // Electric snare
-        { note: 0, duration: 0.25, velocity: 0 }     // Rest
-      ],
-      drumStartAfter: 8 // Start kick drum after 4 run-throughs
-    };
-    this.loadTrack('combat', combatTrack);
-  }
-
-  // Create menu music
-  createMenuTrack() {
-    const menuTrack = {
-      type: 'sequence',
-      name: 'menu',
-      instrumentType: 25, // Steel Guitar
-      bpm: 100,
-      pattern: [
-        { note: 60, duration: 0.5, velocity: 0.6 },  // C4
-        { note: 64, duration: 0.5, velocity: 0.6 },  // E4
-        { note: 67, duration: 0.5, velocity: 0.6 },  // G4
-        { note: 72, duration: 1.0, velocity: 0.7 },  // C5
-        { note: 0, duration: 1.0, velocity: 0 }      // Rest
-      ]
-    };
-    this.loadTrack('menu', menuTrack);
-  }
-
-  // Create docking music
-  createDockingTrack() {
-    const dockingTrack = {
-      type: 'sequence',
-      name: 'docking',
-      instrumentType: 50, // Synth Strings 1
-      bpm: 80,
-      pattern: [
-        { note: 48, duration: 0.5, velocity: 0.5 },  // C3
-        { note: 52, duration: 0.5, velocity: 0.5 },  // E3
-        { note: 55, duration: 0.5, velocity: 0.5 },  // G3
-        { note: 60, duration: 1.0, velocity: 0.6 },  // C4
-        { note: 0, duration: 2.0, velocity: 0 }      // Rest
-      ]
-    };
-    this.loadTrack('docking', dockingTrack);
-  }
-
-  // Play sequence-based track
-  playSequence(track) {
-    if (!this.isInitialized) return;
-
-    // Set the instrument type if specified
-    if (track.instrumentType) {
-      setMIDIInstrument(track.instrumentType);
-    }
-
-    const stepDuration = (60 / track.bpm) * 4; // 4 beats per measured
-    let stepIndex = 0;
-    let patternRunCount = 0;
-
-    this.sequencer = setInterval(() => {
-      if (!this.isPlaying) return;
-
-      const step = track.pattern[stepIndex % track.pattern.length];
-      
-      if (step.note > 0) {
-        const velocity = Math.round(step.velocity * 127); // Convert to MIDI velocity (0-127)
-        playMIDINote(step.note, step.duration * stepDuration, velocity);
-      }
-
-      // Check if we've completed a full pattern run
-      if (stepIndex % track.pattern.length === track.pattern.length - 1) {
-        patternRunCount++;
-      }
-
-      // Play kick drum if we've passed the start threshold and have a kick pattern
-      if (track.drumPattern && track.drumStartAfter && patternRunCount >= track.drumStartAfter) {
-        const kickStepIndex = stepIndex % track.drumPattern.length;
-        const kickStep = track.drumPattern[kickStepIndex];
-        
-        if (kickStep.note > 0) {
-          const kickVelocity = Math.round(kickStep.velocity * 127);
-          // Play kick drum on channel 9 (drum kit channel)
-          playMIDINote(kickStep.note, kickStep.duration * stepDuration, kickVelocity, 9);
-        }
-      }
-
-      stepIndex++;
-    }, stepDuration * 1000);
-  }
-
-  // Play ambient track
-  playAmbient(track) {
-    if (!this.isInitialized) return;
-
-    // Set the instrument type if specified
-    if (track.instrumentType) {
-      setMIDIInstrument(track.instrumentType);
-    }
-
-    // For ambient tracks, we'll use a simple sequence of sustained MIDI notes
-    track.instruments.forEach((instrument, index) => {
-      // Play sustained notes with longer duration
-      const playSustainedNote = () => {
-        if (this.isPlaying && this.currentTrack === 'ambient') {
-          playMIDINote(instrument.midiNote, instrument.duration, instrument.velocity);
-          setTimeout(playSustainedNote, instrument.duration * 2000 + (index * 500)); // Stagger the notes
-        }
-      };
-      
-      // Start the first note after a delay
-      setTimeout(playSustainedNote, index * 500);
-    });
-  }
-
-  playMidiFile(track) {
-    console.log('MusicManager: playMidiFile() called');
-    console.log('MusicManager: Track data:', track);
-    
-    if (!this.isInitialized) {
-      console.warn('MusicManager: Not initialized for MIDI playback');
-      return;
-    }
-
-    try {
-      console.log('MusicManager: Playing MIDI file using JZZ-midi-SMF');
-      
-      // Create MIDI output
-      const midiout = JZZ().openMidiOut('WebAudioTinySynth');
-      console.log('MusicManager: MIDI output created');
-      
-      console.log('track.data', track.data);
-      // Parse the MIDI file data
-      const smf = new JZZ.MIDI.SMF(track.data);
-      console.log('MusicManager: MIDI file parsed');
-      
-      // Log MIDI file information
-      console.log('MusicManager: MIDI file info:');
-      console.log('  - Format:', smf.format);
-      console.log('  - Tracks type:', typeof smf.tracks);
-      console.log('  - Tracks:', smf.tracks);
-      console.log('  - Ticks per quarter note:', smf.ticks);
-      
-      // Log each track's information (handle different track formats)
-      if (Array.isArray(smf.tracks)) {
-        console.log('  - Number of tracks:', smf.tracks.length);
-        smf.tracks.forEach((track, trackIndex) => {
-          console.log(`  - Track ${trackIndex}: ${track.length} events`);
-        });
-      } else if (smf.tracks && typeof smf.tracks === 'object') {
-        console.log('  - Tracks object keys:', Object.keys(smf.tracks));
-        Object.keys(smf.tracks).forEach((trackKey, index) => {
-          const track = smf.tracks[trackKey];
-          console.log(`  - Track ${index} (${trackKey}): ${track.length || 'unknown'} events`);
-        });
-      } else {
-        console.log('  - Tracks structure unknown:', smf.tracks);
-      }
-      
-      // Create player and connect to output
-      const player = smf.player();
-      player.connect(midiout);
-      console.log('MusicManager: Player connected to MIDI output');
-      
-      // Log player information
-      console.log('MusicManager: Player info:');
-      console.log('  - Player tracks:', player.tracks ? player.tracks.length : 'unknown');
-      console.log('  - Player duration:', player.duration ? player.duration + 'ms' : 'unknown');
-      
-      // Add event listener for when the track finishes
-      player.onEnd = () => {
-        console.log('MusicManager: Current MIDI track finished');
-        if (this.isPlaying && this.currentTrack === 'ambient') {
-          console.log('MusicManager: Queueing next random ambient MIDI track with 15 second delay');
-          // Load and play the next random MIDI file after a 15 second delay
-          setTimeout(() => {
-            if (this.isPlaying && this.currentTrack === 'ambient') {
-              this.playNextRandomAmbientMidi();
-            }
-          }, 15000);
-        }
-      };
-      
-      // Start playback
-      player.play();
-      console.log('MusicManager: MIDI file playback started');
-      
-      // Store player reference so we can control it later
-      this.midiPlayer = player;
-      
-    } catch (error) {
-      console.error('MusicManager: Failed to play MIDI file:', error);
-      console.error('MusicManager: Error details:', error.message);
-      console.error('MusicManager: Error stack:', error.stack);
-    }
-  }
-
-  async playNextRandomAmbientMidi() {
-    try {
-      console.log('MusicManager: Loading next random ambient MIDI track');
-      
-      // Select a random MIDI file URL
-      const randomMidiUrl = ambientMidiFiles[Math.floor(Math.random() * ambientMidiFiles.length)];
-      console.log('MusicManager: Selected next random MIDI file URL:', randomMidiUrl);
-      
-      // Fetch the actual MIDI file data
-      const response = await fetch(randomMidiUrl);
-      const midiArrayBuffer = await response.arrayBuffer();
-      const midiData = new Uint8Array(midiArrayBuffer);
-      console.log('MusicManager: Next MIDI file data fetched, size:', midiData.length, 'bytes');
-      
-      // Create new MIDI track object
-      const nextMidiTrack = {
-        type: 'midi',
-        name: 'ambient',
-        data: midiData
-      };
-      
-      // Play the next track
-      this.playMidiFile(nextMidiTrack);
-      
-    } catch (error) {
-      console.error('MusicManager: Failed to load next ambient MIDI track:', error);
-    }
-  }
-
-  // Update music based on game state
   update(gameState) {
-    // Example: Change music based on game state
-    if (gameState.inCombat && this.currentTrack !== 'combat') {
-      this.crossfadeToTrack('combat', 1000);
-    } else if (gameState.isDocking && this.currentTrack !== 'docking') {
-      this.crossfadeToTrack('docking', 1000);
-    } else if (!gameState.inCombat && !gameState.isDocking && this.currentTrack !== 'ambient') {
+    if (!gameState) return;
+    // Only ambient available now; keep logic simple.
+    if (!gameState.inCombat && !gameState.isDocking && this.currentTrack !== 'ambient') {
       this.crossfadeToTrack('ambient', 1000);
     }
   }
 
-  // Cleanup resources
-  dispose() {
-    this.stopTrack();
-    this.tracks.clear();
-    this.isInitialized = false;
+  dispose() { this.stopTrack(); this.isInitialized = false; }
+
+  // Internal: cancel scheduled notes/timeouts
+  _cancelCurrentPlayback() {
+    if (this._currentPlayback) {
+      this._currentPlayback.stop();
+      this._currentPlayback.timeoutIds.forEach(id => clearTimeout(id));
+      this._currentPlayback = null;
+    }
+    this._activeNotes.forEach(stopFn => { try { stopFn(); } catch (_) {} });
+    this._activeNotes.clear();
+  }
+
+  async _playRandomAmbientMidi() {
+    if (!this.isPlaying || this.currentTrack !== 'ambient') return;
+    const src = ambientMidiFiles[Math.floor(Math.random() * ambientMidiFiles.length)];
+    try {
+      const resp = await fetch(src);
+      const arrayBuf = await resp.arrayBuffer();
+      const midi = new Midi(arrayBuf); // parsed via @tonejs/midi
+      // Schedule playback
+      this._cancelCurrentPlayback();
+      const startTime = this._audioCtx.currentTime + 0.05; // small offset
+      const timeoutIds = [];
+
+      const instruments = {};
+      const baseProgram = 0;
+      const uniquePrograms = new Set([baseProgram]);
+      midi.tracks.forEach(t => {
+        const prog = (t.instrument && typeof t.instrument.number === 'number') ? t.instrument.number : baseProgram;
+        // Skip programs outside 0-127 just in case
+        if (prog >= 0 && prog <= 127) uniquePrograms.add(prog);
+      });
+
+      const waitOnReady = (inst) => new Promise(res => {
+        // If instrument already has sample buffers loaded, its play function name is 'buffersPlayer'
+        if (typeof inst.play === 'function' && inst.play.name === 'buffersPlayer') return res(inst);
+        if (typeof inst.onready === 'function') inst.onready(() => res(inst)); else res(inst);
+      });
+
+      const loadProgramInstrument = async (programNum) => {
+  const name = sanitizeInstrumentName(programToInstrument(programNum));
+        if (this._instrumentsCache.has(name)) {
+          instruments[programNum] = this._instrumentsCache.get(name);
+          return;
+        }
+        if (this._instrumentLoading.has(name)) {
+          await this._instrumentLoading.get(name);
+          instruments[programNum] = this._instrumentsCache.get(name);
+          return;
+        }
+        const loadPromise = (async () => {
+            let inst;
+            try {
+              const SF = await getSoundfont(this._audioCtx);
+              inst = SF.instrument(name, { gain: 1 });
+              // Pre-flight URL existence check (HEAD) to reduce onload errors
+              try {
+                // Light existence check only if manifest claims local; otherwise rely on CDN
+                if (_localSoundfontNames && _localSoundfontNames.has(name)) {
+                  const url = _instrumentUrl(name);
+                  const head = await fetch(url, { method: 'HEAD' });
+                  if (!head.ok) throw new Error('Instrument file missing locally: '+url+' status:'+head.status);
+                }
+              } catch (preErr) {
+                console.warn('MusicManager: instrument file missing, fallback chain', name, preErr);
+                inst = null; // force fallback execution
+              }
+              await waitOnReady(inst);
+            } catch (primaryErr) {
+              console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
+              const fallbackNames = ['string_ensemble_1', 'acoustic_grand_piano'];
+              for (const fb of fallbackNames) {
+                try {
+                  const SF2 = await getSoundfont(this._audioCtx);
+                  inst = SF2.instrument(fb, { gain: 1 });
+                  await waitOnReady(inst);
+                  break;
+                } catch (_) { /* continue */ }
+              }
+            }
+            if (inst) this._instrumentsCache.set(name, inst);
+            if (!inst) {
+              // final fallback to cached piano
+              inst = this._instrumentsCache.get('acoustic_grand_piano');
+              if (!inst) {
+                const SF3 = await getSoundfont(this._audioCtx);
+                inst = SF3.instrument('acoustic_grand_piano', { gain: 0.8 });
+                await waitOnReady(inst);
+                this._instrumentsCache.set('acoustic_grand_piano', inst);
+              }
+            }
+        })().finally(() => this._instrumentLoading.delete(name));
+        this._instrumentLoading.set(name, loadPromise);
+        await loadPromise;
+        instruments[programNum] = this._instrumentsCache.get(name) || this._instrumentsCache.get('acoustic_grand_piano');
+      };
+
+      for (const p of uniquePrograms) { // sequential to control load order
+        // eslint-disable-next-line no-await-in-loop
+        await loadProgramInstrument(p);
+      }
+
+      // For drum channel we load a percussion kit instrument (soundfont may map 'percussion'). Use acoustic_grand_piano fallback if unavailable.
+    if (!this._instrumentsCache.has('percussion')) {
+        try {
+          const SF = await getSoundfont(this._audioCtx);
+      const drumInst = SF.instrument('synth_drum', { gain: 0.9 });
+          await waitOnReady(drumInst);
+      this._instrumentsCache.set('percussion', drumInst);
+        } catch (e) {
+          console.warn('MusicManager: percussion kit not found; falling back');
+          const synthDrumName = programToInstrument(118);
+          if (!this._instrumentsCache.has(synthDrumName)) {
+            try {
+              const SF2 = await getSoundfont(this._audioCtx);
+              const synthDrumInst = SF2.instrument(synthDrumName, { gain: 0.9 });
+              await waitOnReady(synthDrumInst);
+              this._instrumentsCache.set(synthDrumName, synthDrumInst);
+            } catch {}
+          }
+          this._instrumentsCache.set('percussion', this._instrumentsCache.get(synthDrumName) || this._instrumentsCache.get('acoustic_grand_piano'));
+        }
+      }
+
+      const stopFns = [];
+      midi.tracks.forEach(track => {
+        const isDrum = track.channel === DRUM_CHANNEL;
+    const program = (track.instrument && typeof track.instrument.number === 'number') ? track.instrument.number : 0;
+        const inst = isDrum ? this._instrumentsCache.get('percussion') : instruments[program];
+        track.notes.forEach(note => {
+          const noteStart = startTime + note.time; // time already in seconds (@tonejs/midi converts ticks)
+          const noteDuration = note.duration || 0.3;
+          const delayMs = Math.max(0, (noteStart - this._audioCtx.currentTime) * 1000);
+          const scheduleId = setTimeout(() => {
+            if (!this.isPlaying || this.currentTrack !== 'ambient') return;
+            if (!inst) return;
+            try {
+              const velocityGain = Math.min(1, (note.velocity || 0.5) * 0.9);
+              const audioNode = inst.play(note.midi, this._audioCtx.currentTime, { gain: velocityGain });
+              const stopDelay = Math.max(10, (noteDuration * 1000));
+              const stopId = setTimeout(() => {
+                try { audioNode.stop(); } catch (_) {}
+              }, stopDelay);
+              timeoutIds.push(stopId);
+              stopFns.push(() => { try { audioNode.stop(); } catch (_) {} });
+            } catch (err) {
+              console.warn('Note play failed', err);
+            }
+          }, delayMs);
+          timeoutIds.push(scheduleId);
+        });
+      });
+
+      const totalDuration = midi.duration; // seconds
+      // Schedule next ambient after 1s gap
+      const nextId = setTimeout(() => {
+        if (this.isPlaying && this.currentTrack === 'ambient') {
+          this._playRandomAmbientMidi();
+        }
+      }, (totalDuration * 1000) + 1000);
+      this._scheduledNextTimeout = nextId;
+
+      this._currentPlayback = {
+        stop: () => stopFns.forEach(fn => fn()),
+        timeoutIds
+      };
+    } catch (err) {
+      console.error('MusicManager: Failed to play ambient MIDI via soundfont-player', err);
+      // Try another file after short delay
+      setTimeout(() => {
+        if (this.isPlaying && this.currentTrack === 'ambient') this._playRandomAmbientMidi();
+      }, 1000);
+    }
   }
 }

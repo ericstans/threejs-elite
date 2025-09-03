@@ -73,26 +73,13 @@ function midiToFreq(midi) {
 	return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
-function playNote(freq, duration = 0.18) {
+function playNote(freq, duration = 0.18, velocity) {
 	if (!audioCtx) {
 		audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 	}
-	if (!bus) {
-		bus = audioCtx.createGain();
-		compressor = audioCtx.createDynamicsCompressor();
-		masterGain = audioCtx.createGain();
-		compressor.threshold.value = -12;
-		compressor.ratio.value = 12;
-		compressor.attack.value = 0.003;
-		compressor.release.value = 0.25;
-		bus.connect(compressor).connect(masterGain).connect(audioCtx.destination);
-		// Set initial master volume from slider if present
-		const volSlider = document.getElementById('master-volume');
-		if (volSlider) masterGain.gain.value = parseFloat(volSlider.value);
-	}
-
 	const note = audioCtx.createOscillator();
 	note.frequency.value = freq;
+	note.volume = velocity
 	note.connect(bus);
 	note.start();
 	note.stop(audioCtx.currentTime + duration);
@@ -113,7 +100,7 @@ function setMIDIInstrument(instrumentNumber) {
 }
 
 // Play MIDI note using JZZ
-function playMIDINote(midiNote, duration = 0.5, velocity = 80, channel = 0) {
+function playMIDINote(midiNote, duration = 0.5, velocity = 50, channel = 0) {
 	if (midiReady && midiOut) {
 		// Note on
 		midiOut.noteOn(channel, midiNote, velocity);
@@ -127,7 +114,7 @@ function playMIDINote(midiNote, duration = 0.5, velocity = 80, channel = 0) {
 		// Fallback to Web Audio API
 		console.warn('MIDI not ready, using Web Audio fallback');
 		const freq = midiToFreq(midiNote);
-		playNote(freq, duration);
+		playNote(freq, duration, velocity);
 	}
 }
 

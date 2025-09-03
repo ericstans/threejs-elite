@@ -35,6 +35,13 @@ npm run dev
 npm run build
 ```
 
+### Local SoundFonts
+To include a subset of SoundFonts locally (avoid first-play network latency), run:
+```bash
+node scripts/fetch-soundfonts.js
+```
+This downloads selected FluidR3_GM instrument JS files into `public/soundfonts`. Only instruments used in the midi files are included.
+
 ### Development
 ```bash
 # Start development server with hot reload

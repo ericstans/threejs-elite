@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import JZZ from 'jzz';
-import { Tiny } from 'jzz-synth-tiny';
 import { GameEngine } from './GameEngine.js';
 import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
@@ -13,14 +11,6 @@ import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 import { ConversationSystem } from './ConversationSystem.js';
 
-// Make JZZ available globally
-window.JZZ = JZZ;
-
-// Initialize the synth
-if (JZZ && Tiny) {
-  Tiny(JZZ);
-  JZZ.synth.Tiny.register('WebAudioTinySynth');
-}
 
 class Game {
   constructor() {
