@@ -169,6 +169,17 @@ export class MusicManager {
     }, duration / 2);
   }
 
+  createAmbientTrackMidi() {
+    const midiFiles = fs.readdirSync('./midi/ambient/');
+    const randomMidiFile = midiFiles[Math.floor(Math.random() * midiFiles.length)];
+    const midiFile = fs.readFileSync(`./midi/ambient/${randomMidiFile}`, 'binary');
+    const midiData = new Uint8Array(midiFile);
+    const midiSequence = new Sequence(midiData);
+    sequence.type="midi";
+    sequence.name="ambient-midi";
+    this.loadTrack('ambient', midiSequence);
+  }
+
   // Create ambient background music
   createAmbientTrack() {
     const ambientTrack = {
