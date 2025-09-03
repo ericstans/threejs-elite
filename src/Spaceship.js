@@ -143,7 +143,7 @@ export class Spaceship {
     // Update Euler rotation for mesh display
     this.rotation.setFromQuaternion(this.quaternion);
     
-    // Apply drag (minimal in space)
+    // Apply drag (minimal in space, but nice for control feel)
     this.velocity.multiplyScalar(0.999);
     this.angularVelocity.multiplyScalar(0.99);
     
