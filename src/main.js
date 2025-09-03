@@ -25,6 +25,13 @@ class Game {
     this.currentNavTarget = null;
     this.planets = [];
     
+    // Global flags
+    this.globalFlags = {
+      gameStarted: false,
+      firstDocking: false,
+      // Add more global flags as needed
+    };
+    
     this.setupGame();
     this.setupControls();
     this.start();
@@ -415,6 +422,40 @@ class Game {
     this.currentConversationNode = null;
   }
 
+  // Global flag management methods
+  setGlobalFlag(flagName, value) {
+    this.globalFlags[flagName] = value;
+  }
+
+  getGlobalFlag(flagName) {
+    return this.globalFlags[flagName] || false;
+  }
+
+  hasGlobalFlag(flagName) {
+    return this.globalFlags.hasOwnProperty(flagName) && this.globalFlags[flagName];
+  }
+
+  getAllGlobalFlags() {
+    return { ...this.globalFlags };
+  }
+
+  // Process flags from conversation options
+  processFlags(flags) {
+    if (flags.player) {
+      for (const [flagName, value] of Object.entries(flags.player)) {
+        this.spaceship.setFlag(flagName, value);
+        console.log(`Set player flag: ${flagName} = ${value}`);
+      }
+    }
+    
+    if (flags.global) {
+      for (const [flagName, value] of Object.entries(flags.global)) {
+        this.setGlobalFlag(flagName, value);
+        console.log(`Set global flag: ${flagName} = ${value}`);
+      }
+    }
+  }
+
   selectCommsOption(optionNumber) {
     if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
       return;
@@ -431,9 +472,28 @@ class Game {
       const optionId = selectedOption.dataset.optionId;
 
       // Handle special cases
-      if (optionId === 'end') {
+      if (optionId === 'end' || optionId === 'confirm_dock') {
+        // Check if this option has flags to set before closing
+        if (selectedOption.dataset.flags) {
+          try {
+            const flags = JSON.parse(selectedOption.dataset.flags);
+            this.processFlags(flags);
+          } catch (e) {
+            console.warn('Invalid flags data:', selectedOption.dataset.flags);
+          }
+        }
         this.closeComms();
         return;
+      }
+
+      // Check if this option has flags to set
+      if (selectedOption.dataset.flags) {
+        try {
+          const flags = JSON.parse(selectedOption.dataset.flags);
+          this.processFlags(flags);
+        } catch (e) {
+          console.warn('Invalid flags data:', selectedOption.dataset.flags);
+        }
       }
 
       if (optionId === 'back_info') {

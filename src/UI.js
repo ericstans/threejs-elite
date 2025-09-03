@@ -433,6 +433,9 @@ export class UI {
         optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
         optionElement.dataset.optionId = option.id;
         optionElement.dataset.optionIndex = index + 1;
+        if (option.flags) {
+          optionElement.dataset.flags = JSON.stringify(option.flags);
+        }
         
         // Add hover effects
         optionElement.addEventListener('mouseenter', () => {
@@ -538,6 +541,9 @@ export class UI {
         optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
         optionElement.dataset.optionId = option.id;
         optionElement.dataset.optionIndex = index + 1;
+        if (option.flags) {
+          optionElement.dataset.flags = JSON.stringify(option.flags);
+        }
         
         // Add hover effects
         optionElement.addEventListener('mouseenter', () => {

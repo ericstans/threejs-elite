@@ -49,7 +49,7 @@ export class ConversationSystem {
             'docking': {
              response: "Docking requests are processed through our automated system. Please provide your ship registration and cargo manifest. Standard docking fees apply.",
              options: [
-               { id: 'confirm_dock', text: 'Initiating docking request.' },
+               { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
                { id: 'docking_services', text: 'What services are available on the planet?' },
                { id: 'cancel_dock', text: 'Actually, never mind. (End conversation)' }
              ]

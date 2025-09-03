@@ -16,6 +16,14 @@ export class Spaceship {
     this.throttle = 0;
     this.maxThrottle = 1;
     
+    // Player flags
+    this.flags = {
+      isDocking: false,
+      hasVisitedAridusPrime: false,
+      hasVisitedOceanus: false,
+      // Add more flags as needed
+    };
+    
     // Update mesh position
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
@@ -132,6 +140,23 @@ export class Spaceship {
 
   getPosition() {
     return this.position.clone();
+  }
+
+  // Flag management methods
+  setFlag(flagName, value) {
+    this.flags[flagName] = value;
+  }
+
+  getFlag(flagName) {
+    return this.flags[flagName] || false;
+  }
+
+  hasFlag(flagName) {
+    return this.flags.hasOwnProperty(flagName) && this.flags[flagName];
+  }
+
+  getAllFlags() {
+    return { ...this.flags };
   }
 
   getRotation() {
