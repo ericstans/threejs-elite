@@ -392,8 +392,29 @@ export class UI {
         optionElement.style.padding = '8px';
         optionElement.style.border = '1px solid #00ff00';
         optionElement.style.cursor = 'pointer';
+        optionElement.style.transition = 'all 0.2s ease';
         optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
         optionElement.dataset.optionId = option.id;
+        optionElement.dataset.optionIndex = index + 1;
+        
+        // Add hover effects
+        optionElement.addEventListener('mouseenter', () => {
+          optionElement.style.background = 'rgba(0, 255, 0, 0.1)';
+          optionElement.style.border = '1px solid #00ff00';
+        });
+        
+        optionElement.addEventListener('mouseleave', () => {
+          optionElement.style.background = 'transparent';
+          optionElement.style.border = '1px solid #00ff00';
+        });
+        
+        // Add click handler
+        optionElement.addEventListener('click', () => {
+          if (this.onCommsOptionClick) {
+            this.onCommsOptionClick(parseInt(optionElement.dataset.optionIndex));
+          }
+        });
+        
         this.commsOptions.appendChild(optionElement);
       });
     } else {
@@ -403,8 +424,29 @@ export class UI {
       option1.style.padding = '8px';
       option1.style.border = '1px solid #00ff00';
       option1.style.cursor = 'pointer';
+      option1.style.transition = 'all 0.2s ease';
       option1.innerHTML = '<span style="color: #ffff00;">1.</span> Information about ' + planetName;
       option1.dataset.optionId = 'information';
+      option1.dataset.optionIndex = '1';
+      
+      // Add hover effects
+      option1.addEventListener('mouseenter', () => {
+        option1.style.background = 'rgba(0, 255, 0, 0.1)';
+        option1.style.border = '1px solid #00ff00';
+      });
+      
+      option1.addEventListener('mouseleave', () => {
+        option1.style.background = 'transparent';
+        option1.style.border = '1px solid #00ff00';
+      });
+      
+      // Add click handler
+      option1.addEventListener('click', () => {
+        if (this.onCommsOptionClick) {
+          this.onCommsOptionClick(1);
+        }
+      });
+      
       this.commsOptions.appendChild(option1);
       
       const option2 = document.createElement('div');
@@ -412,8 +454,29 @@ export class UI {
       option2.style.padding = '8px';
       option2.style.border = '1px solid #00ff00';
       option2.style.cursor = 'pointer';
+      option2.style.transition = 'all 0.2s ease';
       option2.innerHTML = '<span style="color: #ffff00;">2.</span> Request docking';
       option2.dataset.optionId = 'docking';
+      option2.dataset.optionIndex = '2';
+      
+      // Add hover effects
+      option2.addEventListener('mouseenter', () => {
+        option2.style.background = 'rgba(0, 255, 0, 0.1)';
+        option2.style.border = '1px solid #00ff00';
+      });
+      
+      option2.addEventListener('mouseleave', () => {
+        option2.style.background = 'transparent';
+        option2.style.border = '1px solid #00ff00';
+      });
+      
+      // Add click handler
+      option2.addEventListener('click', () => {
+        if (this.onCommsOptionClick) {
+          this.onCommsOptionClick(2);
+        }
+      });
+      
       this.commsOptions.appendChild(option2);
     }
     
@@ -434,8 +497,29 @@ export class UI {
         optionElement.style.padding = '8px';
         optionElement.style.border = '1px solid #00ff00';
         optionElement.style.cursor = 'pointer';
+        optionElement.style.transition = 'all 0.2s ease';
         optionElement.innerHTML = `<span style="color: #ffff00;">${index + 1}.</span> ${option.text}`;
         optionElement.dataset.optionId = option.id;
+        optionElement.dataset.optionIndex = index + 1;
+        
+        // Add hover effects
+        optionElement.addEventListener('mouseenter', () => {
+          optionElement.style.background = 'rgba(0, 255, 0, 0.1)';
+          optionElement.style.border = '1px solid #00ff00';
+        });
+        
+        optionElement.addEventListener('mouseleave', () => {
+          optionElement.style.background = 'transparent';
+          optionElement.style.border = '1px solid #00ff00';
+        });
+        
+        // Add click handler
+        optionElement.addEventListener('click', () => {
+          if (this.onCommsOptionClick) {
+            this.onCommsOptionClick(parseInt(optionElement.dataset.optionIndex));
+          }
+        });
+        
         this.commsOptions.appendChild(optionElement);
       });
     }
@@ -447,6 +531,10 @@ export class UI {
 
   isCommsModalVisible() {
     return this.commsModal.style.display === 'block';
+  }
+
+  setOnCommsOptionClick(callback) {
+    this.onCommsOptionClick = callback;
   }
 
   destroy() {

@@ -107,6 +107,11 @@ class Game {
       this.selectCommsOption(optionNumber);
     });
 
+    // Handle UI click selection
+    this.ui.setOnCommsOptionClick((optionNumber) => {
+      this.selectCommsOption(optionNumber);
+    });
+
     // Handle window resize
     this.controls.setOnResize(() => {
       this.gameEngine.resize();
