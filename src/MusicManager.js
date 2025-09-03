@@ -97,8 +97,10 @@ import ambient1 from './assets/midi/ambient/ambient1.mid';
 import ambient2 from './assets/midi/ambient/ambient2.mid';
 import ambient3 from './assets/midi/ambient/ambient3.mid';
 import ambient4 from './assets/midi/ambient/ambient4.mid';
+import ambient5 from './assets/midi/ambient/ambient5.mid';
 
-const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient4];
+
+const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient4, ambient5];
 
 // Utility: clamp
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -262,6 +264,13 @@ export class MusicManager {
     this._scheduledNextTimeout = null;
     this._instrumentsCache = new Map(); // key: instrumentName -> soundfont-player Instrument
   this._instrumentLoading = new Map(); // in-flight loads
+  // Effects chain
+  this._effectsInput = null;     // entry point for all instruments
+  this._dryGain = null;          // dry branch
+  this._wetGain = null;          // wet (reverb) branch
+  this._reverbConvolver = null;  // convolver node
+  this.reverbMix = 0.3;          // 0..1
+  this._reverbEnabled = true;
   }
 
   async init() {
@@ -270,6 +279,23 @@ export class MusicManager {
     this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this._masterGain = this._audioCtx.createGain();
     this._masterGain.gain.value = this.volume;
+    // Build effects chain: instruments -> effectsInput -> (dry + convolver->wet) -> master -> destination
+    this._effectsInput = this._audioCtx.createGain();
+    this._dryGain = this._audioCtx.createGain();
+    this._wetGain = this._audioCtx.createGain();
+    this._reverbConvolver = this._audioCtx.createConvolver();
+    try {
+      this._reverbConvolver.buffer = this._createImpulseResponse(this._audioCtx, 2.5, 2.0);
+    } catch (e) {
+      console.warn('MusicManager: failed to create impulse response', e);
+    }
+    this._applyReverbMix();
+    // Wire up
+    this._effectsInput.connect(this._dryGain);
+    this._effectsInput.connect(this._reverbConvolver);
+    this._reverbConvolver.connect(this._wetGain);
+    this._dryGain.connect(this._masterGain);
+    this._wetGain.connect(this._masterGain);
     this._masterGain.connect(this._audioCtx.destination);
     this.isInitialized = true;
   }
@@ -357,6 +383,52 @@ export class MusicManager {
 
   dispose() { this.stopTrack(); this.isInitialized = false; }
 
+  // --- Reverb / Effects -------------------------------------------------
+  _createImpulseResponse(ctx, duration = 2, decay = 2) {
+    const rate = ctx.sampleRate;
+    const length = Math.max(1, Math.floor(rate * duration));
+    const impulse = ctx.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const channel = impulse.getChannelData(ch);
+      for (let i = 0; i < length; i++) {
+        const n = i / length;
+        // Exponential-ish decay noise
+        channel[i] = (Math.random() * 2 - 1) * Math.pow(1 - n, decay);
+      }
+    }
+    return impulse;
+  }
+
+  _applyReverbMix() {
+    if (!this._dryGain || !this._wetGain) return;
+    const mix = this._reverbEnabled ? this.reverbMix : 0;
+    this._dryGain.gain.value = 1 - mix;
+    this._wetGain.gain.value = mix;
+  }
+
+  setReverbMix(mix) {
+    this.reverbMix = Math.min(1, Math.max(0, mix));
+    this._applyReverbMix();
+  }
+
+  setReverbEnabled(enabled) {
+    this._reverbEnabled = !!enabled;
+    this._applyReverbMix();
+  }
+
+  _attachInstrumentToEffects(inst) {
+    if (!inst || !this._effectsInput) return;
+    try {
+      if (typeof inst.connect === 'function') {
+        inst.connect(this._effectsInput); // soundfont-player API
+      } else if (inst.output && typeof inst.output.connect === 'function') {
+        inst.output.connect(this._effectsInput);
+      }
+    } catch (e) {
+      console.warn('MusicManager: failed to attach instrument to effects chain', e);
+    }
+  }
+
   // Internal: cancel scheduled notes/timeouts
   _cancelCurrentPlayback() {
     if (this._currentPlayback) {
@@ -424,6 +496,7 @@ export class MusicManager {
                 inst = null; // force fallback execution
               }
               await waitOnReady(inst);
+        this._attachInstrumentToEffects(inst);
             } catch (primaryErr) {
               console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
               const fallbackNames = ['string_ensemble_1', 'acoustic_grand_piano'];
@@ -432,6 +505,7 @@ export class MusicManager {
                   const SF2 = await getSoundfont(this._audioCtx);
                   inst = SF2.instrument(fb, { gain: 1 });
                   await waitOnReady(inst);
+          this._attachInstrumentToEffects(inst);
                   break;
                 } catch (_) { /* continue */ }
               }
@@ -446,6 +520,7 @@ export class MusicManager {
                 await waitOnReady(inst);
                 this._instrumentsCache.set('acoustic_grand_piano', inst);
               }
+        this._attachInstrumentToEffects(inst);
             }
         })().finally(() => this._instrumentLoading.delete(name));
         this._instrumentLoading.set(name, loadPromise);
@@ -465,6 +540,7 @@ export class MusicManager {
       const drumInst = SF.instrument('synth_drum', { gain: 0.9 });
           await waitOnReady(drumInst);
       this._instrumentsCache.set('percussion', drumInst);
+      this._attachInstrumentToEffects(drumInst);
         } catch (e) {
           console.warn('MusicManager: percussion kit not found; falling back');
           const synthDrumName = programToInstrument(118);
@@ -474,6 +550,7 @@ export class MusicManager {
               const synthDrumInst = SF2.instrument(synthDrumName, { gain: 0.9 });
               await waitOnReady(synthDrumInst);
               this._instrumentsCache.set(synthDrumName, synthDrumInst);
+        this._attachInstrumentToEffects(synthDrumInst);
             } catch {}
           }
           this._instrumentsCache.set('percussion', this._instrumentsCache.get(synthDrumName) || this._instrumentsCache.get('acoustic_grand_piano'));
