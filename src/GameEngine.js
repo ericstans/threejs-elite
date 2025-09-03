@@ -23,25 +23,77 @@ export class GameEngine {
   }
 
   setupScene() {
-    // Add starfield background
-    const starGeometry = new THREE.BufferGeometry();
-    const starCount = 1000;
-    const starPositions = new Float32Array(starCount * 3);
+    // Add spacedust (local space particles)
+    this.createSpacedust();
     
-    for (let i = 0; i < starCount * 3; i++) {
-      starPositions[i] = (Math.random() - 0.5) * 2000;
+    // Add distant background stars
+    this.createStarfield();
+  }
+
+  createSpacedust() {
+    // Add local spacedust particles
+    const spacedustGeometry = new THREE.BufferGeometry();
+    const spacedustCount = 1000;
+    const spacedustPositions = new Float32Array(spacedustCount * 3);
+    
+    for (let i = 0; i < spacedustCount * 3; i++) {
+      spacedustPositions[i] = (Math.random() - 0.5) * 2000;
     }
     
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    spacedustGeometry.setAttribute('position', new THREE.BufferAttribute(spacedustPositions, 3));
     
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
+    const spacedustMaterial = new THREE.PointsMaterial({
+      color: 0x808080,
       size: 1,
       sizeAttenuation: false
     });
     
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    this.scene.add(stars);
+    const spacedust = new THREE.Points(spacedustGeometry, spacedustMaterial);
+    this.scene.add(spacedust);
+  }
+
+  createStarfield() {
+    // Create a large sphere of distant stars
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 2000;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    
+    // Generate stars on a large sphere (radius 5000 units - closer for visibility)
+    const radius = 5000;
+    for (let i = 0; i < starCount; i++) {
+      // Generate random points on sphere surface
+      const theta = Math.random() * Math.PI * 2; // Azimuth angle
+      const phi = Math.acos(2 * Math.random() - 1); // Polar angle
+      
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      
+      starPositions[i * 3] = x;
+      starPositions[i * 3 + 1] = y;
+      starPositions[i * 3 + 2] = z;
+      
+      // Add some color variation (white to blue-white)
+      const colorVariation = 0.8 + Math.random() * 0.2;
+      starColors[i * 3] = colorVariation;     // Red
+      starColors[i * 3 + 1] = colorVariation; // Green
+      starColors[i * 3 + 2] = 1.0;            // Blue (slightly blue-tinted)
+    }
+    
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
+      size: 2,
+      sizeAttenuation: false,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8
+    });
+    
+    this.starfield = new THREE.Points(starGeometry, starMaterial);
+    this.scene.add(this.starfield);
   }
 
   setupLighting() {
