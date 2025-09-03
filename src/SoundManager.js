@@ -6,7 +6,10 @@ export class SoundManager {
     // Engine rumble
     this._engine = {
       started: false,
-  layers: [], // each: { source, gain, filter, buffer, phaseOffset }
+      source: null,
+      gain: null,
+      filter: null,
+      buffer: null,
       lastThrottle: 0
     };
     
@@ -168,80 +171,56 @@ export class SoundManager {
   _ensureEngine() {
     if (!this.audioContext || this._engine.started) return;
     const ctx = this.audioContext;
-    const layerCount = 3; // base + 2 out-of-phase
-    const layers = [];
-    for (let i = 0; i < layerCount; i++) {
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      // Slightly stagger cutoff per layer
-      filter.frequency.value = 140 + i * 20;
-      filter.Q.value = 0.7;
-      const buffer = this._createEngineBuffer(2.0);
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-      // Base playback rate plus minuscule detune per layer
-      source.playbackRate.value = (0.9 + Math.random() * 0.06) * (1 + i * 0.01);
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.value = 0; // start silent
-      // Start each layer with a time offset for phase diversity
-      const offset = (buffer.duration / layerCount) * i;
-      try { source.start(0, offset % buffer.duration); } catch(_) {}
-      layers.push({ source, gain, filter, buffer, phaseOffset: offset });
-    }
-    this._engine = { started: true, layers, lastThrottle: 0 };
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 160; // keep it warm
+    filter.Q.value = 0.7;
+    const buffer = this._createEngineBuffer(2.0);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    // Slight random initial playbackRate for variation
+    source.playbackRate.value = 0.9 + Math.random() * 0.1;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.value = 0; // start silent
+    try { source.start(); } catch(_) {}
+    this._engine = { started: true, source, gain, filter, buffer, lastThrottle: 0 };
   }
 
-  updateEngineRumble(throttle = 0, isDocked = false, speedRatio = null) {
+  updateEngineRumble(throttle = 0, isDocked = false) {
     if (!this.audioContext) return;
     this._ensureEngine();
     if (!this._engine.started) return;
-    // If caller didn't supply speed ratio, approximate with throttle
-    if (speedRatio == null) speedRatio = throttle;
-    speedRatio = Math.max(0, Math.min(1, speedRatio));
+    // Target wet volume: base idle 0.05 when throttle > 0 else near silent
     const idle = 0.05;
-    const dockSuppress = isDocked ? 0.3 : 1.0;
+    const dockSuppress = isDocked ? 0.3 : 1.0; // reduce volume while docked
     const target = throttle > 0 ? (idle + throttle * 0.35) * dockSuppress : (isDocked ? 0 : idle * 0.4);
     const now = this.audioContext.currentTime;
-    const baseRate = 0.9;
-    const maxExtra = 0.25;
-    this._engine.layers.forEach((layer, i) => {
-      const g = layer.gain.gain;
-      g.cancelScheduledValues(now);
-      g.setValueAtTime(g.value, now);
-      // Slight per-layer scaling (middle slightly louder)
-      const layerScale = i === 1 ? 1.1 : 0.9;
-      g.linearRampToValueAtTime(target * this.masterVolume * layerScale / this._engine.layers.length, now + 0.15);
-      if (layer.source && layer.source.playbackRate) {
-        const rateParam = layer.source.playbackRate;
-        const detune = (i - 1) * 0.03; // -0.03, 0, +0.03 approx
-        const newRate = (baseRate + throttle * maxExtra) * (1 + detune * 0.1);
-        try {
-          rateParam.cancelScheduledValues(now);
-          rateParam.setValueAtTime(rateParam.value, now);
-          rateParam.linearRampToValueAtTime(newRate, now + 0.3);
-        } catch(_) {}
-      }
-      // Dynamic filter cutoff: base per-layer + growth with speed ratio
-      const baseCut = 140 + i * 20; // original base
-      const extra = 180; // max additional Hz when at full speed
-      const targetCut = baseCut + extra * speedRatio; // up to ~320-360 Hz
-      const f = layer.filter.frequency;
+    const g = this._engine.gain.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(target * this.masterVolume, now + 0.15); // smooth changes
+    // Playback rate slight change with throttle for subtle pitch motion
+    if (this._engine.source && this._engine.source.playbackRate) {
+      const rateParam = this._engine.source.playbackRate;
+      const baseRate = 0.9;
+      const maxExtra = 0.25;
+      const newRate = baseRate + throttle * maxExtra;
       try {
-        f.cancelScheduledValues(now);
-        f.setValueAtTime(f.value, now);
-        f.linearRampToValueAtTime(targetCut, now + 0.5); // slower smoothing
+        rateParam.cancelScheduledValues(now);
+        rateParam.setValueAtTime(rateParam.value, now);
+        rateParam.linearRampToValueAtTime(newRate, now + 0.3);
       } catch(_) {}
-    });
+    }
     this._engine.lastThrottle = throttle;
   }
 
   stopEngineRumble() {
-  if (!this._engine.started) return;
-  this._engine.layers.forEach(l => { try { l.source.stop(); } catch(_) {} });
-  this._engine.started = false;
+    if (!this._engine.started) return;
+    try { this._engine.source.stop(); } catch(_) {}
+    this._engine.started = false;
   }
 }

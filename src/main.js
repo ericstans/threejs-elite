@@ -177,11 +177,7 @@ class Game {
     this.spaceship.update(deltaTime);
     
     // Update UI
-  // Pass targetSpeed, currentSpeed, and maxSpeed for UI
-  const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
-  const currentSpeed = this.spaceship.getSpeed();
-  const maxSpeed = this.spaceship.maxSpeed;
-  this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
+    this.ui.updateThrottle(this.spaceship.getThrottle(), this.spaceship.getSpeedPerMinute());
     
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
@@ -215,11 +211,7 @@ class Game {
     this.gameEngine.camera.rotation.copy(spaceshipRot);
 
   // Update continuous engine rumble based on throttle & docking
-    this.soundManager.updateEngineRumble(
-      this.spaceship.getThrottle(),
-      this.spaceship.flags.isDocked,
-      this.spaceship.getSpeedPercentage()
-    );
+  this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), this.spaceship.flags.isDocked);
   }
 
   updateLasers(deltaTime) {
