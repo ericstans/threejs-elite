@@ -162,6 +162,17 @@ export class Spaceship {
     // Update mesh
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
+
+    // --- Clamp: prevent unintentional backward drift when throttle >= 0 ---
+    if (this.throttle >= 0) {
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
+      const vForward = this.velocity.dot(forward);
+      if (vForward < 0) {
+        // Remove backward component, keep any lateral velocity
+        const lateral = this.velocity.clone().sub(forward.clone().multiplyScalar(vForward));
+        this.velocity.copy(lateral);
+      }
+    }
   }
 
   // Control methods
