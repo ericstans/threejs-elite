@@ -11,11 +11,12 @@ import {
 import ambient1 from './assets/midi/ambient/ambient1.mid';
 import ambient2 from './assets/midi/ambient/ambient2.mid';
 import ambient3 from './assets/midi/ambient/ambient3.mid';
+import ambient4 from './assets/midi/ambient/ambient4.mid';
 import { JZZ } from 'jzz';
 import { SMF } from 'jzz-midi-smf';
 SMF(JZZ);
 // Array of available ambient MIDI files
-const ambientMidiFiles = [ambient1, ambient2, ambient3];
+const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient4];
 
 export class MusicManager {
   constructor() {
@@ -418,10 +419,38 @@ export class MusicManager {
       const smf = new JZZ.MIDI.SMF(track.data);
       console.log('MusicManager: MIDI file parsed');
       
+      // Log MIDI file information
+      console.log('MusicManager: MIDI file info:');
+      console.log('  - Format:', smf.format);
+      console.log('  - Tracks type:', typeof smf.tracks);
+      console.log('  - Tracks:', smf.tracks);
+      console.log('  - Ticks per quarter note:', smf.ticks);
+      
+      // Log each track's information (handle different track formats)
+      if (Array.isArray(smf.tracks)) {
+        console.log('  - Number of tracks:', smf.tracks.length);
+        smf.tracks.forEach((track, trackIndex) => {
+          console.log(`  - Track ${trackIndex}: ${track.length} events`);
+        });
+      } else if (smf.tracks && typeof smf.tracks === 'object') {
+        console.log('  - Tracks object keys:', Object.keys(smf.tracks));
+        Object.keys(smf.tracks).forEach((trackKey, index) => {
+          const track = smf.tracks[trackKey];
+          console.log(`  - Track ${index} (${trackKey}): ${track.length || 'unknown'} events`);
+        });
+      } else {
+        console.log('  - Tracks structure unknown:', smf.tracks);
+      }
+      
       // Create player and connect to output
       const player = smf.player();
       player.connect(midiout);
       console.log('MusicManager: Player connected to MIDI output');
+      
+      // Log player information
+      console.log('MusicManager: Player info:');
+      console.log('  - Player tracks:', player.tracks ? player.tracks.length : 'unknown');
+      console.log('  - Player duration:', player.duration ? player.duration + 'ms' : 'unknown');
       
       // Add event listener for when the track finishes
       player.onEnd = () => {
