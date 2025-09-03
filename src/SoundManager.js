@@ -87,6 +87,28 @@ export class SoundManager {
     oscillator.stop(this.audioContext.currentTime + 1.5);
   }
 
+  // Generate target selected sound effect
+  generateTargetSelectedSound() {
+    if (!this.audioContext) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    // Target selected sound: polite beep - flat frequency
+    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+    
+    // Volume envelope - short, polite beep
+    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(this.masterVolume * 0.2, this.audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.15);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.15);
+  }
+
   // Play sound methods
   playLaserSound() {
     this.generateLaserSound();
@@ -98,6 +120,10 @@ export class SoundManager {
 
   playExplosionSound() {
     this.generateExplosionSound();
+  }
+
+  playTargetSelectedSound() {
+    this.generateTargetSelectedSound();
   }
 
   // Volume control

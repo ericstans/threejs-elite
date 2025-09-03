@@ -73,6 +73,7 @@ export class UI {
       <div>C/X - Throttle</div>
       <div>SPACE - Shoot</div>
       <div>T - Target</div>
+      <div>Y - Nav Target</div>
     `;
 
     // Crosshair
@@ -87,6 +88,21 @@ export class UI {
     this.crosshair.style.borderRadius = '50%';
     this.crosshair.style.background = 'transparent';
     this.uiContainer.appendChild(this.crosshair);
+
+    // Auto-aim cone indicator (for testing)
+    this.autoAimCone = document.createElement('div');
+    this.autoAimCone.style.position = 'absolute';
+    this.autoAimCone.style.top = '50%';
+    this.autoAimCone.style.left = '50%';
+    this.autoAimCone.style.transform = 'translate(-50%, -50%)';
+    this.autoAimCone.style.width = '200px'; // Approximate size for 10 degrees
+    this.autoAimCone.style.height = '200px';
+    this.autoAimCone.style.border = '1px solid #ff0000';
+    this.autoAimCone.style.borderRadius = '50%';
+    this.autoAimCone.style.background = 'transparent';
+    this.autoAimCone.style.pointerEvents = 'none';
+    this.autoAimCone.style.opacity = '0.5';
+    this.uiContainer.appendChild(this.autoAimCone);
 
     // Target panel (initially hidden)
     this.targetPanel = document.createElement('div');
@@ -119,6 +135,37 @@ export class UI {
     this.targetHealth = document.createElement('div');
     this.targetPanel.appendChild(this.targetHealth);
 
+    // Nav target panel (initially hidden)
+    this.navTargetPanel = document.createElement('div');
+    this.navTargetPanel.style.position = 'absolute';
+    this.navTargetPanel.style.bottom = '140px'; // Above the TARGET panel
+    this.navTargetPanel.style.right = '20px';
+    this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
+    this.navTargetPanel.style.padding = '10px';
+    this.navTargetPanel.style.border = '1px solid #00ff00';
+    this.navTargetPanel.style.fontSize = '12px';
+    this.navTargetPanel.style.lineHeight = '1.4';
+    this.navTargetPanel.style.display = 'none'; // Initially hidden
+    this.uiContainer.appendChild(this.navTargetPanel);
+
+    this.navTargetTitle = document.createElement('div');
+    this.navTargetTitle.textContent = 'NAV TARGET';
+    this.navTargetTitle.style.marginBottom = '5px';
+    this.navTargetTitle.style.fontWeight = 'bold';
+    this.navTargetPanel.appendChild(this.navTargetTitle);
+
+    this.navTargetId = document.createElement('div');
+    this.navTargetPanel.appendChild(this.navTargetId);
+
+    this.navTargetName = document.createElement('div');
+    this.navTargetPanel.appendChild(this.navTargetName);
+
+    this.navTargetMass = document.createElement('div');
+    this.navTargetPanel.appendChild(this.navTargetMass);
+
+    this.navTargetDistance = document.createElement('div');
+    this.navTargetPanel.appendChild(this.navTargetDistance);
+
     // Target indicator (red rectangle around targeted asteroid)
     this.targetIndicator = document.createElement('div');
     this.targetIndicator.style.position = 'absolute';
@@ -128,6 +175,16 @@ export class UI {
     this.targetIndicator.style.display = 'none'; // Initially hidden
     this.targetIndicator.style.zIndex = '1000';
     this.uiContainer.appendChild(this.targetIndicator);
+
+    // Nav target indicator (yellow square)
+    this.navTargetIndicator = document.createElement('div');
+    this.navTargetIndicator.style.position = 'absolute';
+    this.navTargetIndicator.style.border = '2px solid #ffff00';
+    this.navTargetIndicator.style.background = 'transparent';
+    this.navTargetIndicator.style.pointerEvents = 'none';
+    this.navTargetIndicator.style.display = 'none'; // Initially hidden
+    this.navTargetIndicator.style.zIndex = '1000';
+    this.uiContainer.appendChild(this.navTargetIndicator);
   }
 
   updateThrottle(throttle) {
@@ -178,6 +235,50 @@ export class UI {
   clearTargetInfo() {
     this.targetPanel.style.display = 'none';
     this.targetIndicator.style.display = 'none';
+  }
+
+  updateNavTargetInfo(navTargetInfo, targetPosition, camera) {
+    this.navTargetPanel.style.display = 'block';
+    this.navTargetId.textContent = `ID: ${navTargetInfo.id}`;
+    this.navTargetName.textContent = `Name: ${navTargetInfo.name}`;
+    this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
+    this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
+    
+    // Update nav target indicator position
+    this.updateNavTargetIndicator(targetPosition, camera);
+  }
+
+  updateNavTargetIndicator(targetPosition, camera) {
+    if (!targetPosition || !camera) {
+      this.navTargetIndicator.style.display = 'none';
+      return;
+    }
+
+    // Convert 3D world position to 2D screen coordinates
+    const vector = targetPosition.clone();
+    vector.project(camera);
+
+    // Check if target is in front of camera
+    if (vector.z > 1) {
+      this.navTargetIndicator.style.display = 'none';
+      return;
+    }
+
+    // Convert normalized device coordinates to screen coordinates
+    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+
+    // Show nav target indicator (yellow square)
+    this.navTargetIndicator.style.display = 'block';
+    this.navTargetIndicator.style.left = `${x - 30}px`;
+    this.navTargetIndicator.style.top = `${y - 30}px`;
+    this.navTargetIndicator.style.width = '60px';
+    this.navTargetIndicator.style.height = '60px';
+  }
+
+  clearNavTargetInfo() {
+    this.navTargetPanel.style.display = 'none';
+    this.navTargetIndicator.style.display = 'none';
   }
 
   destroy() {

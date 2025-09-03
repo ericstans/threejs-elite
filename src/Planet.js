@@ -1,12 +1,18 @@
 import * as THREE from 'three';
 
 export class Planet {
-  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513) {
+  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = "Planet") {
     this.radius = radius;
     this.position = position;
     this.color = color;
+    this.name = name;
     this.rotationSpeed = 0.1;
     this.currentRotation = 0;
+    
+    // Navigation targeting
+    this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
+    this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
+    this.isNavTargeted = false;
     
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
@@ -28,5 +34,30 @@ export class Planet {
     // Rotate the planet
     this.currentRotation += this.rotationSpeed * deltaTime;
     this.mesh.rotation.y = this.currentRotation;
+  }
+
+  // Navigation targeting methods
+  getId() {
+    return this.id;
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  getMass() {
+    return this.mass;
+  }
+
+  setNavTargeted(targeted) {
+    this.isNavTargeted = targeted;
+  }
+
+  isNavTarget() {
+    return this.isNavTargeted;
+  }
+
+  getPosition() {
+    return this.position.clone();
   }
 }

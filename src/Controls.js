@@ -83,6 +83,15 @@ export class Controls {
       // Clear the key to prevent repeated targeting
       this.keys['KeyT'] = false;
     }
+    
+    // Navigation targeting
+    if (this.keys['KeyY']) {
+      if (this.onNavTarget) {
+        this.onNavTarget();
+      }
+      // Clear the key to prevent repeated targeting
+      this.keys['KeyY'] = false;
+    }
   }
 
   setOnShoot(callback) {
@@ -95,5 +104,9 @@ export class Controls {
 
   setOnTarget(callback) {
     this.onTarget = callback;
+  }
+
+  setOnNavTarget(callback) {
+    this.onNavTarget = callback;
   }
 }

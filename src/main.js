@@ -20,6 +20,8 @@ class Game {
     this.asteroids = [];
     this.explosions = [];
     this.currentTarget = null;
+    this.currentNavTarget = null;
+    this.planets = [];
     
     this.setupGame();
     this.setupControls();
@@ -33,9 +35,11 @@ class Game {
     this.spaceship.mesh.visible = false;
     
     // Create planets
-    const planet1 = new Planet(2, new THREE.Vector3(20, 0, -50), 0x8B4513); // Brown planet
-    const planet2 = new Planet(1.5, new THREE.Vector3(-30, 10, -80), 0x4169E1); // Blue planet
+    const planet1 = new Planet(2, new THREE.Vector3(20, 0, -50), 0x8B4513, "Aridus Prime"); // Brown planet
+    const planet2 = new Planet(1.5, new THREE.Vector3(-30, 10, -80), 0x4169E1, "Oceanus"); // Blue planet
     
+    this.planets.push(planet1);
+    this.planets.push(planet2);
     this.gameEngine.addEntity(planet1);
     this.gameEngine.addEntity(planet2);
     
@@ -81,6 +85,11 @@ class Game {
       this.targetNearestAsteroid();
     });
 
+    // Handle navigation targeting
+    this.controls.setOnNavTarget(() => {
+      this.targetNearestPlanet();
+    });
+
     // Handle window resize
     this.controls.setOnResize(() => {
       this.gameEngine.resize();
@@ -96,11 +105,27 @@ class Game {
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(spaceshipRot);
     
+    // Check if we have a target and apply auto-aim
+    let laserDirection = forward;
+    if (this.currentTarget && this.currentTarget.isAlive()) {
+      const targetPos = this.currentTarget.getPosition();
+      const targetDirection = targetPos.clone().sub(spaceshipPos).normalize();
+      
+      // Calculate angle between forward direction and target direction
+      const angle = forward.angleTo(targetDirection);
+      const maxAngle = Math.PI / 18; // 10 degrees in radians
+      
+      // If target is within 10 degrees, aim at it
+      if (angle <= maxAngle) {
+        laserDirection = targetDirection;
+      }
+    }
+    
     // Create laser slightly in front of spaceship
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
     
-    // Create new laser
-    const laser = new Laser(laserStartPos, forward);
+    // Create new laser with calculated direction
+    const laser = new Laser(laserStartPos, laserDirection);
     this.lasers.push(laser);
     this.gameEngine.addEntity(laser);
     
@@ -126,6 +151,9 @@ class Game {
     
     // Update target information
     this.updateTargetInfo();
+    
+    // Update nav target information
+    this.updateNavTargetInfo();
     
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
@@ -228,25 +256,39 @@ class Game {
       this.currentTarget = null;
     }
 
-    // Find nearest asteroid
-    const spaceshipPos = this.spaceship.getPosition();
-    let nearestAsteroid = null;
-    let nearestDistance = Infinity;
+    // Find asteroid closest to crosshair (center of screen)
+    const camera = this.gameEngine.camera;
+    const crosshairCenter = new THREE.Vector2(0, 0); // Center of screen in NDC
+    let closestAsteroid = null;
+    let closestScreenDistance = Infinity;
 
     for (const asteroid of this.asteroids) {
       if (!asteroid.isAlive()) continue;
       
-      const distance = spaceshipPos.distanceTo(asteroid.getPosition());
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestAsteroid = asteroid;
+      // Convert asteroid 3D position to 2D screen coordinates
+      const asteroidPos = asteroid.getPosition();
+      const screenPos = asteroidPos.clone();
+      screenPos.project(camera);
+      
+      // Check if asteroid is in front of camera
+      if (screenPos.z > 1) continue;
+      
+      // Calculate distance from crosshair center
+      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
+      
+      if (screenDistance < closestScreenDistance) {
+        closestScreenDistance = screenDistance;
+        closestAsteroid = asteroid;
       }
     }
 
     // Set new target
-    if (nearestAsteroid) {
-      this.currentTarget = nearestAsteroid;
+    if (closestAsteroid) {
+      this.currentTarget = closestAsteroid;
       this.currentTarget.setTargeted(true);
+      
+      // Play target selected sound
+      this.soundManager.playTargetSelectedSound();
     }
   }
 
@@ -271,6 +313,65 @@ class Game {
         this.currentTarget = null;
       }
       this.ui.clearTargetInfo();
+    }
+  }
+
+  targetNearestPlanet() {
+    // Clear current nav target
+    if (this.currentNavTarget) {
+      this.currentNavTarget.setNavTargeted(false);
+      this.currentNavTarget = null;
+    }
+
+    // Find planet closest to crosshair (center of screen)
+    const camera = this.gameEngine.camera;
+    const crosshairCenter = new THREE.Vector2(0, 0); // Center of screen in NDC
+    let closestPlanet = null;
+    let closestScreenDistance = Infinity;
+
+    for (const planet of this.planets) {
+      // Convert planet 3D position to 2D screen coordinates
+      const planetPos = planet.getPosition();
+      const screenPos = planetPos.clone();
+      screenPos.project(camera);
+      
+      // Check if planet is in front of camera
+      if (screenPos.z > 1) continue;
+      
+      // Calculate distance from crosshair center
+      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
+      
+      if (screenDistance < closestScreenDistance) {
+        closestScreenDistance = screenDistance;
+        closestPlanet = planet;
+      }
+    }
+
+    // Set new nav target
+    if (closestPlanet) {
+      this.currentNavTarget = closestPlanet;
+      this.currentNavTarget.setNavTargeted(true);
+      
+      // Play target selected sound
+      this.soundManager.playTargetSelectedSound();
+    }
+  }
+
+  updateNavTargetInfo() {
+    if (this.currentNavTarget) {
+      // Update nav target information in UI
+      const spaceshipPos = this.spaceship.getPosition();
+      const targetPos = this.currentNavTarget.getPosition();
+      const distance = spaceshipPos.distanceTo(targetPos);
+      
+      this.ui.updateNavTargetInfo({
+        id: this.currentNavTarget.getId(),
+        name: this.currentNavTarget.getName(),
+        mass: this.currentNavTarget.getMass(),
+        distance: distance
+      }, targetPos, this.gameEngine.camera);
+    } else {
+      this.ui.clearNavTargetInfo();
     }
   }
 
