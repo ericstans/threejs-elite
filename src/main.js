@@ -166,6 +166,9 @@ class Game {
     // Update controls
     this.controls.update(deltaTime);
     
+    // Check for nav target proximity and auto-slow
+    this.checkNavTargetProximity();
+    
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
     
@@ -396,6 +399,28 @@ class Game {
       
       // Play target selected sound
       this.soundManager.playTargetSelectedSound();
+    }
+  }
+
+  checkNavTargetProximity() {
+    if (!this.currentNavTarget) return;
+    
+    const spaceshipPos = this.spaceship.getPosition();
+    const targetPos = this.currentNavTarget.getPosition();
+    const distance = spaceshipPos.distanceTo(targetPos);
+    
+    // Check if nav target is within 100 units
+    if (distance <= 100) {
+      // Check if nav target is in the crosshair (center of screen)
+      const camera = this.gameEngine.camera;
+      const screenPos = targetPos.clone();
+      screenPos.project(camera);
+      
+      // Check if target is in front of camera and near center of screen
+      if (screenPos.z <= 1 && Math.abs(screenPos.x) < 0.1 && Math.abs(screenPos.y) < 0.1) {
+        // Nav target is in crosshair and within 100 units - slow to stop
+        this.spaceship.setThrottle(0);
+      }
     }
   }
 

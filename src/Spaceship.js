@@ -10,9 +10,9 @@ export class Spaceship {
     this.angularVelocity = new THREE.Vector3(0, 0, 0);
     
     // Movement properties
-    this.maxSpeed = 50;
-    this.acceleration = 20;
-    this.rotationSpeed = 6; // Increased by 200% (2 -> 6)
+    this.maxSpeed = 10;
+    this.acceleration = 2;
+    this.rotationSpeed = 1;
     this.throttle = 0;
     this.maxThrottle = 1;
     
