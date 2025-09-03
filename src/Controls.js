@@ -1,6 +1,7 @@
 export class Controls {
-  constructor(spaceship) {
+  constructor(spaceship, game = null) {
     this.spaceship = spaceship;
+    this.game = game;
     this.keys = {};
     this.setupEventListeners();
     
@@ -58,6 +59,11 @@ export class Controls {
     if (this.keys['KeyX']) {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle + 1.0 * deltaTime);
+      
+      // Start music on first X press
+      if (this.game && !this.game.musicStarted) {
+        this.startMusic();
+      }
     }
     if (this.keys['KeyZ']) {
       const currentThrottle = this.spaceship.getThrottle();
@@ -150,5 +156,23 @@ export class Controls {
 
   setOnCommsOption(callback) {
     this.onCommsOption = callback;
+  }
+
+  async startMusic() {
+    if (this.game && !this.game.musicStarted) {
+      this.game.musicStarted = true;
+      
+      try {
+        // Initialize music manager
+        await this.game.musicManager.init();
+        
+        // Create and start combat track
+        this.game.musicManager.createCombatTrack();
+        this.game.musicManager.playTrack('combat');
+        this.game.musicManager.fadeIn(3000); // 3 second fade in
+      } catch (error) {
+        console.error('Failed to start music system:', error);
+      }
+    }
   }
 }

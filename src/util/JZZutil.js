@@ -1,34 +1,61 @@
 let midiOut = null;
+let bus = null;
+let audioCtx = null;
+let masterGain = null;	
+let compressor = null;
+let midiReady = false;
 
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize MIDI when JZZ is available
+function initMIDI() {
 	if (window.JZZ && window.JZZ.synth && !midiOut) {
-		midiOut = JZZ().openMidiOut().or(() => { midiReady = false; });
-		if (midiOut) {
-			midiReady = true;
+		try {
 			// Use the built-in software synth
 			JZZ.synth.Tiny.register('WebAudioTinySynth');
 			midiOut = JZZ().openMidiOut('WebAudioTinySynth');
+			if (midiOut) {
+				midiReady = true;
+				// Test with a program change to ensure it's working
+				midiOut.program(0, 0); // Set to Acoustic Grand Piano
+			} else {
+				console.error('Failed to open MIDI output');
+				midiReady = false;
+			}
+		} catch (error) {
+			console.error('Failed to initialize MIDI:', error);
+			midiReady = false;
 		}
+	} else if (!window.JZZ) {
+		console.warn('JZZ not available');
+	} else if (!window.JZZ.synth) {
+		console.warn('JZZ.synth not available');
 	}
-});
+}
+
+// Try to initialize MIDI immediately if JZZ is available
+if (window.JZZ && window.JZZ.synth) {
+	initMIDI();
+} else {
+	// Wait for JZZ to load
+	window.addEventListener('DOMContentLoaded', initMIDI);
+}
 
 function midiToFreq(midi) {
 	return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
-function playNote(freq, duration = 0.18, colors = [NOTE_COLORS[0]]) {
+function playNote(freq, duration = 0.18) {
 	if (!audioCtx) {
 		audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 	}
 	if (!bus) {
 		bus = audioCtx.createGain();
-		sequencerCompressor = audioCtx.createDynamicsCompressor();
+		compressor = audioCtx.createDynamicsCompressor();
 		masterGain = audioCtx.createGain();
-		sequencerCompressor.threshold.value = -12;
-		sequencerCompressor.ratio.value = 12;
-		sequencerCompressor.attack.value = 0.003;
-		sequencerCompressor.release.value = 0.25;
-		sequencerBus.connect(sequencerCompressor).connect(masterGain).connect(audioCtx.destination);
+		compressor.threshold.value = -12;
+		compressor.ratio.value = 12;
+		compressor.attack.value = 0.003;
+		compressor.release.value = 0.25;
+		bus.connect(compressor).connect(masterGain).connect(audioCtx.destination);
 		// Set initial master volume from slider if present
 		const volSlider = document.getElementById('master-volume');
 		if (volSlider) masterGain.gain.value = parseFloat(volSlider.value);
@@ -40,3 +67,65 @@ function playNote(freq, duration = 0.18, colors = [NOTE_COLORS[0]]) {
 	note.start();
 	note.stop(audioCtx.currentTime + duration);
 }
+
+// Set MIDI instrument (program change)
+function setMIDIInstrument(instrumentNumber) {
+	if (midiReady && midiOut) {
+		try {
+			midiOut.program(0, instrumentNumber - 1); // MIDI program change (0-based)
+			return true;
+		} catch (error) {
+			console.error('Failed to set MIDI instrument:', error);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Play MIDI note using JZZ
+function playMIDINote(midiNote, duration = 0.5, velocity = 80, channel = 0) {
+	if (midiReady && midiOut) {
+		// Note on
+		midiOut.noteOn(channel, midiNote, velocity);
+		// Note off after duration
+		setTimeout(() => {
+			if (midiOut) {
+				midiOut.noteOff(channel, midiNote);
+			}
+		}, duration * 1000);
+	} else {
+		// Fallback to Web Audio API
+		console.warn('MIDI not ready, using Web Audio fallback');
+		const freq = midiToFreq(midiNote);
+		playNote(freq, duration);
+	}
+}
+
+// Set master volume
+function setMasterVolume(volume) {
+	if (masterGain) {
+		masterGain.gain.value = Math.max(0, Math.min(1, volume));
+	}
+}
+
+// Get master volume
+function getMasterVolume() {
+	return masterGain ? masterGain.gain.value : 0;
+}
+
+// Check if MIDI is ready
+function isMIDIReady() {
+	return midiReady;
+}
+
+// Export functions for use in other modules
+export {
+	initMIDI,
+	midiToFreq,
+	playNote,
+	playMIDINote,
+	setMIDIInstrument,
+	setMasterVolume,
+	getMasterVolume,
+	isMIDIReady
+};

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import JZZ from 'jzz';
+import { Tiny } from 'jzz-synth-tiny';
 import { GameEngine } from './GameEngine.js';
 import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
@@ -8,15 +10,26 @@ import { Laser } from './Laser.js';
 import { Asteroid } from './Asteroid.js';
 import { Explosion } from './Explosion.js';
 import { SoundManager } from './SoundManager.js';
+import { MusicManager } from './MusicManager.js';
 import { ConversationSystem } from './ConversationSystem.js';
+
+// Make JZZ available globally
+window.JZZ = JZZ;
+
+// Initialize the synth
+if (JZZ && Tiny) {
+  Tiny(JZZ);
+  JZZ.synth.Tiny.register('WebAudioTinySynth');
+}
 
 class Game {
   constructor() {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
-    this.controls = new Controls(this.spaceship);
+    this.controls = new Controls(this.spaceship, this);
     this.ui = new UI();
     this.soundManager = new SoundManager();
+    this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
     this.lasers = [];
     this.asteroids = [];
@@ -24,6 +37,7 @@ class Game {
     this.currentTarget = null;
     this.currentNavTarget = null;
     this.planets = [];
+    this.musicStarted = false;
     
     // Global flags
     this.globalFlags = {
