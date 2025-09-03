@@ -7,6 +7,14 @@ import {
   isMIDIReady 
 } from './util/JZZutil.js';
 
+// Import MIDI files as bundled resources
+import ambient1 from './assets/midi/ambient/ambient1.mid';
+import ambient2 from './assets/midi/ambient/ambient2.mid';
+import ambient3 from './assets/midi/ambient/ambient3.mid';
+
+// Array of available ambient MIDI files
+const ambientMidiFiles = [ambient1, ambient2, ambient3];
+
 export class MusicManager {
   constructor() {
     // Initialize music manager
@@ -33,6 +41,9 @@ export class MusicManager {
       
       // Set initial volume
       setMasterVolume(this.volume);
+      
+      // Create ambient MIDI track
+      this.createAmbientTrackMidi();
       
       this.isInitialized = true;
     } catch (error) {
@@ -169,16 +180,7 @@ export class MusicManager {
     }, duration / 2);
   }
 
-  createAmbientTrackMidi() {
-    const midiFiles = fs.readdirSync('./midi/ambient/');
-    const randomMidiFile = midiFiles[Math.floor(Math.random() * midiFiles.length)];
-    const midiFile = fs.readFileSync(`./midi/ambient/${randomMidiFile}`, 'binary');
-    const midiData = new Uint8Array(midiFile);
-    const midiSequence = new Sequence(midiData);
-    sequence.type="midi";
-    sequence.name="ambient-midi";
-    this.loadTrack('ambient', midiSequence);
-  }
+
 
   // Create ambient background music
   createAmbientTrack() {
@@ -200,12 +202,17 @@ export class MusicManager {
 
   createAmbientTrackMidi(){
     // use the midi files in the /midi/ambient/ directory. Play one at a time at random. Midi files will specify their own instruments and may have more than one part.
-    const midiFiles = fs.readdirSync('./midi/ambient/');
-    const randomMidiFile = midiFiles[Math.floor(Math.random() * midiFiles.length)];
-    const midiFile = fs.readFileSync(`./midi/ambient/${randomMidiFile}`, 'binary');
-    const midiData = new Uint8Array(midiFile);
-    const midiSequence = new Sequence(midiData);
-    this.loadTrack('ambient', midiSequence);
+    // Select a random MIDI file from the bundled resources
+    const randomMidiFile = ambientMidiFiles[Math.floor(Math.random() * ambientMidiFiles.length)];
+    
+    // Create MIDI track object
+    const midiTrack = {
+      type: 'midi',
+      name: 'ambient',
+      data: randomMidiFile
+    };
+    
+    this.loadTrack('ambient', midiTrack);
   }
 
   // Create combat music

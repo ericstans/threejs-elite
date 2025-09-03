@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   base: './', // Use relative paths for assets
+  assetsInclude: ['**/*.mid'], // Include MIDI files as assets
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
