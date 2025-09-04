@@ -9,11 +9,9 @@ export class NavTargetUI {
     // Nav target panel (initially hidden)
     this.navTargetPanel = document.createElement('div');
     this.navTargetPanel.style.position = 'absolute';
-    this.navTargetPanel.style.bottom = '19%';
-    this.navTargetPanel.style.left = '18%';
-    this.navTargetPanel.style.height = '17%';
-    this.navTargetPanel.style.width = '13.5%';
-    //this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
+    this.navTargetPanel.style.height = '20%';
+    this.navTargetPanel.style.width = '10%';
+    this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
     this.navTargetPanel.style.padding = '15px';
     //this.navTargetPanel.style.border = '1px solid #00ff00';
     this.navTargetPanel.style.fontSize = '16px';
