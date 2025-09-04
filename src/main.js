@@ -72,6 +72,61 @@ class Game {
     this.setupGame();
     this.setupControls();
     this.start();
+
+    // Third-person orbit parameters
+    this.thirdPersonOrbitYaw = 0; // radians
+    this.thirdPersonOrbitPitch = 0; // radians
+    this.thirdPersonCameraDistance = 55; // matches default Z offset length (will recalc on toggle)
+    this.thirdPersonOrbitActive = false; // becomes true after any drag
+    this._orbitDragging = false;
+    this._lastMouseX = 0;
+    this._lastMouseY = 0;
+    this._initOrbitEventHandlers();
+  // Orbit idle auto-exit
+  this.thirdPersonOrbitIdleSeconds = 0;
+  this.thirdPersonOrbitIdleThreshold = 3; // seconds
+  }
+
+  _initOrbitEventHandlers() {
+    // Prevent context menu so right-drag feels natural
+    document.addEventListener('contextmenu', (e) => {
+      if (this.spaceship.thirdPersonMode) e.preventDefault();
+    });
+    document.addEventListener('mousedown', (e) => {
+      if (e.button === 2 && this.spaceship.thirdPersonMode) {
+        this._orbitDragging = true;
+        this._lastMouseX = e.clientX;
+        this._lastMouseY = e.clientY;
+  this.thirdPersonOrbitIdleSeconds = 0;
+      }
+    });
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 2) {
+        this._orbitDragging = false;
+      }
+    });
+    document.addEventListener('mouseleave', () => { this._orbitDragging = false; });
+    document.addEventListener('mousemove', (e) => {
+      if (!this._orbitDragging) return;
+      const dx = e.clientX - this._lastMouseX;
+      const dy = e.clientY - this._lastMouseY;
+      this._lastMouseX = e.clientX;
+      this._lastMouseY = e.clientY;
+      const ROT_SPEED = 0.005; // radians per px
+      this.thirdPersonOrbitYaw = (this.thirdPersonOrbitYaw + dx * ROT_SPEED) % (Math.PI * 2);
+      // Clamp pitch to avoid flip
+      this.thirdPersonOrbitPitch = Math.max(-1.2, Math.min(1.2, this.thirdPersonOrbitPitch + dy * ROT_SPEED));
+      this.thirdPersonOrbitActive = true;
+  this.thirdPersonOrbitIdleSeconds = 0;
+    });
+    // Scroll to zoom distance (optional)
+    document.addEventListener('wheel', (e) => {
+      if (!this.spaceship.thirdPersonMode) return;
+      const delta = e.deltaY * 0.05;
+      this.thirdPersonCameraDistance = Math.max(10, Math.min(200, this.thirdPersonCameraDistance + delta));
+      if (this.thirdPersonOrbitActive) e.preventDefault();
+  if (this.thirdPersonOrbitActive) this.thirdPersonOrbitIdleSeconds = 0;
+    }, { passive: false });
   }
 
   initThirdPerson() {
@@ -101,14 +156,25 @@ class Game {
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 40; // match NPC ship visual scale
+        const targetSize = 5; 
         const scale = targetSize / maxDim;
-        object.scale.setScalar(scale);
+  object.scale.setScalar(scale);
+        // Store scaled size for automatic camera calibration
+        const scaledBox = new THREE.Box3().setFromObject(object);
+        const scaledSize = new THREE.Vector3();
+        scaledBox.getSize(scaledSize);
+        this.spaceship.thirdPersonModelSize = scaledSize.clone();
+        // Default: no manual visual offset; keep logical position at model center
+        this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0,0,0);
         // Add group to scene and to spaceship
         this.spaceship.enableThirdPerson(object);
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
         // Hide cockpit-only mesh when third person active
         this.spaceship.mesh.visible = false;
+        // If already in third-person when model finishes loading, calibrate camera now
+        if (this.spaceship.thirdPersonMode) {
+          this.calibrateThirdPersonCamera();
+        }
       },
       undefined,
       (err) => {
@@ -117,9 +183,37 @@ class Game {
     );
   }
 
+  calibrateThirdPersonCamera() {
+    // Derive camera offset dynamically from model size so we avoid hardcoded magic numbers
+    const size = this.spaceship.thirdPersonModelSize || new THREE.Vector3(5,5,10);
+    const largest = Math.max(size.x, size.y, size.z);
+    // Distance: a few times largest dimension so full ship is visible
+    const distance = largest * 3.0; // tweak factor as desired
+    const height = size.y * 0.7; // slightly above center
+    // Camera sits behind ship along +Z (ship forward is -Z)
+    this.thirdPersonCameraOffset = new THREE.Vector3(0, height, distance);
+    this.thirdPersonCameraDistance = this.thirdPersonCameraOffset.length();
+    // Reset orbit state to follow mode initial
+    this.thirdPersonOrbitYaw = 0; // looking forward
+    this.thirdPersonOrbitPitch = Math.asin(height / this.thirdPersonCameraDistance);
+    this.thirdPersonOrbitActive = false;
+    // Auto raise model so it isn't visually low: shift model up by a fraction of its height.
+    // This keeps logic origin (ship position) roughly at an anchor below geometric center.
+    if (this.spaceship.thirdPersonVisualOffset) {
+      const verticalOffsetRatio = 25; // raise by 95% of model height; adjust if still low
+      this.spaceship.thirdPersonVisualOffset.y = size.y * verticalOffsetRatio;
+    }
+  }
+
   toggleThirdPerson() {
+    const switchingToThird = !this.spaceship.thirdPersonMode;
+    // Capture camera position (first-person viewpoint) before switching to third person
+    if (switchingToThird) {
+      if (!this.lastFirstPersonCameraPos) this.lastFirstPersonCameraPos = new THREE.Vector3();
+      this.lastFirstPersonCameraPos.copy(this.gameEngine.camera.position);
+    }
     this.spaceship.toggleThirdPerson();
-    if (this.spaceship.thirdPersonMode) {
+    if (switchingToThird) {
       // Activating third person: ensure group in scene & hide cockpit mesh
       if (!this.spaceship.thirdPersonLoaded) {
         // model still loading or not yet loaded
@@ -128,12 +222,33 @@ class Game {
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
       }
       this.spaceship.mesh.visible = false;
-      // Move camera slightly back and up relative to ship orientation
-      this.thirdPersonCameraOffset = new THREE.Vector3(0, 10, 30); // behind ship (positive z because ship faces -z)
+  // Calibrate camera offset automatically from model size (or fallback defaults)
+  this.calibrateThirdPersonCamera();
+  // Switch UI to third-person layout
+  this.ui.applyThirdPersonLayout && this.ui.applyThirdPersonLayout();
+      // Ensure 3D model visible & centered exactly where first-person camera was
+      this.spaceship.thirdPersonGroup.visible = true;
+      const spawnPos = (this.lastFirstPersonCameraPos) ? this.lastFirstPersonCameraPos : this.spaceship.getPosition();
+      this.spaceship.thirdPersonGroup.position.copy(spawnPos);
+      // Also keep internal ship logical position at that point to avoid jump
+      this.spaceship.position.copy(spawnPos);
+      const shipQuat = this.spaceship.quaternion.clone();
+      this.spaceship.thirdPersonGroup.quaternion.copy(shipQuat);
+  // Initialize orbit distance & angles from current offset vector
+  this.thirdPersonCameraDistance = this.thirdPersonCameraOffset.length();
+  this.thirdPersonOrbitYaw = 0; // forward
+  // derive pitch from existing offset
+  const off = this.thirdPersonCameraOffset;
+  this.thirdPersonOrbitPitch = Math.asin(off.y / off.length());
+  this.thirdPersonOrbitActive = false;
     } else {
       // Return to cockpit
       this.spaceship.mesh.visible = false; // still hidden because cockpit view uses camera at ship pos
       // camera will be reset each frame in update
+  this.ui.applyFirstPersonLayout && this.ui.applyFirstPersonLayout();
+  // Hide third-person visual representation
+  this.spaceship.thirdPersonGroup.visible = false;
+  this.thirdPersonOrbitActive = false;
     }
   }
 
@@ -177,10 +292,72 @@ class Game {
       }
     };
     addNPC();
+  // Create a dense stardust field localized around the derelict vessel
+  this.createDerelictStardustField(npcShipPos);
     
   // Position camera at spaceship center (cockpit view)
   this.gameEngine.camera.position.set(0, 0, 0);
   this.gameEngine.camera.rotation.set(0, 0, 0);
+  }
+
+  createDerelictStardustField(center) {
+    // Parameters for local stardust
+    const particleCount = 50; // denser than general background
+    const radius = 250; // spherical radius around derelict
+    const innerVoid = 25; // keep a small hollow so ship remains readable
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const tmpColor = new THREE.Color();
+    let i = 0;
+    for (let p = 0; p < particleCount; p++) {
+      // Rejection sample to enforce hollow inner sphere
+      let x, y, z, d;
+      do {
+        x = (Math.random() * 2 - 1);
+        y = (Math.random() * 2 - 1);
+        z = (Math.random() * 2 - 1);
+        d = Math.sqrt(x*x + y*y + z*z);
+      } while (d === 0 || d > 1 || d * radius < innerVoid);
+      const falloff = d; // 0..1
+      const rScaled = d * radius;
+      // Slight clustering bias toward mid-shell: distort radius
+      const bias = Math.pow(falloff, 0.6);
+      const finalR = bias * radius;
+      const px = center.x + x / d * finalR;
+      const py = center.y + y / d * finalR;
+      const pz = center.z + z / d * finalR;
+      positions[i] = px; positions[i+1] = py; positions[i+2] = pz;
+      // Color: faint bluish-white variance
+      const hueJitter = 0.58 + (Math.random()-0.5)*0.04; // around blue/cyan
+      const sat = 0.15 + Math.random()*0.2;
+      const val = 0.7 + Math.random()*0.3;
+      tmpColor.setHSL(hueJitter, sat, val);
+      colors[i] = tmpColor.r; colors[i+1] = tmpColor.g; colors[i+2] = tmpColor.b;
+      i += 3;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({
+      size: 1.2,
+      sizeAttenuation: true,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const points = new THREE.Points(geometry, material);
+    points.name = 'DerelictStardustField';
+    // Mild slow rotation for subtle motion
+    points.userData.update = (dt) => {
+      points.rotation.y += dt * 0.0005; // gentle spin
+    };
+    this.derelictStardust = points;
+    this.gameEngine.scene.add(points);
+    // Hook into game loop via simple array or direct call in update
+    if (!this._extraUpdatables) this._extraUpdatables = [];
+    this._extraUpdatables.push(points);
   }
 
   createAsteroidField() {
@@ -303,6 +480,21 @@ class Game {
     
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
+    // Update any extra updatables (like rotating stardust field)
+    if (this._extraUpdatables) {
+      for (const obj of this._extraUpdatables) {
+        if (obj.userData && typeof obj.userData.update === 'function') {
+          obj.userData.update(deltaTime);
+        }
+      }
+    }
+    // Handle orbit idle timeout
+    if (this.spaceship.thirdPersonMode && this.thirdPersonOrbitActive) {
+      this.thirdPersonOrbitIdleSeconds += deltaTime;
+      if (this.thirdPersonOrbitIdleSeconds >= this.thirdPersonOrbitIdleThreshold) {
+        this.thirdPersonOrbitActive = false; // auto-exit back to follow
+      }
+    }
 
     // Update station orbit
     if (this.oceanusStation) {
@@ -381,19 +573,53 @@ class Game {
     const spaceshipPos = this.spaceship.getPosition();
     const spaceshipRot = this.spaceship.getRotation();
     if (this.spaceship.thirdPersonMode && this.thirdPersonCameraOffset) {
-      // Compute world offset from ship quaternion
-      const offsetWorld = this.thirdPersonCameraOffset.clone().applyEuler(spaceshipRot);
-      const camPos = spaceshipPos.clone().add(offsetWorld);
-      this.gameEngine.camera.position.copy(camPos);
-      // Look at ship position
-      this.gameEngine.camera.lookAt(spaceshipPos);
+      if (this.thirdPersonOrbitActive) {
+        // Orbit mode: compute offset in world space using spherical angles independent of ship roll
+        const r = this.thirdPersonCameraDistance;
+        const cp = Math.cos(this.thirdPersonOrbitPitch);
+        const sp = Math.sin(this.thirdPersonOrbitPitch);
+        const cy = Math.cos(this.thirdPersonOrbitYaw);
+        const sy = Math.sin(this.thirdPersonOrbitYaw);
+        const offset = new THREE.Vector3(r * sy * cp, r * sp, r * cy * cp); // z forward
+        const camPos = spaceshipPos.clone().add(offset);
+        this.gameEngine.camera.position.copy(camPos);
+        this.gameEngine.camera.lookAt(spaceshipPos);
+      } else {
+        // Follow mode (previous behavior with full ship rotation)
+        const shipQuat = this.spaceship.quaternion.clone();
+        const offsetWorld = this.thirdPersonCameraOffset.clone().applyQuaternion(shipQuat);
+        const camPos = spaceshipPos.clone().add(offsetWorld);
+        this.gameEngine.camera.position.copy(camPos);
+        this.gameEngine.camera.quaternion.copy(shipQuat);
+      }
     } else {
       this.gameEngine.camera.position.copy(spaceshipPos);
       this.gameEngine.camera.rotation.copy(spaceshipRot);
     }
 
-  // Update continuous engine rumble based on throttle & docking
-  this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), this.spaceship.flags.isDocked);
+  // Update continuous engine rumble based on throttle & docking (station or planet)
+  // Stop engine sound completely when docked, restart when undocked
+  let isActuallyDocked = false;
+  if (this.spaceship.flags.isDocked) {
+    if (this.spaceship.dockingTarget && this.spaceship.dockingTarget.getPosition && !this.spaceship.takeoffActive) {
+      isActuallyDocked = true;
+    }
+    if (this.spaceship.flags.stationDocked) {
+      isActuallyDocked = true;
+    }
+  }
+  if (!this._lastEngineDocked) this._lastEngineDocked = false;
+  if (isActuallyDocked && !this._lastEngineDocked) {
+    this.soundManager.stopEngineRumble();
+  }
+  if (!isActuallyDocked && this._lastEngineDocked) {
+    // Resume engine rumble on undock
+    this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
+  }
+  this._lastEngineDocked = isActuallyDocked;
+  if (!isActuallyDocked) {
+    this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
+  }
   // Check landing vector acquisition if applicable
   this.checkLandingVectorLock();
   }

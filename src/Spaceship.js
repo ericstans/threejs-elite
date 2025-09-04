@@ -7,6 +7,7 @@ export class Spaceship {
   this.thirdPersonGroup = new THREE.Group();
   this.thirdPersonLoaded = false;
   this.thirdPersonMode = false;
+  this.thirdPersonVisualOffset = null; // local-space offset to align model with logical ship position
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
@@ -106,6 +107,20 @@ export class Spaceship {
 
   toggleThirdPerson() {
     this.thirdPersonMode = !this.thirdPersonMode;
+  }
+
+  syncThirdPerson() {
+    if (this.thirdPersonMode) {
+      // Base position is logical ship position (cockpit viewpoint)
+      let basePos = this.position.clone();
+      if (this.thirdPersonVisualOffset) {
+        // Rotate offset by ship orientation so it stays attached properly
+        const rotated = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
+        basePos.add(rotated);
+      }
+      this.thirdPersonGroup.position.copy(basePos);
+      this.thirdPersonGroup.quaternion.copy(this.quaternion);
+    }
   }
 
   lockToStation(station) {
@@ -213,6 +228,7 @@ export class Spaceship {
       this.mesh.position.copy(this.position);
       this.mesh.quaternion.copy(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
+  this.syncThirdPerson();
       if (tTurn >= 1) {
         // Complete docking now if not already
         if (!this.flags.isDocked) {
@@ -268,6 +284,7 @@ export class Spaceship {
       }
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
+  this.syncThirdPerson();
       if (t >= 1) {
         // Detach if still parented
         if (this.takeoffPlanet && this.mesh.parent === this.takeoffPlanet.mesh) {
@@ -438,10 +455,7 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
-       if (this.thirdPersonMode) {
-         this.thirdPersonGroup.position.copy(this.position);
-         this.thirdPersonGroup.quaternion.copy(this.quaternion);
-       }
+  this.syncThirdPerson();
       return; // Skip normal movement while locked
     }
 
@@ -456,10 +470,11 @@ export class Spaceship {
       this.mesh.position.copy(this.position);
       this.mesh.quaternion.copy(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
+  this.syncThirdPerson();
       return;
     }
 
-    // If docked to a planet, update position to follow planet rotation
+    // If docked to a planet, update position to follow planet rotation and zero velocity
     if (this.flags.isDocked && this.dockingTarget && !this.takeoffActive) {
       // Update the ship's world position to follow the planet's rotation
       const planetPos = this.dockingTarget.getPosition();
@@ -476,6 +491,10 @@ export class Spaceship {
       this.mesh.quaternion.copy(this.dockingRotation);
       this.mesh.rotation.setFromQuaternion(this.dockingRotation);
 
+      // Zero velocity and angular velocity so engine sound logic works
+      this.velocity.set(0, 0, 0);
+      this.angularVelocity.set(0, 0, 0);
+
       return;
     }
 
@@ -490,10 +509,7 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
-       if (this.thirdPersonMode) {
-         this.thirdPersonGroup.position.copy(this.position);
-         this.thirdPersonGroup.quaternion.copy(this.quaternion);
-       }
+  this.syncThirdPerson();
       return;
     }
 
@@ -541,6 +557,7 @@ export class Spaceship {
     // Update mesh
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
+  this.syncThirdPerson();
 
     // --- Clamp: prevent unintentional backward drift when throttle >= 0 ---
     if (this.throttle >= 0) {

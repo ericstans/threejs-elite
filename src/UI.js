@@ -8,6 +8,7 @@ import cockpitImageSrc from './assets/png/cockpit.png';
 export class UI {
   constructor() {
     this.createUI();
+  this.firstPersonMode = true; // start in cockpit view
   }
   
   createUI() {
@@ -202,6 +203,97 @@ export class UI {
     this.commsClose.style.color = '#666';
     this.commsClose.textContent = 'Press ESC to close';
     this.commsContent.appendChild(this.commsClose);
+  }
+
+  // Switch to third-person (legacy) layout: hide cockpit bitmap, move panels back to full-screen container, restore original styling.
+  applyThirdPersonLayout() {
+    if (!this.firstPersonMode) return; // already third-person
+    this.firstPersonMode = false;
+    // Hide cockpit image
+    if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'none';
+    // Reparent target & nav panels back to uiContainer
+    if (this.targetUI?.targetPanel) {
+      this.uiContainer.appendChild(this.targetUI.targetPanel);
+      const p = this.targetUI.targetPanel.style;
+      p.position = 'absolute';
+      p.left = '80%';
+      p.top = '15%';
+      p.transform = 'translate(-50%, -50%)';
+      p.width = '10%';
+      p.height = '20%';
+      p.fontSize = '16px';
+    }
+    if (this.navTargetUI?.navTargetPanel) {
+      this.uiContainer.appendChild(this.navTargetUI.navTargetPanel);
+      const p2 = this.navTargetUI.navTargetPanel.style;
+      p2.position = 'absolute';
+      p2.left = '20%';
+      p2.top = '15%';
+      p2.transform = 'translate(-50%, -50%)';
+      p2.width = '10%';
+      p2.height = '20%';
+      p2.fontSize = '16px';
+    }
+    // Docking status: revert to centered floating panel (legacy style)
+    if (this.dockingStatus) {
+      this.dockingStatus.style.position = 'absolute';
+      this.dockingStatus.style.left = '50%';
+      this.dockingStatus.style.bottom = '';
+      this.dockingStatus.style.top = '75%';
+      this.dockingStatus.style.width = 'auto';
+      this.dockingStatus.style.padding = '20px';
+      this.dockingStatus.style.border = '2px solid #ffff00';
+      this.dockingStatus.style.fontSize = '24px';
+      this.dockingStatus.style.background = 'rgba(0,0,0,0.8)';
+      this.dockingStatus.style.transform = 'translate(-50%, -50%)';
+      if (this.dockingStatus.parentElement !== this.uiContainer) {
+        this.uiContainer.appendChild(this.dockingStatus);
+      }
+    }
+  }
+
+  // Switch back to first-person cockpit overlay layout
+  applyFirstPersonLayout() {
+    if (this.firstPersonMode) return; // already first-person
+    this.firstPersonMode = true;
+    if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'block';
+    // Reparent panels into cockpit wrapper with overlay positioning
+    if (this.targetUI?.targetPanel) {
+      this.cockpitWrapper.appendChild(this.targetUI.targetPanel);
+      const p = this.targetUI.targetPanel.style;
+      p.position = 'absolute';
+      p.left = '70.5%';
+      p.top = '61%';
+      p.transform = 'translate(-50%, -50%)';
+      p.width = '';
+      p.height = '';
+      p.fontSize = '12px';
+    }
+    if (this.navTargetUI?.navTargetPanel) {
+      this.cockpitWrapper.appendChild(this.navTargetUI.navTargetPanel);
+      const p2 = this.navTargetUI.navTargetPanel.style;
+      p2.position = 'absolute';
+      p2.left = '29.5%';
+      p2.top = '61%';
+      p2.transform = 'translate(-50%, -50%)';
+      p2.width = '';
+      p2.height = '';
+      p2.fontSize = '12px';
+    }
+    // Docking status back inside nav target panel bottom
+    if (this.dockingStatus && this.navTargetUI?.navTargetPanel) {
+      this.navTargetUI.navTargetPanel.appendChild(this.dockingStatus);
+      this.dockingStatus.style.position = 'absolute';
+      this.dockingStatus.style.left = '50%';
+      this.dockingStatus.style.top = '';
+      this.dockingStatus.style.bottom = '4px';
+      this.dockingStatus.style.transform = 'translateX(-50%)';
+      this.dockingStatus.style.width = '90%';
+      this.dockingStatus.style.padding = '4px 6px';
+      this.dockingStatus.style.border = '1px solid #ffff00';
+      this.dockingStatus.style.fontSize = '12px';
+      this.dockingStatus.style.background = 'rgba(0,0,0,0.4)';
+    }
   }
 
   updateThrottle(targetSpeed, currentSpeed, maxSpeed) {

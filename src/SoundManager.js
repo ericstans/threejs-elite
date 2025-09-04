@@ -202,9 +202,9 @@ export class SoundManager {
     // If caller didn't supply speed ratio, approximate with throttle
     if (speedRatio == null) speedRatio = throttle;
     speedRatio = Math.max(0, Math.min(1, speedRatio));
-    const idle = 0.05;
-    const dockSuppress = isDocked ? 0.3 : 1.0;
-    const target = throttle > 0 ? (idle + throttle * 0.35) * dockSuppress : (isDocked ? 0 : idle * 0.4);
+    const idle = 0.15;
+    const dockSuppress = isDocked ? 0.0 : 1.0;
+    const target = throttle > 0 ? (idle + throttle * 0.50) * dockSuppress : (isDocked ? 0 : idle * 0.4);
     const now = this.audioContext.currentTime;
     const baseRate = 0.9;
     const maxExtra = 0.25;
