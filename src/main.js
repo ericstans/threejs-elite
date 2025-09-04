@@ -13,6 +13,7 @@ import { MusicManager } from './MusicManager.js';
 import { NPCShip } from './NPCShip.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { ConversationSystem } from './ConversationSystem.js';
+import { SpaceStation } from './SpaceStation.js';
 
 class Game {
   handleLaserAsteroidCollision(laser, asteroid, laserIndex, asteroidIndex) {
@@ -81,12 +82,17 @@ class Game {
     
     // Create planets (10x larger and much farther apart)
     const planet1 = new Planet(20, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet
-    const planet2 = new Planet(15, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
+  const planet2 = new Planet(15, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
     
     this.planets.push(planet1);
     this.planets.push(planet2);
     this.gameEngine.addEntity(planet1);
-    this.gameEngine.addEntity(planet2);
+  this.gameEngine.addEntity(planet2);
+
+  // Add an orbital space station around Oceanus
+  this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 4, size: planet2.radius * 0.4 });
+  this.gameEngine.addEntity(this.oceanusStation);
+  this.gameEngine.scene.add(this.oceanusStation.mesh);
     
     // Create asteroid field between the planets
     this.createAsteroidField();
@@ -230,6 +236,11 @@ class Game {
     
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
+
+    // Update station orbit
+    if (this.oceanusStation) {
+      this.oceanusStation.update(deltaTime);
+    }
     
   // Update UI
   // Pass targetSpeed, currentSpeed, and maxSpeed for UI
@@ -504,21 +515,18 @@ class Game {
     let closestPlanet = null;
     let closestScreenDistance = Infinity;
 
-    for (const planet of this.planets) {
-      // Convert planet 3D position to 2D screen coordinates
-      const planetPos = planet.getPosition();
-      const screenPos = planetPos.clone();
+    const navTargets = [...this.planets];
+    if (this.oceanusStation) navTargets.push(this.oceanusStation);
+
+    for (const target of navTargets) {
+      const pos = target.getPosition();
+      const screenPos = pos.clone();
       screenPos.project(camera);
-      
-      // Check if planet is in front of camera
       if (screenPos.z > 1) continue;
-      
-      // Calculate distance from crosshair center
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
-      
       if (screenDistance < closestScreenDistance) {
         closestScreenDistance = screenDistance;
-        closestPlanet = planet;
+        closestPlanet = target;
       }
     }
 
