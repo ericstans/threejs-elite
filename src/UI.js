@@ -139,7 +139,7 @@ export class UI {
     // Docking status display (initially hidden)
     this.dockingStatus = document.createElement('div');
     this.dockingStatus.style.position = 'absolute';
-    this.dockingStatus.style.top = '50%';
+    this.dockingStatus.style.top = '75%';
     this.dockingStatus.style.left = '50%';
     this.dockingStatus.style.transform = 'translate(-50%, -50%)';
     this.dockingStatus.style.fontFamily = 'monospace';

@@ -263,6 +263,9 @@ class Game {
     if (this.spaceship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {
       this.ui.updateDockingStatus('ROTATION LOCK ACQUIRED');
     }
+    if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKED') {
+      this.ui.updateDockingStatus('DOCKED');
+    }
     
     // Handle docking completion
     if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
@@ -716,8 +719,11 @@ class Game {
     if (proj < 0 || proj > length) return; // outside segment
     // Radial distance from axis
     const closestPoint = start.clone().add(dir.clone().multiplyScalar(proj));
-    const radialDist = shipPos.distanceTo(closestPoint);
-    const tolerance = this.currentNavTarget.size * 0.15; // acceptable distance from line
+  const radialDist = shipPos.distanceTo(closestPoint);
+  // Expanded capture tolerance (logic-only) to make locking easier without changing visual thickness.
+  // Previously 0.15 * size; now using multiplier constant for easier tuning.
+  const LANDING_VECTOR_CAPTURE_FACTOR = 0.30; // was 0.15
+  const tolerance = this.currentNavTarget.size * LANDING_VECTOR_CAPTURE_FACTOR; // acceptable distance from line
     const forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
     if (radialDist < tolerance) {
       // Lock ship

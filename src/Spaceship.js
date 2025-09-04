@@ -47,6 +47,13 @@ export class Spaceship {
   this.rotationAlignTimer = 0; // time since alignment lock
   this.rotationTargetQuaternion = null; // final desired orientation (computed once)
   this.rotationSlerpSpeed = 2.0; // slerp factor per second
+  // Station auto insertion after rotation
+  this.postRotationTimer = 0; // time since rotation lock
+  this.autoInsertionDelay = 2.0; // seconds after rotation lock before moving into slot
+  this.insertionInProgress = false;
+  this.insertionSpeed = 2.0; // units per second toward station center
+  this.insertionTargetLocal = new THREE.Vector3(0,0,0); // station center
+  this.insertionTargetAlong = null; // negative along-distance to reach station center
     
     // Update mesh position
     this.mesh.position.copy(this.position);
@@ -133,7 +140,9 @@ export class Spaceship {
       const start = station.getLandingVectorStartWorld();
       const length = station.getLandingVectorLength();
       // Desired axis point (clamp along distance within vector length)
-      const along = Math.min(Math.max(this.landingVectorAlongDistance, 0), length);
+  // Allow negative along-distance once insertion begins (to travel down into station)
+  const lowerBound = (this.insertionInProgress && this.insertionTargetAlong !== null) ? this.insertionTargetAlong : 0;
+  const along = Math.min(Math.max(this.landingVectorAlongDistance, lowerBound), length);
       const axisPoint = start.clone().add(dir.clone().multiplyScalar(along));
       // Current radial offset
       const radial = this.position.clone().sub(axisPoint);
@@ -153,13 +162,52 @@ export class Spaceship {
           this.rotationAlignTimer = 0; // start delay timer
         }
       } else {
-        // Maintain exact axis position once locked
+        // Maintain axis position always; insertion adjusts along-distance directly.
         this.position.copy(axisPoint);
       }
       // Orientation handling: compute target orientation once (forward toward slot, right horizontal)
       const slotForward = dir.clone().negate();
       if (this.flags.landingAlignmentLocked) {
         this.rotationAlignTimer += deltaTime;
+      }
+      if (this.flags.rotationLockAcquired) {
+        // Manage post-rotation insertion timer / movement
+        this.postRotationTimer += deltaTime;
+        if (!this.insertionInProgress && this.postRotationTimer >= this.autoInsertionDelay) {
+          this.insertionInProgress = true;
+          if (this.insertionTargetAlong === null) {
+            // Station center lies below slot start by roughly size/2 (plus small slot offset ~0.01)
+            const station = this.landingVectorStation;
+            this.insertionTargetAlong = - (station.size * 0.5 + 0.01);
+          }
+        }
+        if (this.insertionInProgress && this.insertionTargetAlong !== null) {
+          // Move along-distance toward target (negative direction)
+          const step = this.insertionSpeed * deltaTime;
+          if (this.landingVectorAlongDistance > this.insertionTargetAlong) {
+            this.landingVectorAlongDistance = Math.max(this.landingVectorAlongDistance - step, this.insertionTargetAlong);
+          }
+          // Completion check
+          if (Math.abs(this.landingVectorAlongDistance - this.insertionTargetAlong) < 1e-3) {
+            // Docking complete inside station
+            const station = this.landingVectorStation;
+            const centerWorld = station.mesh.localToWorld(new THREE.Vector3(0,0,0));
+            this.position.copy(centerWorld);
+            this.flags.isDocked = true;
+            this.flags.stationDocked = true;
+            // Capture relative transform (no parenting to avoid losing world update logic)
+            this.dockedStation = station;
+            this.dockedLocalOffset = new THREE.Vector3(0,0,0);
+            const stationQuatInv = station.mesh.quaternion.clone().invert();
+            this.dockedRelativeQuat = stationQuatInv.multiply(this.quaternion.clone());
+            // Clear guidance flags
+            this.flags.dockingAuthorized = false;
+            this.flags.landingVectorLocked = false;
+            this.flags.landingAlignmentLocked = false;
+            this.dockingProgress = 1;
+            this.insertionInProgress = false;
+          }
+        }
       }
       if (this.flags.landingAlignmentLocked && !this.flags.rotationLockAcquired && this.rotationAlignTimer >= this.rotationAlignDelay) {
         // Step 1: align forward to slot.
@@ -194,7 +242,7 @@ export class Spaceship {
             this.quaternion.premultiply(rollQ);
           }
         }
-        this.flags.rotationLockAcquired = true; // rotation phase complete
+  this.flags.rotationLockAcquired = true; // rotation phase complete; insertion timer begins
       } else if (!this.flags.rotationLockAcquired) {
         // Before roll phase: keep forward pointed at slot only (remove lateral drift)
         const currentForward = new THREE.Vector3(0,0,-1).applyQuaternion(this.quaternion).normalize();
@@ -207,7 +255,21 @@ export class Spaceship {
       return; // Skip normal movement while locked
     }
     
-    // If docked, update position to follow planet rotation
+    // If docked inside station, keep position (parented) and exit
+    if (this.flags.isDocked && this.flags.stationDocked && this.dockedStation) {
+      // Recompute world transform from station each frame
+      const worldPos = this.dockedStation.mesh.localToWorld(this.dockedLocalOffset.clone());
+      this.position.copy(worldPos);
+      this.quaternion.copy(this.dockedStation.mesh.quaternion);
+      if (this.dockedRelativeQuat) this.quaternion.multiply(this.dockedRelativeQuat);
+      this.rotation.setFromQuaternion(this.quaternion);
+      this.mesh.position.copy(this.position);
+      this.mesh.quaternion.copy(this.quaternion);
+      this.mesh.rotation.copy(this.rotation);
+      return;
+    }
+
+    // If docked to a planet, update position to follow planet rotation
     if (this.flags.isDocked && this.dockingTarget) {
       // Update the ship's world position to follow the planet's rotation
       const planetPos = this.dockingTarget.getPosition();
