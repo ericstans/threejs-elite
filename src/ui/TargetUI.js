@@ -24,14 +24,17 @@ export class TargetUI {
     // Target panel (initially hidden)
     this.targetPanel = document.createElement('div');
     this.targetPanel.style.position = 'absolute';
-    this.targetPanel.style.bottom = '20px';
-    this.targetPanel.style.right = '20px';
-    this.targetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
-    this.targetPanel.style.padding = '10px';
-    this.targetPanel.style.border = '1px solid #00ff00';
-    this.targetPanel.style.fontSize = '12px';
+    this.targetPanel.style.bottom = '19%';
+    this.targetPanel.style.right = '19%';
+    this.targetPanel.style.height = '17%';
+    this.targetPanel.style.width = '12.5%';
+    //this.targetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
+    this.targetPanel.style.padding = '15px';
+    //this.targetPanel.style.border = '1px solid #00ff00';
+    this.targetPanel.style.fontSize = '16px';
     this.targetPanel.style.lineHeight = '1.4';
     this.targetPanel.style.display = 'none'; // Initially hidden
+    
     this.container.appendChild(this.targetPanel);
 
     this.targetTitle = document.createElement('div');
@@ -55,7 +58,7 @@ export class TargetUI {
     // Target commable indicator
     this.targetCommableIndicator = document.createElement('div');
     this.targetCommableIndicator.style.position = 'absolute';
-    this.targetCommableIndicator.style.left = '-50px';
+    this.targetCommableIndicator.style.left = '80%';
     this.targetCommableIndicator.style.top = '10px';
     this.targetCommableIndicator.style.fontSize = '16px';
     this.targetCommableIndicator.style.display = 'none';

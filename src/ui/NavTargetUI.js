@@ -9,12 +9,14 @@ export class NavTargetUI {
     // Nav target panel (initially hidden)
     this.navTargetPanel = document.createElement('div');
     this.navTargetPanel.style.position = 'absolute';
-    this.navTargetPanel.style.bottom = '140px'; // Above the TARGET panel
-    this.navTargetPanel.style.right = '20px';
-    this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
-    this.navTargetPanel.style.padding = '10px';
-    this.navTargetPanel.style.border = '1px solid #00ff00';
-    this.navTargetPanel.style.fontSize = '12px';
+    this.navTargetPanel.style.bottom = '19%';
+    this.navTargetPanel.style.left = '18%';
+    this.navTargetPanel.style.height = '17%';
+    this.navTargetPanel.style.width = '13.5%';
+    //this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
+    this.navTargetPanel.style.padding = '15px';
+    //this.navTargetPanel.style.border = '1px solid #00ff00';
+    this.navTargetPanel.style.fontSize = '16px';
     this.navTargetPanel.style.lineHeight = '1.4';
     this.navTargetPanel.style.display = 'none'; // Initially hidden
     this.container.appendChild(this.navTargetPanel);
@@ -40,7 +42,7 @@ export class NavTargetUI {
     // Nav target commable indicator
     this.navCommableIndicator = document.createElement('div');
     this.navCommableIndicator.style.position = 'absolute';
-    this.navCommableIndicator.style.left = '-50px';
+    this.navCommableIndicator.style.left = '80%';
     this.navCommableIndicator.style.top = '10px';
     this.navCommableIndicator.style.fontSize = '16px';
     this.navCommableIndicator.style.display = 'none';
