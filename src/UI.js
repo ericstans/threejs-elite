@@ -18,7 +18,7 @@ export class UI {
     this.cockpitWrapper.style.bottom = '0';
     this.cockpitWrapper.style.left = '50%';
     this.cockpitWrapper.style.transform = 'translateX(-50%)';
-    this.cockpitWrapper.style.width = '120%'; // existing scaling behavior retained
+    this.cockpitWrapper.style.width = '100%'; // existing scaling behavior retained
     this.cockpitWrapper.style.height = 'auto';
     this.cockpitWrapper.style.pointerEvents = 'none';
     this.cockpitWrapper.style.zIndex = '500';
