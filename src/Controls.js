@@ -1,3 +1,5 @@
+const DEBUG = false;
+
 export class Controls {
   constructor(spaceship, game = null) {
     this.spaceship = spaceship;
@@ -62,10 +64,10 @@ export class Controls {
       
       // Start music on first X press
       if (this.game && !this.game.musicStarted) {
-        console.log('Controls: X key pressed, starting music');
+        if (DEBUG) console.log('Controls: X key pressed, starting music');
         this.startMusic();
       } else {
-        console.log('Controls: X key pressed but music already started or game not available');
+        if (DEBUG) console.log('Controls: X key pressed but music already started or game not available');
       }
     }
     if (this.keys['KeyZ']) {
@@ -162,33 +164,33 @@ export class Controls {
   }
 
   async startMusic() {
-    console.log('startMusic: Method called');
-    console.log('startMusic: this.game exists:', !!this.game);
-    console.log('startMusic: this.game.musicStarted:', this.game?.musicStarted);
-    
+    if (DEBUG) console.log('startMusic: Method called');
+    if (DEBUG) console.log('startMusic: this.game exists:', !!this.game);
+    if (DEBUG) console.log('startMusic: this.game.musicStarted:', this.game?.musicStarted);
+
     if (this.game && !this.game.musicStarted) {
-      console.log('startMusic: Starting music system');
+      if (DEBUG) console.log('startMusic: Starting music system');
       this.game.musicStarted = true;
       
       try {
         // Initialize music manager
-        console.log('startMusic: Initializing music manager');
+        if (DEBUG) console.log('startMusic: Initializing music manager');
         await this.game.musicManager.init();
-        console.log('startMusic: Music manager initialized successfully');
-        
+        if (DEBUG) console.log('startMusic: Music manager initialized successfully');
+
         // Start ambient track
-        console.log('startMusic: Playing ambient track');
+        if (DEBUG) console.log('startMusic: Playing ambient track');
         this.game.musicManager.playTrack('ambient');
-        console.log('startMusic: Starting fade in');
+        if (DEBUG) console.log('startMusic: Starting fade in');
         this.game.musicManager.fadeIn(3000); // 3 second fade in
-        console.log('startMusic: Music system started successfully');
+        if (DEBUG) console.log('startMusic: Music system started successfully');
       } catch (error) {
         console.error('startMusic: Failed to start music system:', error);
         console.error('startMusic: Error details:', error.message);
         console.error('startMusic: Error stack:', error.stack);
       }
     } else {
-      console.log('startMusic: Music already started or game not available');
+      if (DEBUG) console.log('startMusic: Music already started or game not available');
     }
   }
 }
