@@ -13,8 +13,10 @@ export class UI {
   createCockpitOverlay() {
     // --- SVG Cockpit Overlay ---
   this.cockpitOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  this.cockpitOverlay.setAttribute('width', '100%');
-  this.cockpitOverlay.setAttribute('height', '100%');
+  //this.cockpitOverlay.setAttribute('width', '100%');
+  //this.cockpitOverlay.setAttribute('height', '100%');
+  this.cockpitOverlay.style.maxWidth = '120%';
+  this.cockpitOverlay.style.maxHeight = '1335px'
   this.cockpitOverlay.style.position = 'fixed';
   this.cockpitOverlay.style.top = '0';
   this.cockpitOverlay.style.left = '0';
@@ -134,6 +136,8 @@ export class UI {
     this.controlsUI = new ControlsUI(this.uiContainer);
     this.targetUI = new TargetUI(this.uiContainer);
     this.navTargetUI = new NavTargetUI(this.uiContainer);
+  // After panels exist, set up anchoring relative to cockpit bitmap
+  this.setupCockpitAnchors();
 
 
 
@@ -455,5 +459,54 @@ export class UI {
     if (this.uiContainer && this.uiContainer.parentNode) {
       this.uiContainer.parentNode.removeChild(this.uiContainer);
     }
+  }
+
+  // --- Cockpit anchoring logic ---
+  setupCockpitAnchors() {
+    // Define anchor points as normalized (0..1) coordinates within the cockpit image
+    // Adjust these values to fine‑tune placement over the PNG artwork.
+    this.cockpitAnchors = {
+      // Example guesses: right side stacked panels. Tweak to match artwork hotspots.
+      navTargetPanel: { x: 0.30, y: 0.66 },    // Slightly above target panel
+      targetPanel: { x: 0.70, y: 0.66 }       // Near lower right of canopy
+    };
+
+    // Recalculate on window resize and when image loads
+    window.addEventListener('resize', () => this.updateCockpitAnchoredPanels());
+    if (this.cockpitBitmap) {
+      if (this.cockpitBitmap.complete) {
+        this.updateCockpitAnchoredPanels();
+      } else {
+        this.cockpitBitmap.addEventListener('load', () => this.updateCockpitAnchoredPanels(), { once: true });
+      }
+    }
+  }
+
+  updateCockpitAnchoredPanels() {
+    if (!this.cockpitBitmap) return;
+    const rect = this.cockpitBitmap.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const place = (el, anchor) => {
+      if (!el || !anchor) return;
+      // Ensure element is visible for correct measurement (temporarily)
+      const prevDisplay = el.style.display || '';
+      if (prevDisplay === 'none') el.style.display = 'block';
+      // Use fixed positioning so it's relative to viewport, not container scaling
+      el.style.position = 'fixed';
+      // Measure AFTER forcing block to get size
+      const elRect = el.getBoundingClientRect();
+      const left = rect.left + anchor.x * rect.width - elRect.width / 2;
+      const top = rect.top + anchor.y * rect.height - elRect.height / 2;
+      el.style.left = `${Math.round(left)}px`;
+      el.style.top = `${Math.round(top)}px`;
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      // Restore original display if it was hidden
+      if (prevDisplay === 'none') el.style.display = 'none';
+    };
+
+    place(this.targetUI && this.targetUI.targetPanel, this.cockpitAnchors.targetPanel);
+    place(this.navTargetUI && this.navTargetUI.navTargetPanel, this.cockpitAnchors.navTargetPanel);
   }
 }
