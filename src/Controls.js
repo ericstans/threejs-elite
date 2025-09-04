@@ -86,13 +86,27 @@ export class Controls {
       }
     }
     
-    // Targeting
+    // Targeting: hold T to clear, tap T to select
     if (this.keys['KeyT']) {
-      if (this.onTarget) {
+      if (!this._tKeyHeld) {
+        this._tKeyHeld = { start: performance.now(), cleared: false };
+      }
+      const held = this._tKeyHeld;
+      const heldTime = performance.now() - held.start;
+      if (heldTime > 350 && !held.cleared) { // Hold >350ms to clear
+        if (this.game && this.game.currentTarget) {
+          this.game.currentTarget.setTargeted(false);
+          this.game.currentTarget = null;
+          this.game.ui.clearTargetInfo();
+        }
+        held.cleared = true;
+      }
+    } else if (this._tKeyHeld) {
+      // On T release: if not held long enough, treat as tap (target)
+      if (!this._tKeyHeld.cleared && this.onTarget) {
         this.onTarget();
       }
-      // Clear the key to prevent repeated targeting
-      this.keys['KeyT'] = false;
+      this._tKeyHeld = null;
     }
     
     // Navigation targeting

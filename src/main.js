@@ -258,6 +258,27 @@ class Game {
     
     // Update target information
     this.updateTargetInfo();
+
+    // --- Update auto-aim cone color (homing radius indicator) ---
+    // Default: green (not in range)
+    let homingActive = false;
+    if (this.currentTarget && this.currentTarget.isAlive()) {
+      const spaceshipPos = this.spaceship.getPosition();
+      const targetPos = this.currentTarget.getPosition();
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyEuler(this.spaceship.getRotation());
+      const toTarget = targetPos.clone().sub(spaceshipPos).normalize();
+      const angle = forward.angleTo(toTarget);
+      const maxAngle = Math.PI / 18; // 10 degrees in radians (same as auto-aim)
+      if (angle <= maxAngle) {
+        homingActive = true;
+      }
+    }
+    if (homingActive) {
+      this.ui.autoAimCone.style.border = '1px solid #ff0000'; // Red if homing active
+    } else {
+      this.ui.autoAimCone.style.border = '1px solid #00ff00'; // Green if not
+    }
     
     // Update nav target information
     this.updateNavTargetInfo();

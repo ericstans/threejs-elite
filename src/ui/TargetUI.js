@@ -1,8 +1,23 @@
 export class TargetUI {
+  createOffscreenArrow() {
+    // Red arrow for offscreen target
+    this.offscreenArrow = document.createElement('div');
+    this.offscreenArrow.style.position = 'fixed';
+    this.offscreenArrow.style.width = '0';
+    this.offscreenArrow.style.height = '0';
+    this.offscreenArrow.style.borderLeft = '18px solid transparent';
+    this.offscreenArrow.style.borderRight = '18px solid transparent';
+    this.offscreenArrow.style.borderBottom = '32px solid #ff2222';
+    this.offscreenArrow.style.zIndex = '2000';
+    this.offscreenArrow.style.display = 'none';
+    this.offscreenArrow.style.pointerEvents = 'none';
+    this.container.appendChild(this.offscreenArrow);
+  }
   constructor(container) {
     this.container = container;
     this.createTargetPanel();
     this.createTargetIndicator();
+    this.createOffscreenArrow();
   }
 
   createTargetPanel() {
@@ -81,6 +96,7 @@ export class TargetUI {
   updateTargetIndicator(targetPosition, camera) {
     if (!targetPosition || !camera) {
       this.targetIndicator.style.display = 'none';
+      this.offscreenArrow.style.display = 'none';
       return;
     }
 
@@ -88,22 +104,48 @@ export class TargetUI {
     const vector = targetPosition.clone();
     vector.project(camera);
 
-    // Check if target is in front of camera
-    if (vector.z > 1) {
+    // If target is in front of camera and on screen, show indicator, hide arrow
+    if (vector.z > 1 || vector.x < -1 || vector.x > 1 || vector.y < -1 || vector.y > 1) {
       this.targetIndicator.style.display = 'none';
+      // Show arrow at edge of screen, pointing toward target
+      // Clamp vector.x/y to [-1,1] for edge, but keep direction
+      let angle = Math.atan2(vector.y, vector.x);
+      // Clamp to edge
+      let edgeX = Math.max(-0.92, Math.min(0.92, vector.x));
+      let edgeY = Math.max(-0.92, Math.min(0.92, vector.y));
+      // If both x and y are out of bounds, pick the dominant axis
+      if (Math.abs(vector.x) > Math.abs(vector.y)) {
+        edgeY = vector.y / Math.abs(vector.x) * 0.92;
+      } else {
+        edgeX = vector.x / Math.abs(vector.y) * 0.92;
+      }
+      const screenX = (edgeX * 0.5 + 0.5) * window.innerWidth;
+      const screenY = (edgeY * -0.5 + 0.5) * window.innerHeight;
+      this.offscreenArrow.style.display = 'block';
+      this.offscreenArrow.style.left = `${screenX - 18}px`;
+      this.offscreenArrow.style.top = `${screenY - 32}px`;
+      // Snap arrow to up, down, left, or right depending on edge
+      let rotation = 0;
+      if (Math.abs(edgeY) > 0.91 && Math.abs(edgeY) >= Math.abs(edgeX)) {
+        // Top or bottom (invert for both)
+        rotation = edgeY < 0 ? Math.PI : 0; // Top: down, Bottom: up
+      } else {
+        // Left or right
+        rotation = edgeX < 0 ? -Math.PI / 2 : Math.PI / 2; // Left: left, Right: right
+      }
+      this.offscreenArrow.style.transform = `rotate(${rotation}rad)`;
       return;
     }
 
-    // Convert normalized device coordinates to screen coordinates
+    // On screen: show indicator, hide arrow
     const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
     const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
-
-    // Show target indicator
     this.targetIndicator.style.display = 'block';
     this.targetIndicator.style.left = `${x - 25}px`;
     this.targetIndicator.style.top = `${y - 25}px`;
     this.targetIndicator.style.width = '50px';
     this.targetIndicator.style.height = '50px';
+    this.offscreenArrow.style.display = 'none';
   }
 
   clearTargetInfo() {

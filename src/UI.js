@@ -9,7 +9,98 @@ export class UI {
     this.createUI();
   }
 
+  createCockpitOverlay() {
+    // --- SVG Cockpit Overlay ---
+  this.cockpitOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  this.cockpitOverlay.setAttribute('width', '100%');
+  this.cockpitOverlay.setAttribute('height', '100%');
+  this.cockpitOverlay.style.position = 'fixed';
+  this.cockpitOverlay.style.top = '0';
+  this.cockpitOverlay.style.left = '0';
+  this.cockpitOverlay.style.width = '100vw';
+  this.cockpitOverlay.style.height = '100vh';
+  this.cockpitOverlay.style.pointerEvents = 'none';
+  this.cockpitOverlay.style.zIndex = '900'; // Below UI container (zIndex 1200+)
+  document.body.appendChild(this.cockpitOverlay);
+
+  // Draw Apache-style canopy: metallic frame and clear canopy
+  // Main hull (bottom, metallic)
+  const hull = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  hull.setAttribute('d', `M 0,1000 Q 960,800 1920,1000 L 1920,1080 L 0,1080 Z`);
+  hull.setAttribute('fill', 'url(#hullMetal)');
+  hull.setAttribute('opacity', '0.92');
+  this.cockpitOverlay.appendChild(hull);
+
+  // Canopy (center, clear)
+  const canopy = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  canopy.setAttribute('d', `M 600,1080 Q 960,400 1320,1080 Z`);
+  canopy.setAttribute('fill', 'rgba(200,200,255,0.13)');
+  canopy.setAttribute('stroke', '#b0b0b0');
+  canopy.setAttribute('stroke-width', '4');
+  this.cockpitOverlay.appendChild(canopy);
+
+  // Left metallic frame
+  const leftFrame = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  leftFrame.setAttribute('d', `M 0,1000 Q 960,800 600,1080 L 0,1080 Z`);
+  leftFrame.setAttribute('fill', 'url(#hullMetal)');
+  leftFrame.setAttribute('opacity', '0.97');
+  this.cockpitOverlay.appendChild(leftFrame);
+
+  // Right metallic frame
+  const rightFrame = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  rightFrame.setAttribute('d', `M 1320,1080 Q 1920,800 1920,1000 L 1920,1080 Z`);
+  rightFrame.setAttribute('fill', 'url(#hullMetal)');
+  rightFrame.setAttribute('opacity', '0.97');
+  this.cockpitOverlay.appendChild(rightFrame);
+
+  // Add metallic gradient
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  grad.setAttribute('id', 'hullMetal');
+  grad.setAttribute('x1', '0%');
+  grad.setAttribute('y1', '0%');
+  grad.setAttribute('x2', '0%');
+  grad.setAttribute('y2', '100%');
+  const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop1.setAttribute('offset', '0%');
+  stop1.setAttribute('stop-color', '#888');
+  const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop2.setAttribute('offset', '100%');
+  stop2.setAttribute('stop-color', '#222');
+  grad.appendChild(stop1);
+  grad.appendChild(stop2);
+  defs.appendChild(grad);
+  this.cockpitOverlay.appendChild(defs);
+
+  // --- HUD panel areas (bottom left/right) ---
+  const panelW = 260, panelH = 120;
+  const leftPanel = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  leftPanel.setAttribute('x', 120);
+  leftPanel.setAttribute('y', 900);
+  leftPanel.setAttribute('width', panelW);
+  leftPanel.setAttribute('height', panelH);
+  leftPanel.setAttribute('rx', 18);
+  leftPanel.setAttribute('fill', 'rgba(60,60,60,0.85)');
+  leftPanel.setAttribute('stroke', '#b0b0b0');
+  leftPanel.setAttribute('stroke-width', '3');
+  this.cockpitOverlay.appendChild(leftPanel);
+
+  const rightPanel = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rightPanel.setAttribute('x', 1920-120-panelW);
+  rightPanel.setAttribute('y', 900);
+  rightPanel.setAttribute('width', panelW);
+  rightPanel.setAttribute('height', panelH);
+  rightPanel.setAttribute('rx', 18);
+  rightPanel.setAttribute('fill', 'rgba(60,60,60,0.85)');
+  rightPanel.setAttribute('stroke', '#b0b0b0');
+  rightPanel.setAttribute('stroke-width', '3');
+  this.cockpitOverlay.appendChild(rightPanel);
+  }
+
   createUI() {
+    // cockpit overlay disabled for now 
+    // this.createCockpitOverlay();
+    
     // Create UI container
     this.uiContainer = document.createElement('div');
     this.uiContainer.style.position = 'fixed';
@@ -22,17 +113,6 @@ export class UI {
     this.uiContainer.style.color = '#00ff00';
     this.uiContainer.style.fontSize = '14px';
     document.body.appendChild(this.uiContainer);
-
-  // --- NPC Ship Highlight Rectangle ---
-  this.npcShipRect = document.createElement('div');
-  this.npcShipRect.style.position = 'absolute';
-  this.npcShipRect.style.border = '3px solid #00ffff';
-  this.npcShipRect.style.background = 'rgba(0,255,255,0.18)';
-  this.npcShipRect.style.boxShadow = '0 0 16px 4px #00ffff88';
-  this.npcShipRect.style.pointerEvents = 'none';
-  this.npcShipRect.style.display = 'none';
-  this.npcShipRect.style.zIndex = '1200';
-  this.uiContainer.appendChild(this.npcShipRect);
  
     // Initialize UI components
     this.throttleUI = new ThrottleUI(this.uiContainer);
@@ -148,24 +228,6 @@ export class UI {
     this.commsClose.style.color = '#666';
     this.commsClose.textContent = 'Press ESC to close';
     this.commsContent.appendChild(this.commsClose);
-  }
-
-  showNPCShipRect(x, y, w, h) {
-    this.npcShipRect.style.display = 'block';
-    this.npcShipRect.style.left = `${x}px`;
-    this.npcShipRect.style.top = `${y}px`;
-    this.npcShipRect.style.width = `${w}px`;
-    this.npcShipRect.style.height = `${h}px`;
-    // Debug: log rectangle
-    if (w > 0 && h > 0) {
-      console.log('[NPC Overlay] show at', x, y, w, h);
-    }
-    }
-  
-  // Removed NPC ship overlay rectangle logic
-
-  hideNPCShipRect() {
-    this.npcShipRect.style.display = 'none';
   }
 
   updateThrottle(targetSpeed, currentSpeed, maxSpeed) {
