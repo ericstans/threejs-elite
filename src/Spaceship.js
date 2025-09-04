@@ -27,12 +27,54 @@ export class Spaceship {
     this.flags = {
       isDocking: false,
       isDocked: false,
+  dockingAuthorized: false, // station granted docking
+  landingVectorLocked: false, // player aligned with landing vector
+  landingAlignmentLocked: false, // fully centered on landing vector axis
+  rotationLockAcquired: false, // finished rotating to horizontal slot-facing orientation
       hasVisitedAridusPrime: false,
       hasVisitedOceanus: false,
       // Add more flags as needed
     };
+
+  // Landing vector lock state
+  this.landingVectorStation = null; // reference to station
+  this.landingVectorHoldOffset = 0; // legacy (not used for position now)
+  this.landingVectorLocalOffset = null; // local-space offset from station root when lock engaged
+  this.landingVectorAlongDistance = 0; // stored projection along vector at lock time
+  this.landingVectorAlignRate = 20; // radial converge rate (per second)
+  // Post-alignment rotation (pure roll) parameters
+  this.rotationAlignDelay = 4.0; // seconds after alignment lock before roll begins
+  this.rotationAlignTimer = 0; // time since alignment lock
+  this.rotationTargetQuaternion = null; // final desired orientation (computed once)
+  this.rotationSlerpSpeed = 2.0; // slerp factor per second
     
     // Update mesh position
+    this.mesh.position.copy(this.position);
+    this.mesh.rotation.copy(this.rotation);
+  }
+
+  lockToStation(station) {
+    // Freeze relative motion: attach ship to station but keep slight offset on vector start
+    this.dockingTarget = station;
+    this.flags.landingVectorLocked = true;
+    this.velocity.set(0,0,0);
+    this.angularVelocity.set(0,0,0);
+  this.landingVectorStation = station;
+  // Capture current relative local offset so we preserve exact position at lock moment (no teleport)
+  const worldPosAtLock = this.position.clone();
+  this.landingVectorLocalOffset = station.mesh.worldToLocal(worldPosAtLock.clone());
+  // Store along-axis distance to maintain longitudinal placement
+  const start = station.getLandingVectorStartWorld();
+  const dir = station.getLandingVectorDirectionWorld();
+  this.landingVectorAlongDistance = worldPosAtLock.clone().sub(start).dot(dir);
+  // Direction data for orientation
+  // (dir already defined)
+    // Orientation: align ship forward (-Z) with station slot normal (invert dir so facing down toward slot)
+    const desiredForward = dir.clone().negate();
+    const currentForward = new THREE.Vector3(0,0,-1).applyQuaternion(this.quaternion);
+    const q = new THREE.Quaternion().setFromUnitVectors(currentForward.normalize(), desiredForward.normalize());
+    this.quaternion.premultiply(q);
+    this.rotation.setFromQuaternion(this.quaternion);
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
   }
@@ -83,6 +125,87 @@ export class Spaceship {
   update(deltaTime) {
     // Handle docking
     this.updateDocking(deltaTime);
+
+    // Follow station landing vector if locked (but not yet docked)
+    if (this.flags.landingVectorLocked && !this.flags.isDocked && this.landingVectorStation) {
+      const station = this.landingVectorStation;
+      const dir = station.getLandingVectorDirectionWorld();
+      const start = station.getLandingVectorStartWorld();
+      const length = station.getLandingVectorLength();
+      // Desired axis point (clamp along distance within vector length)
+      const along = Math.min(Math.max(this.landingVectorAlongDistance, 0), length);
+      const axisPoint = start.clone().add(dir.clone().multiplyScalar(along));
+      // Current radial offset
+      const radial = this.position.clone().sub(axisPoint);
+      const radialDist = radial.length();
+      if (!this.flags.landingAlignmentLocked) {
+        if (radialDist > 1e-4) {
+          const shrink = Math.exp(-this.landingVectorAlignRate * deltaTime);
+          const newRadial = radial.multiplyScalar(shrink);
+          this.position.copy(axisPoint.clone().add(newRadial));
+        } else {
+          this.position.copy(axisPoint);
+        }
+        // Check lock threshold (use station size fraction)
+        if (this.position.distanceTo(axisPoint) < station.size * 0.01) {
+          this.position.copy(axisPoint);
+          this.flags.landingAlignmentLocked = true;
+          this.rotationAlignTimer = 0; // start delay timer
+        }
+      } else {
+        // Maintain exact axis position once locked
+        this.position.copy(axisPoint);
+      }
+      // Orientation handling: compute target orientation once (forward toward slot, right horizontal)
+      const slotForward = dir.clone().negate();
+      if (this.flags.landingAlignmentLocked) {
+        this.rotationAlignTimer += deltaTime;
+      }
+      if (this.flags.landingAlignmentLocked && !this.flags.rotationLockAcquired && this.rotationAlignTimer >= this.rotationAlignDelay) {
+        // Step 1: align forward to slot.
+        const currentForward = new THREE.Vector3(0,0,-1).applyQuaternion(this.quaternion).normalize();
+        const alignQ2 = new THREE.Quaternion().setFromUnitVectors(currentForward, slotForward.clone());
+        this.quaternion.premultiply(alignQ2);
+
+        // Step 2: compute minimal roll so station's horizontal reference appears level.
+        // Use station local X axis as horizontal reference.
+        const stationRightWorld = new THREE.Vector3(1,0,0).applyQuaternion(this.landingVectorStation.mesh.quaternion).normalize();
+        const fwd = slotForward.clone().normalize();
+        // Project both currentRight and desiredRight onto plane perpendicular to forward
+        const currentRight = new THREE.Vector3(1,0,0).applyQuaternion(this.quaternion);
+        currentRight.sub(fwd.clone().multiplyScalar(currentRight.dot(fwd))).normalize();
+        let desiredRight = stationRightWorld.clone();
+        desiredRight.sub(fwd.clone().multiplyScalar(desiredRight.dot(fwd)));
+        if (desiredRight.lengthSq() < 1e-8) {
+          // Fallback: use station local Z
+            desiredRight = new THREE.Vector3(0,0,1).applyQuaternion(this.landingVectorStation.mesh.quaternion);
+            desiredRight.sub(fwd.clone().multiplyScalar(desiredRight.dot(fwd)));
+        }
+        if (desiredRight.lengthSq() > 1e-8) {
+          desiredRight.normalize();
+          // Angle between current and desired rights
+          let angle = Math.acos(Math.min(1, Math.max(-1, currentRight.dot(desiredRight))));
+          if (angle > 1e-4) {
+            // Determine rotation direction using cross product sign along forward
+            const cross = new THREE.Vector3().crossVectors(currentRight, desiredRight);
+            const sign = Math.sign(cross.dot(fwd));
+            angle *= sign;
+            const rollQ = new THREE.Quaternion().setFromAxisAngle(fwd, angle);
+            this.quaternion.premultiply(rollQ);
+          }
+        }
+        this.flags.rotationLockAcquired = true; // rotation phase complete
+      } else if (!this.flags.rotationLockAcquired) {
+        // Before roll phase: keep forward pointed at slot only (remove lateral drift)
+        const currentForward = new THREE.Vector3(0,0,-1).applyQuaternion(this.quaternion).normalize();
+        const alignQ = new THREE.Quaternion().setFromUnitVectors(currentForward, slotForward.clone());
+        this.quaternion.premultiply(alignQ);
+      }
+      this.rotation.setFromQuaternion(this.quaternion);
+      this.mesh.position.copy(this.position);
+      this.mesh.rotation.copy(this.rotation);
+      return; // Skip normal movement while locked
+    }
     
     // If docked, update position to follow planet rotation
     if (this.flags.isDocked && this.dockingTarget) {

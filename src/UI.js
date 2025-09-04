@@ -100,7 +100,7 @@ export class UI {
   createUI() {
     // cockpit overlay disabled for now 
     // this.createCockpitOverlay();
-    
+
     // Create UI container
     this.uiContainer = document.createElement('div');
     this.uiContainer.style.position = 'fixed';
@@ -425,6 +425,10 @@ export class UI {
     this.crosshair.style.display = 'none';
     this.autoAimCone.style.display = 'none';
     this.dockingStatus.style.display = 'block';
+  }
+
+  updateDockingStatus(text) {
+    this.dockingStatus.textContent = text;
   }
 
   hideDockingStatus() {

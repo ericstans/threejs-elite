@@ -255,6 +255,14 @@ class Game {
     
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
+
+    // Landing alignment status update
+    if (this.spaceship.getFlag('landingVectorLocked') && this.spaceship.getFlag('landingAlignmentLocked') && this.ui.dockingStatus.textContent !== 'Alignment lock acquired') {
+      this.ui.updateDockingStatus('Alignment lock acquired');
+    }
+    if (this.spaceship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {
+      this.ui.updateDockingStatus('ROTATION LOCK ACQUIRED');
+    }
     
     // Handle docking completion
     if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
@@ -307,6 +315,8 @@ class Game {
 
   // Update continuous engine rumble based on throttle & docking
   this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), this.spaceship.flags.isDocked);
+  // Check landing vector acquisition if applicable
+  this.checkLandingVectorLock();
   }
 
   updateLasers(deltaTime) {
@@ -657,6 +667,11 @@ class Game {
         if (flagName === 'isDocking' && value === true) {
           this.startDockingProcess();
         }
+        if (flagName === 'dockingAuthorized' && value === true) {
+          // New station flow: show authorization message
+          this.ui.showDockingStatus();
+          this.ui.updateDockingStatus('AUTHORIZED -- PROCEED TO LANDING VECTOR');
+        }
       }
     }
     
@@ -686,6 +701,32 @@ class Game {
     }
   }
 
+  checkLandingVectorLock() {
+    // Only if docking authorized, not already locked, and nav target is a station
+    if (!this.currentNavTarget || !this.spaceship.getFlag('dockingAuthorized') || this.spaceship.getFlag('landingVectorLocked')) return;
+    if (!this.currentNavTarget.getLandingVectorStartWorld) return; // ensure station
+    const station = this.currentNavTarget;
+    const start = station.getLandingVectorStartWorld();
+    const dir = station.getLandingVectorDirectionWorld();
+    const length = station.getLandingVectorLength();
+    const shipPos = this.spaceship.getPosition();
+    // Project ship position onto vector
+    const toShip = shipPos.clone().sub(start);
+    const proj = toShip.dot(dir);
+    if (proj < 0 || proj > length) return; // outside segment
+    // Radial distance from axis
+    const closestPoint = start.clone().add(dir.clone().multiplyScalar(proj));
+    const radialDist = shipPos.distanceTo(closestPoint);
+    const tolerance = this.currentNavTarget.size * 0.15; // acceptable distance from line
+    const forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
+    if (radialDist < tolerance) {
+      // Lock ship
+      this.spaceship.lockToStation(station);
+      this.ui.updateDockingStatus('LANDING VECTOR ACQUIRED');
+      console.log('Landing vector lock achieved.');
+    }
+  }
+
   selectCommsOption(optionNumber) {
     if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
       return;
@@ -712,6 +753,16 @@ class Game {
             console.warn('Invalid flags data:', selectedOption.dataset.flags);
           }
         }
+        this.closeComms();
+        return;
+      }
+
+      // Station-specific docking flow: request docking -> authorization granted
+      if (optionId === 'docking' && this.currentNavTarget && this.currentNavTarget.getLandingVectorStartWorld) {
+        // Grant docking authorization
+        this.spaceship.setFlag('dockingAuthorized', true);
+        this.ui.showDockingStatus();
+        this.ui.updateDockingStatus('AUTHORIZED -- PROCEED TO LANDING VECTOR');
         this.closeComms();
         return;
       }

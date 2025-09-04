@@ -154,4 +154,17 @@ export class SpaceStation {
   getPosition() { return this.position.clone(); }
   isCommable() { return this.isCommable; }
   getGreeting() { return `This is ${this.name}. State your business.`; }
+
+  // Landing vector helpers
+  getLandingVectorStartWorld() {
+    // Start point (slot) in local space then transformed to world
+    const local = new THREE.Vector3(0, this.size / 2 + 0.01, 0);
+    return this.mesh.localToWorld(local.clone());
+  }
+  getLandingVectorDirectionWorld() {
+    const dirLocal = this.landingVectorDirection.clone();
+    const dirWorld = dirLocal.applyQuaternion(this.mesh.quaternion).normalize();
+    return dirWorld;
+  }
+  getLandingVectorLength() { return this.landingVectorLength; }
 }
