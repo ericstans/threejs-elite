@@ -327,37 +327,58 @@ class Game {
       this.currentTarget = null;
     }
 
-    // Find asteroid closest to crosshair (center of screen)
+    // Find asteroid or NPC ship closest to crosshair (center of screen)
     const camera = this.gameEngine.camera;
     const crosshairCenter = new THREE.Vector2(0, 0); // Center of screen in NDC
-    let closestAsteroid = null;
+    let closestTarget = null;
     let closestScreenDistance = Infinity;
 
-    for (const asteroid of this.asteroids) {
-      if (!asteroid.isAlive()) continue;
-      
-      // Convert asteroid 3D position to 2D screen coordinates
-      const asteroidPos = asteroid.getPosition();
-      const screenPos = asteroidPos.clone();
+    // Combine asteroids and NPC ship into one array
+    const targetables = [...this.asteroids];
+    if (this.npcShip && this.npcShip.loaded && this.npcShip.mesh) {
+      // Find the first visible mesh inside the NPCShip group
+      let meshCenter = null;
+      this.npcShip.mesh.traverse(child => {
+        if (!meshCenter && child.isMesh) {
+          // Get world position of the mesh
+          meshCenter = new THREE.Vector3();
+          child.getWorldPosition(meshCenter);
+        }
+      });
+      if (meshCenter) {
+        targetables.push({
+          getPosition: () => meshCenter,
+          isAlive: () => true,
+          setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
+          getId: () => 'npcship',
+          getMass: () => 1000,
+          getHealth: () => 100,
+          getMaxHealth: () => 100,
+          isCommable: false
+        });
+      }
+    }
+
+    for (const obj of targetables) {
+      if (!obj.isAlive()) continue;
+      // Convert 3D position to 2D screen coordinates
+      const pos = obj.getPosition();
+      const screenPos = pos.clone();
       screenPos.project(camera);
-      
-      // Check if asteroid is in front of camera
+      // Check if in front of camera
       if (screenPos.z > 1) continue;
-      
       // Calculate distance from crosshair center
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
-      
       if (screenDistance < closestScreenDistance) {
         closestScreenDistance = screenDistance;
-        closestAsteroid = asteroid;
+        closestTarget = obj;
       }
     }
 
     // Set new target
-    if (closestAsteroid) {
-      this.currentTarget = closestAsteroid;
+    if (closestTarget) {
+      this.currentTarget = closestTarget;
       this.currentTarget.setTargeted(true);
-      
       // Play target selected sound
       this.soundManager.playTargetSelectedSound();
     }
