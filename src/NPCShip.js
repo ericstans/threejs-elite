@@ -108,6 +108,14 @@ export class NPCShip {
     return this.size;
   }
 
+  getHealth() {
+    return this.health;
+  }
+
+  getMaxHealth() {
+    return this.maxHealth;
+  }
+
   destroy() {
     this.destroyed = true;
     if (this.mesh.parent) {

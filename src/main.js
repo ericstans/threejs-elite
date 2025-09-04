@@ -15,6 +15,36 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { ConversationSystem } from './ConversationSystem.js';
 
 class Game {
+  handleLaserAsteroidCollision(laser, asteroid, laserIndex, asteroidIndex) {
+    // Remove the laser
+    this.gameEngine.removeEntity(laser);
+    this.lasers.splice(laserIndex, 1);
+    // Damage the asteroid
+    const wasDestroyed = asteroid.takeDamage(1);
+    if (wasDestroyed) {
+      // Asteroid destroyed - create large explosion at center
+      const explosion = new Explosion(asteroid.getPosition(), asteroid.getSize() * 2, 1.0);
+      this.explosions.push(explosion);
+      this.gameEngine.addEntity(explosion);
+      // Play spatial explosion sound
+      this.gameEngine.createSpatialExplosion(asteroid.getPosition());
+      // Remove asteroid
+      this.gameEngine.removeEntity(asteroid);
+      this.asteroids.splice(asteroidIndex, 1);
+    } else {
+      // Asteroid hit but not destroyed - create small explosion on surface
+      const hitPosition = asteroid.getPosition().clone();
+      // Add some randomness to the hit position
+      hitPosition.x += (Math.random() - 0.5) * asteroid.getSize();
+      hitPosition.y += (Math.random() - 0.5) * asteroid.getSize();
+      hitPosition.z += (Math.random() - 0.5) * asteroid.getSize();
+      const explosion = new Explosion(hitPosition, 0.3, 0.3);
+      this.explosions.push(explosion);
+      this.gameEngine.addEntity(explosion);
+      // Play spatial hit sound
+      this.gameEngine.createSpatialLaserHit(hitPosition);
+    }
+  }
   constructor() {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
