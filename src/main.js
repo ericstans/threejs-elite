@@ -266,8 +266,8 @@ class Game {
     if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKED') {
       this.ui.updateDockingStatus('DOCKED');
     }
-    // Fail-safe: if docking authorized but vector still hidden, reveal it
-    if (this.spaceship.getFlag('dockingAuthorized') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
+    // Fail-safe: if docking authorized but vector still hidden, reveal it (unless alignment lock already achieved, in which case it was intentionally hidden)
+    if (this.spaceship.getFlag('dockingAuthorized') && !this.spaceship.getFlag('landingAlignmentLocked') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
       this.currentNavTarget.setLandingVectorVisible(true);
     }
     

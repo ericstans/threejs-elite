@@ -289,6 +289,10 @@ export class Spaceship {
           this.position.copy(axisPoint);
           this.flags.landingAlignmentLocked = true;
           this.rotationAlignTimer = 0; // start delay timer
+          // Hide landing vector guidance now that precise axis alignment achieved
+          if (station.setLandingVectorVisible) {
+            station.setLandingVectorVisible(false);
+          }
         }
       } else {
         // Maintain axis position always; insertion adjusts along-distance directly.
