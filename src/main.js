@@ -9,8 +9,10 @@ import { Asteroid } from './Asteroid.js';
 import { Explosion } from './Explosion.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
-import { ConversationSystem } from './ConversationSystem.js';
 
+import { NPCShip } from './NPCShip.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { ConversationSystem } from './ConversationSystem.js';
 
 class Game {
   constructor() {
@@ -58,10 +60,24 @@ class Game {
     
     // Create asteroid field between the planets
     this.createAsteroidField();
+
+    // --- Add static NPC ship near the asteroid field ---
+    // Place it 60 units beside the field center
+    const npcShipPos = new THREE.Vector3(-50 + 60, 50, -650);
+    this.npcShip = new NPCShip(npcShipPos);
+    // Wait for FBX to load, then add to scene
+    const addNPC = () => {
+      if (this.npcShip.loaded && this.npcShip.mesh.children.length > 0) {
+        this.gameEngine.scene.add(this.npcShip.mesh);
+      } else {
+        setTimeout(addNPC, 100);
+      }
+    };
+    addNPC();
     
-    // Position camera at spaceship center (cockpit view)
-    this.gameEngine.camera.position.set(0, 0, 0);
-    this.gameEngine.camera.rotation.set(0, 0, 0);
+  // Position camera at spaceship center (cockpit view)
+  this.gameEngine.camera.position.set(0, 0, 0);
+  this.gameEngine.camera.rotation.set(0, 0, 0);
   }
 
   createAsteroidField() {

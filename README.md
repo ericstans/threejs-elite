@@ -49,3 +49,8 @@ npm run dev
 
 # Build optimized production bundle
 npm run build
+
+
+### Credits
+
+Spaceship models by https://mehrasaur.itch.io/3d-spaceships-pack under CC0 license

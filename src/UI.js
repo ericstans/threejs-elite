@@ -23,6 +23,17 @@ export class UI {
     this.uiContainer.style.fontSize = '14px';
     document.body.appendChild(this.uiContainer);
 
+  // --- NPC Ship Highlight Rectangle ---
+  this.npcShipRect = document.createElement('div');
+  this.npcShipRect.style.position = 'absolute';
+  this.npcShipRect.style.border = '3px solid #00ffff';
+  this.npcShipRect.style.background = 'rgba(0,255,255,0.18)';
+  this.npcShipRect.style.boxShadow = '0 0 16px 4px #00ffff88';
+  this.npcShipRect.style.pointerEvents = 'none';
+  this.npcShipRect.style.display = 'none';
+  this.npcShipRect.style.zIndex = '1200';
+  this.uiContainer.appendChild(this.npcShipRect);
+ 
     // Initialize UI components
     this.throttleUI = new ThrottleUI(this.uiContainer);
     this.debugFlagsUI = new DebugFlagsUI();
@@ -139,7 +150,23 @@ export class UI {
     this.commsContent.appendChild(this.commsClose);
   }
 
+  showNPCShipRect(x, y, w, h) {
+    this.npcShipRect.style.display = 'block';
+    this.npcShipRect.style.left = `${x}px`;
+    this.npcShipRect.style.top = `${y}px`;
+    this.npcShipRect.style.width = `${w}px`;
+    this.npcShipRect.style.height = `${h}px`;
+    // Debug: log rectangle
+    if (w > 0 && h > 0) {
+      console.log('[NPC Overlay] show at', x, y, w, h);
+    }
+    }
+  
+  // Removed NPC ship overlay rectangle logic
 
+  hideNPCShipRect() {
+    this.npcShipRect.style.display = 'none';
+  }
 
   updateThrottle(targetSpeed, currentSpeed, maxSpeed) {
     this.throttleUI.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
