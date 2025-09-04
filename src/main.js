@@ -119,9 +119,18 @@ class Game {
       this.targetNearestPlanet();
     });
 
-    // Handle communications
+    // Handle communications (V key: only for current target)
     this.controls.setOnComms(() => {
-      this.openComms();
+      if (this.currentTarget && this.currentTarget.isCommable) {
+        this.openComms();
+      }
+    });
+
+    // Handle nav target comms (C key)
+    this.controls.setOnNavComms(() => {
+      if (this.currentNavTarget && this.currentNavTarget.isCommable) {
+        this.openNavComms();
+      }
     });
 
     // Handle closing communications
@@ -351,10 +360,11 @@ class Game {
           isAlive: () => true,
           setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
           getId: () => 'npcship',
+          getName: () => 'Derelict Cruiser',
           getMass: () => 1000,
           getHealth: () => 100,
           getMaxHealth: () => 100,
-          isCommable: false
+          isCommable: true
         });
       }
     }
@@ -492,6 +502,24 @@ class Game {
   }
 
   openComms() {
+    // Only open comms if we have a commable current target
+    if (this.currentTarget && this.currentTarget.isCommable) {
+      // Set comm target in docking range flag BEFORE generating options
+      const spaceshipPos = this.spaceship.getPosition();
+      const targetPos = this.currentTarget.getPosition();
+      const distance = spaceshipPos.distanceTo(targetPos);
+      const inDockingRange = distance <= 200;
+      this.spaceship.setFlag('commTargetInDockingRange', inDockingRange);
+      const targetName = this.currentTarget.getName ? this.currentTarget.getName() : 'Unknown';
+      const greeting = this.conversationSystem.getGreeting ? this.conversationSystem.getGreeting(targetName) : 'No response.';
+      const playerFlags = this.spaceship.getAllFlags();
+      const initialOptions = this.conversationSystem.getInitialOptions ? this.conversationSystem.getInitialOptions(targetName, playerFlags) : [{ id: 'end', text: 'End Transmission' }];
+      this.ui.showCommsModal(targetName, greeting, initialOptions);
+      this.currentConversationNode = 'initial';
+    }
+  }
+
+  openNavComms() {
     // Only open comms if we have a nav target and it's commable
     if (this.currentNavTarget && this.currentNavTarget.isCommable) {
       // Set comm target in docking range flag BEFORE generating options
@@ -500,7 +528,6 @@ class Game {
       const distance = spaceshipPos.distanceTo(targetPos);
       const inDockingRange = distance <= 200;
       this.spaceship.setFlag('commTargetInDockingRange', inDockingRange);
-      
       const planetName = this.currentNavTarget.getName();
       const greeting = this.conversationSystem.getGreeting(planetName);
       const playerFlags = this.spaceship.getAllFlags();
@@ -632,6 +659,8 @@ class Game {
       }
     }
   }
+
+  
 
   start() {
     // Override the game engine's update to include our custom update

@@ -104,12 +104,17 @@ export class Controls {
       this.keys['KeyY'] = false;
     }
     
-    // Communications
-    if (this.keys['KeyC']) {
+    // Communications (V for target, C for nav target)
+    if (this.keys['KeyV']) {
       if (this.onComms) {
         this.onComms();
       }
-      // Clear the key to prevent repeated calls
+      this.keys['KeyV'] = false;
+    }
+    if (this.keys['KeyC']) {
+      if (this.onNavComms) {
+        this.onNavComms();
+      }
       this.keys['KeyC'] = false;
     }
     
@@ -133,6 +138,10 @@ export class Controls {
         this.keys[keyName] = false;
       }
     }
+  }
+
+  setOnNavComms(callback) {
+    this.onNavComms = callback;
   }
 
   setOnShoot(callback) {
