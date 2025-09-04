@@ -750,24 +750,10 @@ class Game {
     if (!this.spaceship.flags.isDocked || this.spaceship.flags.stationDocked) return;
     const planet = this.spaceship.dockingTarget;
     if (!planet) return;
-    // Clear docked state
-    this.spaceship.flags.isDocked = false;
-    this.spaceship.dockingProgress = 0;
-    // Detach mesh from planet if parented
-    if (this.spaceship.mesh.parent === planet.mesh) {
-      planet.mesh.remove(this.spaceship.mesh);
-      // Recompute world position relative to scene root
-      planet.mesh.updateWorldMatrix(true, false);
-      this.spaceship.mesh.applyMatrix4(planet.mesh.matrixWorld);
-      this.spaceship.mesh.position.add(new THREE.Vector3(0, planet.radius * 1.1, 0));
+    // Use smooth takeoff sequence (keeps isDocked true until ascent completes)
+    if (this.spaceship.startPlanetTakeoff) {
+      this.spaceship.startPlanetTakeoff(planet, this.gameEngine.scene);
     }
-    // Give an initial upward velocity away from planet surface
-    const up = new THREE.Vector3(0,1,0);
-    this.spaceship.position.copy(this.spaceship.mesh.getWorldPosition(new THREE.Vector3()));
-    this.spaceship.quaternion.copy(this.spaceship.mesh.getWorldQuaternion(new THREE.Quaternion()));
-    this.spaceship.velocity.copy(up.multiplyScalar(5));
-    // Reset throttle to half for departure
-    this.spaceship.setThrottle(0.5);
   }
 
   selectCommsOption(optionNumber) {
