@@ -270,60 +270,76 @@ class Game {
   }
 
   checkCollisions() {
-    // Check each laser against each asteroid
+    // Check each laser against each asteroid and the NPC ship
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const laser = this.lasers[i];
-      
+      let hit = false;
+      // Asteroids
       for (let j = this.asteroids.length - 1; j >= 0; j--) {
         const asteroid = this.asteroids[j];
-        
         if (!asteroid.isAlive()) continue;
-        
-        // Simple distance-based collision detection
         const distance = laser.getPosition().distanceTo(asteroid.getPosition());
-        const collisionRadius = asteroid.getSize() + 0.1; // Small buffer
-        
+        const collisionRadius = asteroid.getSize() + 0.1;
         if (distance < collisionRadius) {
-          // Collision detected!
           this.handleLaserAsteroidCollision(laser, asteroid, i, j);
-          break; // Laser can only hit one asteroid
+          hit = true;
+          break;
+        }
+      }
+      if (hit) continue;
+      // NPC Ship
+      if (this.npcShip && this.npcShip.loaded && this.npcShip.isAlive()) {
+        const npcPos = this.npcShip.getWorldPosition();
+        const npcRadius = this.npcShip.getSize() + 0.1;
+        const distance = laser.getPosition().distanceTo(npcPos);
+        if (distance < npcRadius) {
+          this.handleLaserNPCShipCollision(laser, this.npcShip, i);
+          continue;
         }
       }
     }
   }
 
-  handleLaserAsteroidCollision(laser, asteroid, laserIndex, asteroidIndex) {
+  handleLaserNPCShipCollision(laser, npcShip, laserIndex) {
     // Remove the laser
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
-    
-    // Damage the asteroid
-    const wasDestroyed = asteroid.takeDamage(1);
-    
-    if (wasDestroyed) {
-      // Asteroid destroyed - create large explosion at center
-      const explosion = new Explosion(asteroid.getPosition(), asteroid.getSize() * 2, 1.0);
+    // Calculate intersection point between laser and NPC ship bounding sphere
+    const laserStart = laser.getPosition();
+    const laserDir = laser.direction.clone().normalize();
+    const sphereCenter = npcShip.getWorldPosition();
+    const sphereRadius = npcShip.getSize();
+    // Ray-sphere intersection
+    const toCenter = sphereCenter.clone().sub(laserStart);
+    const tProj = toCenter.dot(laserDir);
+    let hitPosition = laserStart.clone().add(laserDir.clone().multiplyScalar(tProj));
+    // Clamp to sphere surface
+    const distToCenter = hitPosition.distanceTo(sphereCenter);
+    if (distToCenter > sphereRadius) {
+      hitPosition = sphereCenter.clone().add(
+        hitPosition.clone().sub(sphereCenter).normalize().multiplyScalar(sphereRadius)
+      );
+    }
+    // Damage the NPC ship
+    const wasNPCDestroyed = npcShip.takeDamage(1);
+    if (wasNPCDestroyed) {
+      // NPC ship destroyed - create large explosion at center
+      const explosion = new Explosion(hitPosition, npcShip.getSize() * 2, 1.0);
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
-      
       // Play spatial explosion sound
-      this.gameEngine.createSpatialExplosion(asteroid.getPosition());
-      
-      // Remove asteroid
-      this.gameEngine.removeEntity(asteroid);
-      this.asteroids.splice(asteroidIndex, 1);
+      this.gameEngine.createSpatialExplosion(hitPosition);
+      // Clear target if it was the NPC ship
+      if (this.currentTarget && this.currentTarget.getId && this.currentTarget.getId() === 'npcship') {
+        this.currentTarget = null;
+        this.ui.clearTargetInfo();
+      }
+      // Remove NPC ship from scene handled in destroy()
     } else {
-      // Asteroid hit but not destroyed - create small explosion on surface
-      const hitPosition = asteroid.getPosition().clone();
-      // Add some randomness to the hit position
-      hitPosition.x += (Math.random() - 0.5) * asteroid.getSize();
-      hitPosition.y += (Math.random() - 0.5) * asteroid.getSize();
-      hitPosition.z += (Math.random() - 0.5) * asteroid.getSize();
-      
+      // NPC ship hit but not destroyed - create small explosion on surface
       const explosion = new Explosion(hitPosition, 0.3, 0.3);
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
-      
       // Play spatial hit sound
       this.gameEngine.createSpatialLaserHit(hitPosition);
     }

@@ -7,7 +7,23 @@ export class NPCShip {
     this.mesh = new THREE.Group();
     this.position = position.clone();
     this.loaded = false;
-  this.loadModel();
+    this.health = 10;
+    this.maxHealth = 10;
+    this.destroyed = false;
+    this.size = 20; // Default, will be set after model loads
+    this.loadModel();
+  }
+
+  getWorldPosition() {
+    // Return the world position of the first visible mesh, or fallback to group position
+    let meshCenter = null;
+    this.mesh.traverse(child => {
+      if (!meshCenter && child.isMesh) {
+        meshCenter = new THREE.Vector3();
+        child.getWorldPosition(meshCenter);
+      }
+    });
+    return meshCenter || this.mesh.position;
   }
 
   loadModel() {
@@ -33,18 +49,19 @@ export class NPCShip {
       const center = new THREE.Vector3();
       box.getCenter(center);
       object.position.sub(center); // move geometry so origin is at center
-      // Scale so largest dimension is ~40 units (planet diameter)
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const targetSize = 40;
-      const scale = targetSize / maxDim;
-      object.scale.setScalar(scale);
+  // Scale so largest dimension is ~40 units (planet diameter)
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const targetSize = 40;
+  const scale = targetSize / maxDim;
+  object.scale.setScalar(scale);
+  this.size = targetSize / 2; // Use radius for collision
       // Place at intended world position
       this.mesh.position.copy(this.position);
       this.mesh.add(object);
             // ...removed wireframe debug box...
-      this.loaded = true;
+  this.loaded = true;
       // Debug: log bounding box size after scaling
       setTimeout(() => {
         const worldBox = new THREE.Box3().setFromObject(this.mesh);
@@ -67,5 +84,34 @@ export class NPCShip {
 
   update(/* deltaTime */) {
     // No behavior yet
+  }
+
+  isAlive() {
+    return !this.destroyed && this.health > 0;
+  }
+
+  takeDamage(amount) {
+    if (!this.isAlive()) return false;
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.destroy();
+      return true;
+    }
+    return false;
+  }
+
+  getPosition() {
+    return this.mesh.position;
+  }
+
+  getSize() {
+    return this.size;
+  }
+
+  destroy() {
+    this.destroyed = true;
+    if (this.mesh.parent) {
+      this.mesh.parent.remove(this.mesh);
+    }
   }
 }
