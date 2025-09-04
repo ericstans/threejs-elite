@@ -74,6 +74,69 @@ class Game {
     this.start();
   }
 
+  initThirdPerson() {
+    this.thirdPersonInitialized = true;
+    // Load FBX model (ship2.fbx) similar to NPCShip but reused for player
+    const loader = new FBXLoader();
+    loader.load(
+      new URL('./assets/fbx/ship2.fbx', import.meta.url).href,
+      (object) => {
+        object.traverse(child => {
+          if (child.isMesh) {
+            child.castShadow = false;
+            child.receiveShadow = false;
+            if (!child.material || (Array.isArray(child.material) && child.material.length === 0)) {
+              child.material = new THREE.MeshStandardMaterial({ color: 0xccccff, emissive: 0x222244 });
+            }
+            child.material.transparent = false;
+            child.material.opacity = 1.0;
+            child.material.visible = true;
+          }
+        });
+        // Center & scale similar to NPCShip
+        const box = new THREE.Box3().setFromObject(object);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        object.position.sub(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetSize = 40; // match NPC ship visual scale
+        const scale = targetSize / maxDim;
+        object.scale.setScalar(scale);
+        // Add group to scene and to spaceship
+        this.spaceship.enableThirdPerson(object);
+        this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
+        // Hide cockpit-only mesh when third person active
+        this.spaceship.mesh.visible = false;
+      },
+      undefined,
+      (err) => {
+        console.error('Failed to load player third-person model', err);
+      }
+    );
+  }
+
+  toggleThirdPerson() {
+    this.spaceship.toggleThirdPerson();
+    if (this.spaceship.thirdPersonMode) {
+      // Activating third person: ensure group in scene & hide cockpit mesh
+      if (!this.spaceship.thirdPersonLoaded) {
+        // model still loading or not yet loaded
+      }
+      if (!this.spaceship.thirdPersonGroup.parent) {
+        this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
+      }
+      this.spaceship.mesh.visible = false;
+      // Move camera slightly back and up relative to ship orientation
+      this.thirdPersonCameraOffset = new THREE.Vector3(0, 10, 30); // behind ship (positive z because ship faces -z)
+    } else {
+      // Return to cockpit
+      this.spaceship.mesh.visible = false; // still hidden because cockpit view uses camera at ship pos
+      // camera will be reset each frame in update
+    }
+  }
+
   setupGame() {
     // Add spaceship to game engine for physics updates, but don't render the mesh
     this.gameEngine.addEntity(this.spaceship);
@@ -317,9 +380,17 @@ class Game {
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
     const spaceshipRot = this.spaceship.getRotation();
-    
-    this.gameEngine.camera.position.copy(spaceshipPos);
-    this.gameEngine.camera.rotation.copy(spaceshipRot);
+    if (this.spaceship.thirdPersonMode && this.thirdPersonCameraOffset) {
+      // Compute world offset from ship quaternion
+      const offsetWorld = this.thirdPersonCameraOffset.clone().applyEuler(spaceshipRot);
+      const camPos = spaceshipPos.clone().add(offsetWorld);
+      this.gameEngine.camera.position.copy(camPos);
+      // Look at ship position
+      this.gameEngine.camera.lookAt(spaceshipPos);
+    } else {
+      this.gameEngine.camera.position.copy(spaceshipPos);
+      this.gameEngine.camera.rotation.copy(spaceshipRot);
+    }
 
   // Update continuous engine rumble based on throttle & docking
   this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), this.spaceship.flags.isDocked);

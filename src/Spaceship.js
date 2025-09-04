@@ -3,6 +3,10 @@ import * as THREE from 'three';
 export class Spaceship {
   constructor() {
     this.mesh = this.createSpaceshipMesh();
+  // Third-person model holder (FBX)
+  this.thirdPersonGroup = new THREE.Group();
+  this.thirdPersonLoaded = false;
+  this.thirdPersonMode = false;
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
@@ -79,6 +83,29 @@ export class Spaceship {
     // Update mesh position
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
+     if (this.thirdPersonMode) {
+       this.thirdPersonGroup.position.copy(this.position);
+       this.thirdPersonGroup.rotation.copy(this.rotation);
+     }
+    this.thirdPersonGroup.position.copy(this.position);
+    this.thirdPersonGroup.rotation.copy(this.rotation);
+  }
+
+  enableThirdPerson(modelRoot) {
+    // Attach loaded model root into thirdPersonGroup
+    if (modelRoot && !this.thirdPersonLoaded) {
+      this.thirdPersonGroup.add(modelRoot);
+      this.thirdPersonLoaded = true;
+    }
+    this.thirdPersonMode = true;
+  }
+
+  disableThirdPerson() {
+    this.thirdPersonMode = false;
+  }
+
+  toggleThirdPerson() {
+    this.thirdPersonMode = !this.thirdPersonMode;
   }
 
   lockToStation(station) {
@@ -105,6 +132,10 @@ export class Spaceship {
     this.rotation.setFromQuaternion(this.quaternion);
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
+     if (this.thirdPersonMode) {
+       this.thirdPersonGroup.position.copy(this.position);
+       this.thirdPersonGroup.quaternion.copy(this.quaternion);
+     }
   }
 
   createSpaceshipMesh() {
@@ -407,6 +438,10 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
+       if (this.thirdPersonMode) {
+         this.thirdPersonGroup.position.copy(this.position);
+         this.thirdPersonGroup.quaternion.copy(this.quaternion);
+       }
       return; // Skip normal movement while locked
     }
 
@@ -455,6 +490,10 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
+       if (this.thirdPersonMode) {
+         this.thirdPersonGroup.position.copy(this.position);
+         this.thirdPersonGroup.quaternion.copy(this.quaternion);
+       }
       return;
     }
 

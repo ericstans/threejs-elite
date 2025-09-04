@@ -166,6 +166,18 @@ export class Controls {
         this.keys[keyName] = false;
       }
     }
+
+    // F1 toggles third-person mode
+    if (this.keys['F1']) {
+      if (this.game) {
+        if (!this.game.thirdPersonInitialized) {
+          this.game.initThirdPerson();
+        } else {
+          this.game.toggleThirdPerson();
+        }
+      }
+      this.keys['F1'] = false; // prevent repeat
+    }
   }
 
   setOnNavComms(callback) {
