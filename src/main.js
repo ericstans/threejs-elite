@@ -176,8 +176,12 @@ class Game {
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
     
-    // Update UI
-    this.ui.updateThrottle(this.spaceship.getThrottle(), this.spaceship.getSpeedPerMinute());
+  // Update UI
+  // Pass targetSpeed, currentSpeed, and maxSpeed for UI
+  const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
+  const currentSpeed = this.spaceship.getSpeed();
+  const maxSpeed = this.spaceship.maxSpeed;
+  this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
     
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
