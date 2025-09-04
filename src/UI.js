@@ -18,7 +18,7 @@ export class UI {
   this.cockpitOverlay.style.position = 'fixed';
   this.cockpitOverlay.style.top = '0';
   this.cockpitOverlay.style.left = '0';
-  this.cockpitOverlay.style.width = '100vw';
+  this.cockpitOverlay.style.width = '80vw';
   this.cockpitOverlay.style.height = '100vh';
   this.cockpitOverlay.style.pointerEvents = 'none';
   this.cockpitOverlay.style.zIndex = '900'; // Below UI container (zIndex 1200+)
