@@ -257,14 +257,14 @@ class Game {
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
 
     // Landing alignment status update
-    if (this.spaceship.getFlag('landingVectorLocked') && this.spaceship.getFlag('landingAlignmentLocked') && this.ui.dockingStatus.textContent !== 'Alignment lock acquired') {
-      this.ui.updateDockingStatus('Alignment lock acquired');
+    if (this.spaceship.getFlag('landingVectorLocked') && this.spaceship.getFlag('landingAlignmentLocked') && this.ui.dockingStatus.textContent !== 'ALIGNMENT LOCK ACQUIRED') {
+      this.ui.updateDockingStatus('ALIGNMENT LOCK ACQUIRED');
     }
     if (this.spaceship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {
       this.ui.updateDockingStatus('ROTATION LOCK ACQUIRED');
     }
-    if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKED') {
-      this.ui.updateDockingStatus('DOCKED');
+    if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKING COMPLETE') {
+      this.ui.updateDockingStatus('DOCKING COMPLETE');
     }
     // Fail-safe: if docking authorized but vector still hidden, reveal it (unless alignment lock already achieved, in which case it was intentionally hidden)
     if (this.spaceship.getFlag('dockingAuthorized') && !this.spaceship.getFlag('landingAlignmentLocked') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
@@ -273,6 +273,7 @@ class Game {
     
     // Handle docking completion
     if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
+      this.ui.updateDockingStatus('DOCKING COMPLETE');
       this.ui.hideDockingStatus();
       console.log('Docking completed! Ship is now docked on', this.currentNavTarget?.getName());
     }
@@ -794,7 +795,7 @@ class Game {
         // Grant docking authorization
         this.spaceship.setFlag('dockingAuthorized', true);
         this.ui.showDockingStatus();
-        this.ui.updateDockingStatus('AUTHORIZED -- PROCEED TO LANDING VECTOR');
+        this.ui.updateDockingStatus('LANDING AUTHORIZED \n PROCEED TO LANDING VECTOR');
         this.closeComms();
         return;
       }

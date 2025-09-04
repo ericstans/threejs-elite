@@ -100,23 +100,33 @@ export class UI {
     this.crosshair.style.background = 'transparent';
     this.uiContainer.appendChild(this.crosshair);
 
-    // Docking status display (initially hidden)
+    // Docking status display moved into Nav Target panel (bottom area)
     this.dockingStatus = document.createElement('div');
     this.dockingStatus.style.position = 'absolute';
-    this.dockingStatus.style.top = '75%';
     this.dockingStatus.style.left = '50%';
-    this.dockingStatus.style.transform = 'translate(-50%, -50%)';
+    this.dockingStatus.style.bottom = '4px';
+    this.dockingStatus.style.transform = 'translateX(-50%)';
     this.dockingStatus.style.fontFamily = 'monospace';
-    this.dockingStatus.style.fontSize = '24px';
+    this.dockingStatus.style.fontSize = '12px';
     this.dockingStatus.style.color = '#ffff00';
     this.dockingStatus.style.textAlign = 'center';
-    this.dockingStatus.style.background = 'rgba(0, 0, 0, 0.8)';
-    this.dockingStatus.style.padding = '20px';
-    this.dockingStatus.style.border = '2px solid #ffff00';
+    this.dockingStatus.style.background = 'rgba(0, 0, 0, 0.4)';
+    this.dockingStatus.style.padding = '4px 6px';
+    this.dockingStatus.style.border = '1px solid #ffff00';
+    this.dockingStatus.style.width = '90%';
+    this.dockingStatus.style.borderRadius = '2px';
     this.dockingStatus.style.display = 'none';
-    this.dockingStatus.style.zIndex = '1500';
+    this.dockingStatus.style.whiteSpace = 'pre-line';
     this.dockingStatus.textContent = 'DOCKING IN PROGRESS';
-    this.uiContainer.appendChild(this.dockingStatus);
+    // Ensure nav target panel can anchor absolutely positioned children
+    if (this.navTargetUI && this.navTargetUI.navTargetPanel) {
+      // If panel is absolute we still can position child; but make it relative to ensure correct bottom reference
+      this.navTargetUI.navTargetPanel.style.position = this.navTargetUI.navTargetPanel.style.position || 'relative';
+      this.navTargetUI.navTargetPanel.appendChild(this.dockingStatus);
+    } else {
+      // Fallback: append to uiContainer (should rarely happen)
+      this.uiContainer.appendChild(this.dockingStatus);
+    }
 
     // Auto-aim cone indicator (for testing)
     this.autoAimCone = document.createElement('div');
