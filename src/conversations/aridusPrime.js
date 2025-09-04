@@ -7,7 +7,8 @@ export const aridusPrimeConversation = {
         { id: 'mining', text: 'Tell me more about mining.' },
         { id: 'planet', text: 'Tell me more about Aridus Prime.' },
         { id: 'system', text: 'Tell me more about the Aridus system.' },
-        playerFlags.commTargetInDockingRange === true ? { id: 'docking', text: 'Request docking.' } : 
+  playerFlags.isDocked && playerFlags.dockedPlanet === 'Aridus Prime' ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+  playerFlags.commTargetInDockingRange === true ? { id: 'docking', text: 'Request docking.' } : 
         playerFlags.commTargetInDockingRange === false ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null,
         playerFlags.hasVisitedOceanus ? { id: 'oceanus_comparison', text: 'How does this compare to Oceanus?' } : null,
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
@@ -109,6 +110,12 @@ export const aridusPrimeConversation = {
       options: [
         { id: 'back_docking', text: 'Back to docking information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
+      ]
+    },
+    request_takeoff: {
+      response: "Takeoff authorization granted. Launching now.",
+      options: [
+        { id: 'confirm_takeoff', text: 'Acknowledged.' }
       ]
     },
     back_mining: {

@@ -19,6 +19,8 @@ export class SpaceStation {
   // Landing vector animation state
   this.landingVectorGroup = this.createLandingVector();
   if (this.landingVectorGroup) this.mesh.add(this.landingVectorGroup);
+  // Hidden until player receives docking authorization
+  if (this.landingVectorGroup) this.landingVectorGroup.visible = false;
   this.landingVectorOffset = 0; // animation phase
     this.updatePosition();
   }
@@ -138,7 +140,7 @@ export class SpaceStation {
     this.angle += this.orbitSpeed * deltaTime;
     this.updatePosition();
     // Animate landing vector dotted movement
-    if (this.landingVectorDots) {
+  if (this.landingVectorDots && this.landingVectorGroup && this.landingVectorGroup.visible) {
       this.landingVectorOffset = (this.landingVectorOffset + this.landingVectorSpeed * deltaTime) % this.landingVectorLength;
       const start = new THREE.Vector3(0, this.size / 2 + 0.01, 0);
       this.positionLandingVectorDots(start);
@@ -167,4 +169,8 @@ export class SpaceStation {
     return dirWorld;
   }
   getLandingVectorLength() { return this.landingVectorLength; }
+
+  setLandingVectorVisible(v) {
+    if (this.landingVectorGroup) this.landingVectorGroup.visible = v;
+  }
 }

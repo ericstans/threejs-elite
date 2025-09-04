@@ -68,8 +68,9 @@ export class ConversationSystem {
     // Base options with inline conditional logic
     const baseOptions = [
       { id: 'information', text: `Information about ${planetName}` },
-      playerFlags.commTargetInDockingRange === true ? { id: 'docking', text: 'Request docking' } : 
-      playerFlags.commTargetInDockingRange === false ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null
+      playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } : 
+      playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : 
+      playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } : null
     ];
     
     // Filter out null/undefined options

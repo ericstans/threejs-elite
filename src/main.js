@@ -266,6 +266,10 @@ class Game {
     if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKED') {
       this.ui.updateDockingStatus('DOCKED');
     }
+    // Fail-safe: if docking authorized but vector still hidden, reveal it
+    if (this.spaceship.getFlag('dockingAuthorized') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
+      this.currentNavTarget.setLandingVectorVisible(true);
+    }
     
     // Handle docking completion
     if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
@@ -520,6 +524,10 @@ class Game {
   }
 
   targetNearestPlanet() {
+    // Block nav target changes while docking or docked
+    if (this.spaceship.flags.isDocked || this.spaceship.flags.isDocking || this.spaceship.flags.landingVectorLocked) {
+      return;
+    }
     // Clear current nav target
     if (this.currentNavTarget) {
       this.currentNavTarget.setNavTargeted(false);
@@ -674,6 +682,10 @@ class Game {
           // New station flow: show authorization message
           this.ui.showDockingStatus();
           this.ui.updateDockingStatus('AUTHORIZED -- PROCEED TO LANDING VECTOR');
+          // Reveal landing vector guidance now that authorization granted
+          if (this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
+            this.currentNavTarget.setLandingVectorVisible(true);
+          }
         }
       }
     }
@@ -733,6 +745,31 @@ class Game {
     }
   }
 
+  initiatePlanetTakeoff() {
+    // Only proceed if currently docked to a planet
+    if (!this.spaceship.flags.isDocked || this.spaceship.flags.stationDocked) return;
+    const planet = this.spaceship.dockingTarget;
+    if (!planet) return;
+    // Clear docked state
+    this.spaceship.flags.isDocked = false;
+    this.spaceship.dockingProgress = 0;
+    // Detach mesh from planet if parented
+    if (this.spaceship.mesh.parent === planet.mesh) {
+      planet.mesh.remove(this.spaceship.mesh);
+      // Recompute world position relative to scene root
+      planet.mesh.updateWorldMatrix(true, false);
+      this.spaceship.mesh.applyMatrix4(planet.mesh.matrixWorld);
+      this.spaceship.mesh.position.add(new THREE.Vector3(0, planet.radius * 1.1, 0));
+    }
+    // Give an initial upward velocity away from planet surface
+    const up = new THREE.Vector3(0,1,0);
+    this.spaceship.position.copy(this.spaceship.mesh.getWorldPosition(new THREE.Vector3()));
+    this.spaceship.quaternion.copy(this.spaceship.mesh.getWorldQuaternion(new THREE.Quaternion()));
+    this.spaceship.velocity.copy(up.multiplyScalar(5));
+    // Reset throttle to half for departure
+    this.spaceship.setThrottle(0.5);
+  }
+
   selectCommsOption(optionNumber) {
     if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
       return;
@@ -749,7 +786,7 @@ class Game {
       const optionId = selectedOption.dataset.optionId;
 
       // Handle special cases
-      if (optionId === 'end' || optionId === 'confirm_dock') {
+      if (optionId === 'end' || optionId === 'confirm_dock' || optionId === 'confirm_takeoff') {
         // Check if this option has flags to set before closing
         if (selectedOption.dataset.flags) {
           try {
@@ -758,6 +795,9 @@ class Game {
           } catch (e) {
             console.warn('Invalid flags data:', selectedOption.dataset.flags);
           }
+        }
+        if (optionId === 'confirm_takeoff') {
+          this.initiatePlanetTakeoff();
         }
         this.closeComms();
         return;
