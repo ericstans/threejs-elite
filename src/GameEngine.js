@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { generateStarfieldEquirectTexture } from './util/generateStarfieldTexture.js';
 
 export class GameEngine {
   constructor() {
@@ -16,18 +17,20 @@ export class GameEngine {
   }
 
   setupRenderer() {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setClearColor(0x000000);
-    this.renderer.shadowMap.enabled = false; // Disable shadows for flat-shaded look
-    document.body.appendChild(this.renderer.domElement);
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  this.renderer.setClearColor(0x000000);
+  this.renderer.shadowMap.enabled = false; // Disable shadows for flat-shaded look
+  document.body.appendChild(this.renderer.domElement);
+
+  // Set equirectangular starfield background (white dots on black)
+  const starfieldTexture = generateStarfieldEquirectTexture(2048, 600);
+  this.scene.background = starfieldTexture;
   }
 
   setupScene() {
-    // Add spacedust (local space particles)
-    this.createSpacedust();
-    
-    // Add distant background stars
-    this.createStarfield();
+  // Add spacedust (local space particles)
+  this.createSpacedust();
+  // Remove distant starfield points, now handled by background
   }
 
   createSpacedust() {
@@ -37,7 +40,7 @@ export class GameEngine {
     const spacedustPositions = new Float32Array(spacedustCount * 3);
     
     for (let i = 0; i < spacedustCount * 3; i++) {
-      spacedustPositions[i] = (Math.random() - 0.5) * 2000;
+      spacedustPositions[i] = (Math.random() - 0.5) * 8000;
     }
     
     spacedustGeometry.setAttribute('position', new THREE.BufferAttribute(spacedustPositions, 3));
@@ -89,10 +92,13 @@ export class GameEngine {
       sizeAttenuation: false,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8
+      opacity: 1,
+      depthWrite: false,
+      depthTest: false
     });
-    
+
     this.starfield = new THREE.Points(starGeometry, starMaterial);
+    this.starfield.renderOrder = -1;
     this.scene.add(this.starfield);
   }
 
@@ -200,6 +206,11 @@ export class GameEngine {
 
   animate() {
     const deltaTime = this.clock.getDelta();
+    // Center starfield on player ship if available (do not rotate)
+    if (this.spaceship && this.starfield) {
+      this.starfield.position.copy(this.spaceship.getPosition());
+      this.starfield.rotation.set(0, 0, 0); // Ensure no rotation is applied
+    }
     this.update(deltaTime);
     this.render();
     requestAnimationFrame(() => this.animate());

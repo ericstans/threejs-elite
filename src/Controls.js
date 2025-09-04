@@ -109,13 +109,27 @@ export class Controls {
       this._tKeyHeld = null;
     }
     
-    // Navigation targeting
+    // Navigation targeting: tap Y to nav target, hold Y to clear nav target
     if (this.keys['KeyY']) {
-      if (this.onNavTarget) {
+      if (!this._yKeyHeld) {
+        this._yKeyHeld = { start: performance.now(), cleared: false };
+      }
+      const held = this._yKeyHeld;
+      const heldTime = performance.now() - held.start;
+      if (heldTime > 350 && !held.cleared) { // Hold >350ms to clear nav target
+        if (this.game && this.game.currentNavTarget) {
+          this.game.currentNavTarget.setTargeted && this.game.currentNavTarget.setTargeted(false);
+          this.game.currentNavTarget = null;
+          this.game.ui.clearNavTargetInfo && this.game.ui.clearNavTargetInfo();
+        }
+        held.cleared = true;
+      }
+    } else if (this._yKeyHeld) {
+      // On Y release: if not held long enough, treat as tap (nav target)
+      if (!this._yKeyHeld.cleared && this.onNavTarget) {
         this.onNavTarget();
       }
-      // Clear the key to prevent repeated targeting
-      this.keys['KeyY'] = false;
+      this._yKeyHeld = null;
     }
     
     // Communications (V for target, C for nav target)
