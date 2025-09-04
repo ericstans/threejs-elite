@@ -18,7 +18,7 @@ export class DebugFlagsUI {
     // Flags display container
     this.flagsDisplay = document.createElement('div');
     this.flagsDisplay.style.position = 'fixed';
-    this.flagsDisplay.style.bottom = '10px';
+    this.flagsDisplay.style.top = '10px';
     this.flagsDisplay.style.left = '50%';
     this.flagsDisplay.style.transform = 'translateX(-50%)';
     this.flagsDisplay.style.background = 'rgba(0, 0, 0, 0.8)';
