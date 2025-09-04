@@ -116,6 +116,11 @@ export class NPCShip {
     return this.maxHealth;
   }
 
+  setTargeted(v) {
+    // Placeholder for consistency with asteroid interface; could toggle a highlight later
+    this.mesh.userData.targeted = v;
+  }
+
   destroy() {
     this.destroyed = true;
     if (this.mesh.parent) {

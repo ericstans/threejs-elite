@@ -373,6 +373,11 @@ class Game {
     }
     // Damage the NPC ship
     const wasNPCDestroyed = npcShip.takeDamage(1);
+    // If NPC ship currently targeted, refresh target info for updated health
+    if (!wasNPCDestroyed && this.currentTarget && this.currentTarget.getId && this.currentTarget.getId() === 'npcship') {
+      // Directly call updateTargetInfo so UI reflects new health immediately
+      this.updateTargetInfo();
+    }
     if (wasNPCDestroyed) {
       // NPC ship destroyed - create large explosion at center
       const explosion = new Explosion(hitPosition, npcShip.getSize() * 2, 1.0);
@@ -424,14 +429,14 @@ class Game {
       if (meshCenter) {
         targetables.push({
           getPosition: () => meshCenter,
-          isAlive: () => true,
-          setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
-          getId: () => 'npcship',
-          getName: () => 'Derelict Cruiser',
-          getMass: () => 1000,
-          getHealth: () => 100,
-          getMaxHealth: () => 100,
-          isCommable: true
+            isAlive: () => this.npcShip.isAlive(),
+            setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
+            getId: () => 'npcship',
+            getName: () => 'Derelict Cruiser',
+            getMass: () => 1000,
+            getHealth: () => this.npcShip.getHealth(),
+            getMaxHealth: () => this.npcShip.getMaxHealth(),
+            isCommable: true
         });
       }
     }
