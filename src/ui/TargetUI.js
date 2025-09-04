@@ -104,34 +104,36 @@ export class TargetUI {
     const vector = targetPosition.clone();
     vector.project(camera);
 
-    // If target is in front of camera and on screen, show indicator, hide arrow
-    if (vector.z > 1 || vector.x < -1 || vector.x > 1 || vector.y < -1 || vector.y > 1) {
+    const behind = vector.z > 1; // target is behind camera
+    const offscreen = behind || vector.x < -1 || vector.x > 1 || vector.y < -1 || vector.y > 1;
+
+    if (offscreen) {
       this.targetIndicator.style.display = 'none';
-      // Show arrow at edge of screen, pointing toward target
-      // Clamp vector.x/y to [-1,1] for edge, but keep direction
-      let angle = Math.atan2(vector.y, vector.x);
-      // Clamp to edge
-      let edgeX = Math.max(-0.92, Math.min(0.92, vector.x));
-      let edgeY = Math.max(-0.92, Math.min(0.92, vector.y));
-      // If both x and y are out of bounds, pick the dominant axis
-      if (Math.abs(vector.x) > Math.abs(vector.y)) {
-        edgeY = vector.y / Math.abs(vector.x) * 0.92;
-      } else {
-        edgeX = vector.x / Math.abs(vector.y) * 0.92;
+      // Use a stable direction; if behind, flip so arrow indicates turn direction instead of collapsing to center
+      let dx = vector.x;
+      let dy = vector.y;
+      if (behind) { dx = -dx; dy = -dy; }
+      // Avoid near-zero collapse (exactly behind / forward)
+      const eps = 1e-4;
+      if (Math.hypot(dx, dy) < eps) {
+        // Choose upward by default
+        dx = 0; dy = 1;
       }
-      const screenX = (edgeX * 0.5 + 0.5) * window.innerWidth;
-      const screenY = (edgeY * -0.5 + 0.5) * window.innerHeight;
+      // Scale to edge while preserving aspect
+      const scale = 0.92 / Math.max(Math.abs(dx), Math.abs(dy));
+      dx *= scale;
+      dy *= scale;
+      const screenX = (dx * 0.5 + 0.5) * window.innerWidth;
+      const screenY = (dy * -0.5 + 0.5) * window.innerHeight;
       this.offscreenArrow.style.display = 'block';
       this.offscreenArrow.style.left = `${screenX - 18}px`;
       this.offscreenArrow.style.top = `${screenY - 32}px`;
-      // Snap arrow to up, down, left, or right depending on edge
+      // Snap to cardinal direction
       let rotation = 0;
-      if (Math.abs(edgeY) > 0.91 && Math.abs(edgeY) >= Math.abs(edgeX)) {
-        // Top or bottom (invert for both)
-        rotation = edgeY < 0 ? Math.PI : 0; // Top: down, Bottom: up
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        rotation = dy < 0 ? Math.PI : 0; // Top => point down (target above), Bottom => up
       } else {
-        // Left or right
-        rotation = edgeX < 0 ? -Math.PI / 2 : Math.PI / 2; // Left: left, Right: right
+        rotation = dx < 0 ? -Math.PI / 2 : Math.PI / 2;
       }
       this.offscreenArrow.style.transform = `rotate(${rotation}rad)`;
       return;

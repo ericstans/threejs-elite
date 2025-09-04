@@ -3,6 +3,7 @@ import { DebugFlagsUI } from './ui/DebugFlagsUI.js';
 import { ControlsUI } from './ui/ControlsUI.js';
 import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
+import cockpitImageSrc from './assets/png/cockpit.png';
 
 export class UI {
   constructor() {
@@ -98,8 +99,20 @@ export class UI {
   }
 
   createUI() {
-    // cockpit overlay disabled for now 
-    // this.createCockpitOverlay();
+  // Add bitmap cockpit graphic (bottom center) beneath UI
+  this.cockpitBitmap = document.createElement('img');
+  this.cockpitBitmap.src = cockpitImageSrc;
+  this.cockpitBitmap.alt = 'Cockpit';
+  this.cockpitBitmap.style.width = '120%';
+  this.cockpitBitmap.style.position = 'fixed';
+  this.cockpitBitmap.style.bottom = '0';
+  this.cockpitBitmap.style.left = '50%';
+  this.cockpitBitmap.style.transform = 'translateX(-50%)';
+  this.cockpitBitmap.style.pointerEvents = 'none';
+  this.cockpitBitmap.style.zIndex = '500'; // below UI elements
+  // Scale: keep natural size; could be adjusted with max-width if needed
+  // this.cockpitBitmap.style.maxWidth = '100%';
+  document.body.appendChild(this.cockpitBitmap);
 
     // Create UI container
     this.uiContainer = document.createElement('div');
@@ -112,6 +125,7 @@ export class UI {
     this.uiContainer.style.fontFamily = 'monospace';
     this.uiContainer.style.color = '#00ff00';
     this.uiContainer.style.fontSize = '14px';
+  this.uiContainer.style.zIndex = '1000'; // ensure above cockpit graphic
     document.body.appendChild(this.uiContainer);
  
     // Initialize UI components
