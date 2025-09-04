@@ -81,8 +81,9 @@ class Game {
     this.spaceship.mesh.visible = false;
     
     // Create planets (10x larger and much farther apart)
-    const planet1 = new Planet(20, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet
-  const planet2 = new Planet(15, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet
+  // Scaled up: planets now 4x previous radii (20->80, 15->60)
+  const planet1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet (4x size)
+  const planet2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet (4x size)
     
     this.planets.push(planet1);
     this.planets.push(planet2);
@@ -90,7 +91,10 @@ class Game {
   this.gameEngine.addEntity(planet2);
 
   // Add an orbital space station around Oceanus
-  this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 4, size: planet2.radius * 0.4 });
+  // Space station: only 2x its former absolute size (previous size ~7.2). New size target ~14.4 => factor 14.4 / 60 = 0.24.
+  // Also adjust orbit so it isn't pushed too far out by planet scaling (use 2x original orbit distance: old 15*4=60, new 60*2=120).
+  // Double previous station size (0.24 -> 0.48 radius factor)
+  this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 2, size: planet2.radius * 0.48 });
   this.gameEngine.addEntity(this.oceanusStation);
   this.gameEngine.scene.add(this.oceanusStation.mesh);
     
@@ -119,8 +123,8 @@ class Game {
   createAsteroidField() {
     // Create asteroid field between the two planets (scaled up for new planet distances)
     const asteroidCount = 25;
-    const fieldCenter = new THREE.Vector3(-50, 50, -650); // Between the planets (scaled up)
-    const fieldSize = 300; // Size of the asteroid field (scaled up)
+  const fieldCenter = new THREE.Vector3(-50, 50, -650); // Keep center same for now
+  const fieldSize = 1200; // Expand field size 4x to match planet scale increase
     
     for (let i = 0; i < asteroidCount; i++) {
       // Random position within the field
