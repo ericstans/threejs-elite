@@ -6,7 +6,7 @@ export const genericProceduralConversation = {
       options: (playerFlags, planet) => [
         { id: 'information', text: `Request ${planet.name} information` },
         planet.dockable ? { id: 'docking', text: 'Request docking clearance' } : { id: 'docking_unavailable', text: 'Docking services inquiry' },
-        { id: 'end', text: 'End Transmission' }
+        { id: 'end', text: 'Goodbye. (End conversation)' }
       ]
     },
     // Docking request path (planet-based docking)
@@ -26,8 +26,8 @@ export const genericProceduralConversation = {
     docking_unavailable: {
       response: 'Docking services not available on this body. Surface infrastructure is limited or restricted.',
       options: [
-        { id: 'back_initial', text: 'Return to root menu' },
-        { id: 'end', text: 'End Transmission' }
+        { id: 'initial', text: 'Got it.' },
+        { id: 'end', text: '(End conversation)' }
       ]
     },
     request_takeoff: {
@@ -48,14 +48,14 @@ export const genericProceduralConversation = {
       options: (playerFlags, planet) => [
         { id: 'resources', text: 'Ask about known resources' },
         planet.dockable ? { id: 'docking', text: 'Proceed to docking channel' } : null,
-        { id: 'end', text: 'End Transmission' }
+        { id: 'end', text: 'Goodbye. (End conversation)' }
       ].filter(o => o)
     },
     resources: {
       response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${planet.radius.toFixed(0)} sample profiles.`,
       options: [
         { id: 'back_information', text: 'Back to information' },
-        { id: 'end', text: 'End Transmission' }
+        { id: 'end', text: 'Goodbye. (End conversation)' }
       ]
     },
     // traffic: {
@@ -63,14 +63,14 @@ export const genericProceduralConversation = {
     //   options: [
     //     { id: 'safety', text: 'Request approach safety guidelines' },
     //     { id: 'back_initial', text: 'Return to root menu' },
-    //     { id: 'end', text: 'End Transmission' }
+    //     { id: 'end', text: 'Goodbye. (End conversation)' }
     //   ]
     // },
     // safety: {
     //   response: 'Caution: unpredictable debris vectors and intermittent ion interference reported. Proceed using visual confirmation.',
     //   options: [
     //     { id: 'back_traffic', text: 'Back to traffic advisories' },
-    //     { id: 'end', text: 'End Transmission' }
+    //     { id: 'end', text: 'Goodbye. (End conversation)' }
     //   ]
     // },
     // trade: {
@@ -78,14 +78,14 @@ export const genericProceduralConversation = {
     //   options: [
     //     { id: 'market', text: 'Ask about market demand' },
     //     { id: 'back_initial', text: 'Return to root menu' },
-    //     { id: 'end', text: 'End Transmission' }
+    //     { id: 'end', text: 'Goodbye. (End conversation)' }
     //   ]
     // },
     // market: {
     //   response: 'High demand: refined alloys, medical substrates, nav-grade carbon composites. Low demand: bulk ore, frozen water.',
     //   options: [
     //     { id: 'back_trade', text: 'Back to trade console' },
-    //     { id: 'end', text: 'End Transmission' }
+    //     { id: 'end', text: 'Goodbye. (End conversation)' }
     //   ]
     // }
   }
