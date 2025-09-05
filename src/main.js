@@ -4,9 +4,10 @@ import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
 import { Controls } from './Controls.js';
 import { UI } from './UI.js';
-import { Laser } from './Laser.js';
+import { Laser } from './Laser.js'; // (kept temporarily if other code references directly)
 import { Asteroid } from './Asteroid.js';
-import { Explosion } from './Explosion.js';
+import { Explosion } from './Explosion.js'; // (legacy references during transition)
+import { CombatSystem } from './systems/CombatSystem.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 
@@ -16,37 +17,6 @@ import { ConversationSystem } from './ConversationSystem.js';
 import { SpaceStation } from './SpaceStation.js';
 
 class Game {
-  handleLaserAsteroidCollision(laser, asteroid, laserIndex, asteroidIndex) {
-    this.ui.blinkCrosshairRed();
-    // Remove the laser
-    this.gameEngine.removeEntity(laser);
-    this.lasers.splice(laserIndex, 1);
-    // Damage the asteroid
-    const wasDestroyed = asteroid.takeDamage(1);
-    if (wasDestroyed) {
-      // Asteroid destroyed - create large explosion at center
-      const explosion = new Explosion(asteroid.getPosition(), asteroid.getSize() * 2, 1.0);
-      this.explosions.push(explosion);
-      this.gameEngine.addEntity(explosion);
-      // Play spatial explosion sound
-      this.gameEngine.createSpatialExplosion(asteroid.getPosition());
-      // Remove asteroid
-      this.gameEngine.removeEntity(asteroid);
-      this.asteroids.splice(asteroidIndex, 1);
-    } else {
-      // Asteroid hit but not destroyed - create small explosion on surface
-      const hitPosition = asteroid.getPosition().clone();
-      // Add some randomness to the hit position
-      hitPosition.x += (Math.random() - 0.5) * asteroid.getSize();
-      hitPosition.y += (Math.random() - 0.5) * asteroid.getSize();
-      hitPosition.z += (Math.random() - 0.5) * asteroid.getSize();
-      const explosion = new Explosion(hitPosition, 0.3, 0.3);
-      this.explosions.push(explosion);
-      this.gameEngine.addEntity(explosion);
-      // Play spatial hit sound
-      this.gameEngine.createSpatialLaserHit(hitPosition);
-    }
-  }
   constructor() {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
@@ -55,9 +25,19 @@ class Game {
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
-    this.lasers = [];
     this.asteroids = [];
-    this.explosions = [];
+    // Combat system now owns lasers & explosions
+    this.combatSystem = new CombatSystem({
+      gameEngine: this.gameEngine,
+      soundManager: this.soundManager,
+      ui: this.ui,
+      getSpaceship: () => this.spaceship,
+      getCurrentTarget: () => this.currentTarget,
+      onRequestTargetInfoUpdate: () => this.updateTargetInfo(),
+      getNPCShip: () => this.npcShip,
+      getAsteroids: () => this.asteroids,
+      onHitFeedback: () => this.ui.blinkCrosshairRed()
+    });
     this.currentTarget = null;
     this.currentNavTarget = null;
     this.planets = [];
@@ -387,7 +367,7 @@ class Game {
     // Handle shooting
     this.controls.setOnShoot(() => {
       if (this.spaceship.flags.firingEnabled) {
-        this.shootLaser();
+  this.combatSystem.shootLaser();
       }
     });
 
@@ -436,6 +416,7 @@ class Game {
     });
   }
 
+  // Legacy method retained temporarily for backward compatibility; delegates to combatSystem
   shootLaser() {
     // Get spaceship position and forward direction
     const spaceshipPos = this.spaceship.getPosition();
@@ -466,11 +447,7 @@ class Game {
 
     // Create new laser with calculated direction
     const laser = new Laser(laserStartPos, laserDirection);
-    this.lasers.push(laser);
-    this.gameEngine.addEntity(laser);
-
-    // Play laser sound
-    this.soundManager.playLaserSound();
+  this.combatSystem.shootLaser();
   }
 
   update(deltaTime) {
@@ -535,14 +512,8 @@ class Game {
       console.log('Docking completed! Ship is now docked on', this.currentNavTarget?.getName());
     }
 
-    // Update and cleanup lasers
-    this.updateLasers(deltaTime);
-
-    // Update and cleanup explosions
-    this.updateExplosions(deltaTime);
-
-    // Check for laser-asteroid collisions
-    this.checkCollisions();
+  // Combat system update (lasers, explosions, collisions)
+  this.combatSystem.update(deltaTime);
 
     // Update target information
     this.updateTargetInfo();
@@ -634,113 +605,6 @@ class Game {
     }
   }
 
-  updateLasers(deltaTime) {
-    // Update lasers and remove expired ones
-    for (let i = this.lasers.length - 1; i >= 0; i--) {
-      const laser = this.lasers[i];
-      const shouldDestroy = laser.update(deltaTime);
-
-      if (shouldDestroy) {
-        this.gameEngine.removeEntity(laser);
-        this.lasers.splice(i, 1);
-      }
-    }
-  }
-
-  updateExplosions(deltaTime) {
-    // Update explosions and remove expired ones
-    for (let i = this.explosions.length - 1; i >= 0; i--) {
-      const explosion = this.explosions[i];
-      const shouldDestroy = explosion.update(deltaTime);
-
-      if (shouldDestroy) {
-        this.gameEngine.removeEntity(explosion);
-        this.explosions.splice(i, 1);
-      }
-    }
-  }
-
-  checkCollisions() {
-    // Check each laser against each asteroid and the NPC ship
-    for (let i = this.lasers.length - 1; i >= 0; i--) {
-      const laser = this.lasers[i];
-      let hit = false;
-      // Asteroids
-      for (let j = this.asteroids.length - 1; j >= 0; j--) {
-        const asteroid = this.asteroids[j];
-        if (!asteroid.isAlive()) continue;
-        const distance = laser.getPosition().distanceTo(asteroid.getPosition());
-        const collisionRadius = asteroid.getSize() + 0.1;
-        if (distance < collisionRadius) {
-          this.handleLaserAsteroidCollision(laser, asteroid, i, j);
-          hit = true;
-          break;
-        }
-      }
-      if (hit) continue;
-      // NPC Ship
-      if (this.npcShip && this.npcShip.loaded && this.npcShip.isAlive()) {
-        const npcPos = this.npcShip.getWorldPosition();
-        const npcRadius = this.npcShip.getSize() + 0.1;
-        const distance = laser.getPosition().distanceTo(npcPos);
-        if (distance < npcRadius) {
-          this.handleLaserNPCShipCollision(laser, this.npcShip, i);
-          continue;
-        }
-      }
-    }
-  }
-
-  handleLaserNPCShipCollision(laser, npcShip, laserIndex) {
-    this.ui.blinkCrosshairRed();
-    // Remove the laser
-    this.gameEngine.removeEntity(laser);
-    this.lasers.splice(laserIndex, 1);
-    // Calculate intersection point between laser and NPC ship bounding sphere
-    const laserStart = laser.getPosition();
-    const laserDir = laser.direction.clone().normalize();
-    const sphereCenter = npcShip.getWorldPosition();
-    const sphereRadius = npcShip.getSize();
-    // Ray-sphere intersection
-    const toCenter = sphereCenter.clone().sub(laserStart);
-    const tProj = toCenter.dot(laserDir);
-    let hitPosition = laserStart.clone().add(laserDir.clone().multiplyScalar(tProj));
-    // Clamp to sphere surface
-    const distToCenter = hitPosition.distanceTo(sphereCenter);
-    if (distToCenter > sphereRadius) {
-      hitPosition = sphereCenter.clone().add(
-        hitPosition.clone().sub(sphereCenter).normalize().multiplyScalar(sphereRadius)
-      );
-    }
-    // Damage the NPC ship
-    const wasNPCDestroyed = npcShip.takeDamage(1);
-    // If NPC ship currently targeted, refresh target info for updated health
-    if (!wasNPCDestroyed && this.currentTarget && this.currentTarget.getId && this.currentTarget.getId() === 'npcship') {
-      // Directly call updateTargetInfo so UI reflects new health immediately
-      this.updateTargetInfo();
-    }
-    if (wasNPCDestroyed) {
-      // NPC ship destroyed - create large explosion at center
-      const explosion = new Explosion(hitPosition, npcShip.getSize() * 2, 1.0);
-      this.explosions.push(explosion);
-      this.gameEngine.addEntity(explosion);
-      // Play spatial explosion sound
-      this.gameEngine.createSpatialExplosion(hitPosition);
-      // Clear target if it was the NPC ship
-      if (this.currentTarget && this.currentTarget.getId && this.currentTarget.getId() === 'npcship') {
-        this.currentTarget = null;
-        this.ui.clearTargetInfo();
-      }
-      // Remove NPC ship from scene handled in destroy()
-    } else {
-      // NPC ship hit but not destroyed - create small explosion on surface
-      const explosion = new Explosion(hitPosition, 0.3, 0.3);
-      this.explosions.push(explosion);
-      this.gameEngine.addEntity(explosion);
-      // Play spatial hit sound
-      this.gameEngine.createSpatialLaserHit(hitPosition);
-    }
-  }
 
   targetNearestAsteroid() {
     // Clear current target
