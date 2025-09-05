@@ -8,46 +8,56 @@ import * as THREE from 'three';
 
 export class UI {
   constructor() {
-    this.createUI();
+    // Anchors and state will be initialized before building DOM
     this.firstPersonMode = true; // start in cockpit view
-  // Map modal (reuses comms styling for quick implementation)
-  this.mapModal = document.createElement('div');
-  this.mapModal.style.position = 'fixed';
-  this.mapModal.style.top = '0';
-  this.mapModal.style.left = '0';
-  this.mapModal.style.width = '100%';
-  this.mapModal.style.height = '100%';
-  this.mapModal.style.background = 'rgba(0, 0, 0, 0.8)';
-  this.mapModal.style.display = 'none';
-  this.mapModal.style.zIndex = '2100';
-  this.mapModal.style.pointerEvents = 'auto';
-  document.body.appendChild(this.mapModal);
+    this._parallaxEnabled = true;
+    this._parallaxState = { lastX: 0, lastY: 0 };
+    // Centralized anchor definitions for cockpit-relative panels (percent from top-left of cockpit image)
+    this._anchors = {
+      target: { left: '70.5%', top: '61%' },
+      nav: { left: '29.5%', top: '61%' },
+      radar: { left: '50%', top: '70%' }
+    };
+    // Build DOM after anchors so createUI can consume them
+    this.createUI();
+    // Map modal (reuses comms styling for quick implementation)
+    this.mapModal = document.createElement('div');
+    this.mapModal.style.position = 'fixed';
+    this.mapModal.style.top = '0';
+    this.mapModal.style.left = '0';
+    this.mapModal.style.width = '100%';
+    this.mapModal.style.height = '100%';
+    this.mapModal.style.background = 'rgba(0, 0, 0, 0.8)';
+    this.mapModal.style.display = 'none';
+    this.mapModal.style.zIndex = '2100';
+    this.mapModal.style.pointerEvents = 'auto';
+    document.body.appendChild(this.mapModal);
 
-  this.mapContent = document.createElement('div');
-  this.mapContent.style.position = 'absolute';
-  this.mapContent.style.top = '50%';
-  this.mapContent.style.left = '50%';
-  this.mapContent.style.transform = 'translate(-50%, -50%)';
-  this.mapContent.style.width = '540px';
-  this.mapContent.style.maxHeight = '70%';
-  this.mapContent.style.overflowY = 'auto';
-  this.mapContent.style.background = 'rgba(0,0,0,0.5)';
-  this.mapContent.style.border = '2px solid #00ff00';
-  this.mapContent.style.padding = '20px';
-  this.mapContent.style.color = '#ffffff';
-  this.mapContent.style.fontFamily = 'monospace';
-  this.mapContent.style.boxShadow = '0 0 10px rgba(0,255,0,0.5)';
-  this.mapModal.appendChild(this.mapContent);
+    this.mapContent = document.createElement('div');
+    this.mapContent.style.position = 'absolute';
+    this.mapContent.style.top = '50%';
+    this.mapContent.style.left = '50%';
+    this.mapContent.style.transform = 'translate(-50%, -50%)';
+    this.mapContent.style.width = '540px';
+    this.mapContent.style.maxHeight = '70%';
+    this.mapContent.style.overflowY = 'auto';
+    this.mapContent.style.background = 'rgba(0,0,0,0.5)';
+    this.mapContent.style.border = '2px solid #00ff00';
+    this.mapContent.style.padding = '20px';
+    this.mapContent.style.color = '#ffffff';
+    this.mapContent.style.fontFamily = 'monospace';
+    this.mapContent.style.boxShadow = '0 0 10px rgba(0,255,0,0.5)';
+    this.mapModal.appendChild(this.mapContent);
 
-  this.mapTitle = document.createElement('h2');
-  this.mapTitle.style.marginTop = '0';
-  this.mapTitle.style.fontFamily = 'monospace';
-  this.mapTitle.style.color = '#00ff00';
-  this.mapTitle.textContent = 'SECTOR MAP';
-  this.mapContent.appendChild(this.mapTitle);
+    this.mapTitle = document.createElement('h2');
+    this.mapTitle.style.marginTop = '0';
+    this.mapTitle.style.fontFamily = 'monospace';
+    this.mapTitle.style.color = '#00ff00';
+    this.mapTitle.textContent = 'SECTOR MAP';
+    this.mapContent.appendChild(this.mapTitle);
 
-  this.mapList = document.createElement('div');
-  this.mapContent.appendChild(this.mapList);
+    this.mapList = document.createElement('div');
+    this.mapContent.appendChild(this.mapList);
   }
 
   createUI() {
@@ -101,12 +111,11 @@ export class UI {
       this.cockpitWrapper.appendChild(this.targetUI.targetPanel);
       const p = this.targetUI.targetPanel.style;
       p.position = 'absolute';
-      p.left = '70.5%';  // corresponds to previous anchor.x 0.70
-      p.top = '61%';   // previous anchor.y 0.66
+      p.left = this._anchors.target.left;
+      p.top = this._anchors.target.top;
       p.right = 'auto';
       p.bottom = 'auto';
       p.transform = 'translate(-50%, -50%)';
-      // Re-apply text styling lost when moved out of uiContainer inheritance
       p.color = '#00ff00';
       p.fontFamily = 'monospace';
       p.fontSize = '12px';
@@ -115,8 +124,8 @@ export class UI {
       this.cockpitWrapper.appendChild(this.navTargetUI.navTargetPanel);
       const p2 = this.navTargetUI.navTargetPanel.style;
       p2.position = 'absolute';
-      p2.left = '29.5%'; // previous anchor.x 0.30
-      p2.top = '61%';
+      p2.left = this._anchors.nav.left;
+      p2.top = this._anchors.nav.top;
       p2.right = 'auto';
       p2.bottom = 'auto';
       p2.transform = 'translate(-50%, -50%)';
@@ -183,44 +192,48 @@ export class UI {
     this.autoAimCone.style.opacity = '0.5';
     this.uiContainer.appendChild(this.autoAimCone);
 
-  // Radar (two concentric circles) bottom center
-  this.radarWrapper = document.createElement('div');
-  this.radarWrapper.style.position = 'absolute';
-  this.radarWrapper.style.left = '50%';
-  this.radarWrapper.style.bottom = '13%';
-  this.radarWrapper.style.transform = 'translateX(-50%)';
-  this.radarWrapper.style.width = '140px';
-  this.radarWrapper.style.height = '140px';
-  this.radarWrapper.style.pointerEvents = 'none';
-  this.radarWrapper.style.opacity = '0.9';
-  this.uiContainer.appendChild(this.radarWrapper);
-  const radarOuter = document.createElement('div');
-  radarOuter.style.position = 'absolute';
-  radarOuter.style.left = '0';
-  radarOuter.style.top = '0';
-  radarOuter.style.width = '100%';
-  radarOuter.style.height = '100%';
-  radarOuter.style.border = '2px solid #00aa55';
-  radarOuter.style.borderRadius = '50%';
-  radarOuter.style.boxShadow = '0 0 8px rgba(0,255,128,0.4)';
-  this.radarWrapper.appendChild(radarOuter);
-  const radarInner = document.createElement('div');
-  radarInner.style.position = 'absolute';
-  radarInner.style.left = '25%';
-  radarInner.style.top = '25%';
-  radarInner.style.width = '50%';
-  radarInner.style.height = '50%';
-  radarInner.style.border = '2px solid #00aa55';
-  radarInner.style.borderRadius = '50%';
-  this.radarWrapper.appendChild(radarInner);
-  this.radarBlipLayer = document.createElement('div');
-  this.radarBlipLayer.style.position = 'absolute';
-  this.radarBlipLayer.style.left = '0';
-  this.radarBlipLayer.style.top = '0';
-  this.radarBlipLayer.style.width = '100%';
-  this.radarBlipLayer.style.height = '100%';
-  this.radarWrapper.appendChild(this.radarBlipLayer);
-  this._radarBlips = new Map();
+    // Radar (two concentric circles) anchored relative to cockpit (top-based)
+    this.radarWrapper = document.createElement('div');
+    this.radarWrapper.style.position = 'absolute';
+    this.radarWrapper.style.left = this._anchors.radar.left;
+    this.radarWrapper.style.top = this._anchors.radar.top;
+    this.radarWrapper.style.bottom = '';
+    this.radarWrapper.style.transform = 'translate(-50%, -50%)';
+    this.radarWrapper.style.width = '140px';
+    this.radarWrapper.style.height = '140px';
+    this.radarWrapper.style.pointerEvents = 'none';
+    this.radarWrapper.style.opacity = '0.9';
+    this.cockpitWrapper.appendChild(this.radarWrapper);
+    const radarOuter = document.createElement('div');
+    radarOuter.style.position = 'absolute';
+    radarOuter.style.left = '0';
+    radarOuter.style.top = '0';
+    radarOuter.style.width = '100%';
+    radarOuter.style.height = '100%';
+    radarOuter.style.border = '2px solid #00aa55';
+    radarOuter.style.borderRadius = '50%';
+    radarOuter.style.boxShadow = '0 0 8px rgba(0,255,128,0.4)';
+    this.radarWrapper.appendChild(radarOuter);
+    const radarInner = document.createElement('div');
+    radarInner.style.position = 'absolute';
+    radarInner.style.left = '25%';
+    radarInner.style.top = '25%';
+    radarInner.style.width = '50%';
+    radarInner.style.height = '50%';
+    radarInner.style.border = '2px solid #00aa55';
+    radarInner.style.borderRadius = '50%';
+    this.radarWrapper.appendChild(radarInner);
+    this.radarBlipLayer = document.createElement('div');
+    this.radarBlipLayer.style.position = 'absolute';
+    this.radarBlipLayer.style.left = '0';
+    this.radarBlipLayer.style.top = '0';
+    this.radarBlipLayer.style.width = '100%';
+    this.radarBlipLayer.style.height = '100%';
+    this.radarWrapper.appendChild(this.radarBlipLayer);
+    this._radarBlips = new Map();
+
+    // Initialize responsive scaling for radar when cockpit image loads / window resizes
+    this._initResponsiveAnchors();
 
     // Communications modal (initially hidden)
     this.commsModal = document.createElement('div');
@@ -328,15 +341,16 @@ export class UI {
         this.uiContainer.appendChild(this.dockingStatus);
       }
     }
-    // --- Radar layout (third-person) ---
-    // Customize radar size/position for third-person here.
-    // Current implementation copies first-person styling intentionally.
+    // Radar: move out of cockpit so it no longer parallax shifts
     if (this.radarWrapper) {
+      if (this.radarWrapper.parentElement !== this.uiContainer) this.uiContainer.appendChild(this.radarWrapper);
       this.radarWrapper.style.left = '50%';
-      this.radarWrapper.style.bottom = '120px'; // TODO: change for third-person if desired
+      this.radarWrapper.style.top = '';
+      this.radarWrapper.style.bottom = '120px';
       this.radarWrapper.style.transform = 'translateX(-50%)';
-      this.radarWrapper.style.width = '160px';
-      this.radarWrapper.style.height = '160px';
+      // Fixed size in third-person (not tied to cockpit scale)
+      this.radarWrapper.style.width = '140px';
+      this.radarWrapper.style.height = '140px';
     }
   }
 
@@ -382,14 +396,17 @@ export class UI {
       this.dockingStatus.style.fontSize = '12px';
       this.dockingStatus.style.background = 'rgba(0,0,0,0.4)';
     }
-    // --- Radar layout (first-person) ---
-    // Default cockpit view radar placement & size.
+    // Radar: move into cockpit so parallax affects it
+    if (this.radarWrapper && this.cockpitWrapper && this.radarWrapper.parentElement !== this.cockpitWrapper) {
+      this.cockpitWrapper.appendChild(this.radarWrapper);
+    }
     if (this.radarWrapper) {
-      this.radarWrapper.style.left = '50%';
-      this.radarWrapper.style.bottom = '14%';
-      this.radarWrapper.style.transform = 'translateX(-50%)';
-      this.radarWrapper.style.width = '160px';
-      this.radarWrapper.style.height = '160px';
+      this.radarWrapper.style.left = this._anchors.radar.left;
+      this.radarWrapper.style.top = this._anchors.radar.top;
+      this.radarWrapper.style.bottom = '';
+      this.radarWrapper.style.transform = 'translate(-50%, -50%)';
+      // Recompute size now that we're back in cockpit context
+      this._updateRadarSize();
     }
   }
 
@@ -414,13 +431,13 @@ export class UI {
   }
 
   updateRadar(playerPos, playerQuat, targets) {
-  if (!this.radarWrapper) return;
-  // Derive current radar radii from actual DOM size so resizing (e.g. 140px vs 160px) is reflected.
-  const rect = this.radarWrapper.getBoundingClientRect();
-  const outerR = rect.width * 0.5;           // outer circle radius (wrapper is square)
-  const innerR = outerR * 0.5;               // keep inner circle at 50% of outer diameter
-    const forward = new THREE.Vector3(0,0,-1).applyQuaternion(playerQuat).normalize();
-    const up = new THREE.Vector3(0,1,0).applyQuaternion(playerQuat).normalize();
+    if (!this.radarWrapper) return;
+    // Derive current radar radii from actual DOM size so resizing (e.g. 140px vs 160px) is reflected.
+    const rect = this.radarWrapper.getBoundingClientRect();
+    const outerR = rect.width * 0.5;           // outer circle radius (wrapper is square)
+    const innerR = outerR * 0.5;               // keep inner circle at 50% of outer diameter
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(playerQuat).normalize();
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(playerQuat).normalize();
     const right = new THREE.Vector3().copy(forward).cross(up).normalize(); // ship right
     const live = new Set();
     for (const t of targets) {
@@ -450,8 +467,8 @@ export class UI {
         } else {
           // Renormalize direction in lateral/vertical plane to preserve orientation
           const mag = Math.hypot(lateral, vertical) || 1;
-            x = (lateral / mag) * scale;
-            y = -(vertical / mag) * scale;
+          x = (lateral / mag) * scale;
+          y = -(vertical / mag) * scale;
         }
       }
       // Clamp final within outer bounds
@@ -496,6 +513,60 @@ export class UI {
     for (const [k, el] of this._radarBlips.entries()) {
       if (!live.has(k)) { el.remove(); this._radarBlips.delete(k); }
     }
+  }
+
+  // Lightweight cockpit bitmap parallax based on ship attitude & velocity.
+  updateCockpitParallax(spaceship) {
+    if (!this._parallaxEnabled || !this.cockpitWrapper || !spaceship) return;
+    if (!this.firstPersonMode) { this.cockpitWrapper.style.transform = 'translateX(-50%)'; return; }
+    try {
+      const rot = spaceship.mesh?.quaternion || spaceship.quaternion;
+      if (!rot) return;
+      // Extract approximate pitch & roll from quaternion.
+      const euler = new THREE.Euler();
+      euler.setFromQuaternion(rot, 'YXZ');
+      const roll = euler.z;   // left/right tilt
+      const pitch = euler.x;  // up/down tilt
+      // Clamp
+      const MAX_OFFSET_PX = 18; // maximum translation
+      const x = THREE.MathUtils.clamp(-roll * 40, -MAX_OFFSET_PX, MAX_OFFSET_PX);  // invert so roll visually counteracts
+      const y = THREE.MathUtils.clamp(pitch * 40, -MAX_OFFSET_PX, MAX_OFFSET_PX);
+      // Apply smooth easing
+      const lerp = (a, b, t) => a + (b - a) * t;
+      this._parallaxState.lastX = lerp(this._parallaxState.lastX, x, 0.15);
+      this._parallaxState.lastY = lerp(this._parallaxState.lastY, y, 0.15);
+      const rotDeg = this._parallaxState.lastX * 0.15; // subtle roll based on lateral offset
+      this.cockpitWrapper.style.transform = `translateX(-50%) translate(${this._parallaxState.lastX}px, ${this._parallaxState.lastY}px) rotate(${rotDeg}deg)`;
+    } catch (_) { }
+  }
+
+  // --- Responsive anchor utilities ---
+  _initResponsiveAnchors() {
+    // Debounced resize
+    let resizeTimer = null;
+    const onResize = () => {
+      if (resizeTimer) cancelAnimationFrame(resizeTimer);
+      resizeTimer = requestAnimationFrame(() => this._updateRadarSize());
+    };
+    window.addEventListener('resize', onResize);
+    // Initial sizing after cockpit image loads
+    if (this.cockpitBitmap?.complete) {
+      this._updateRadarSize();
+    } else if (this.cockpitBitmap) {
+      this.cockpitBitmap.addEventListener('load', () => this._updateRadarSize(), { once: true });
+    }
+  }
+
+  _updateRadarSize() {
+    if (!this.firstPersonMode) return; // only scale when in cockpit
+    if (!this.cockpitBitmap || !this.radarWrapper) return;
+    const baseWidth = this.cockpitBitmap.naturalWidth || 1920; // assumed design width
+    const currentWidth = this.cockpitBitmap.clientWidth || baseWidth;
+    const scale = currentWidth / baseWidth;
+    // Base radar design size 140px at baseWidth; clamp reasonable bounds
+    const size = Math.max(90, Math.min(240, Math.round(90 * scale)));
+    this.radarWrapper.style.width = size + 'px';
+    this.radarWrapper.style.height = size + 'px';
   }
 
   showCommsModal(planetName, greeting, options = null) {

@@ -26,8 +26,12 @@ class Game {
   constructor() {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
+  // Expose spaceship to engine for starfield & UI parallax logic
+  this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
     this.ui = new UI();
+  // Expose UI to engine for per-frame parallax callback
+  this.gameEngine.ui = this.ui;
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();

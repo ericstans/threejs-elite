@@ -27,6 +27,8 @@ export class GameEngine {
   // Set equirectangular starfield background (white dots on black)
   const starfieldTexture = generateStarfieldEquirectTexture(2048, 600);
   this.scene.background = starfieldTexture;
+  // Create supplemental parallax star layers (two shells with slight movement)
+  this._createParallaxStars();
   }
 
   setupScene() {
@@ -55,6 +57,29 @@ export class GameEngine {
     
     const spacedust = new THREE.Points(spacedustGeometry, spacedustMaterial);
     this.scene.add(spacedust);
+  }
+
+  _createParallaxStars() {
+    const makeLayer = (count, radius, size, opacity) => {
+      const geom = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      for (let i=0;i<count;i++) {
+        const theta = Math.random()*Math.PI*2;
+        const phi = Math.acos(2*Math.random()-1);
+        const r = radius;
+        positions[i*3] = r*Math.sin(phi)*Math.cos(theta);
+        positions[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+        positions[i*3+2] = r*Math.cos(phi);
+      }
+      geom.setAttribute('position', new THREE.BufferAttribute(positions,3));
+      const mat = new THREE.PointsMaterial({ color: 0xffffff, size, sizeAttenuation:false, transparent:true, opacity, depthWrite:false });
+      const pts = new THREE.Points(geom, mat);
+      pts.matrixAutoUpdate = false;
+      this.scene.add(pts);
+      return pts;
+    };
+    this.starParallaxNear = makeLayer(800, 3000, 3, 0.55);
+    this.starParallaxFar  = makeLayer(1200, 6000, 2, 0.35);
   }
 
   createStarfield() {
@@ -213,7 +238,21 @@ export class GameEngine {
       this.starfield.position.copy(this.spaceship.getPosition());
       this.starfield.rotation.set(0, 0, 0); // Ensure no rotation is applied
     }
+    // Parallax star layers: anchor roughly to camera but with slight lag for depth illusion
+    if (this.camera) {
+      const camPos = this.camera.position;
+      if (this.starParallaxNear) {
+        this.starParallaxNear.position.copy(camPos).multiplyScalar(0.92);
+      }
+      if (this.starParallaxFar) {
+        this.starParallaxFar.position.copy(camPos).multiplyScalar(0.85);
+      }
+    }
     this.update(deltaTime);
+    // UI cockpit parallax (if UI attached by outer Game)
+    if (this.ui && this.spaceship) {
+      try { this.ui.updateCockpitParallax(this.spaceship); } catch(_) {}
+    }
     this.render();
     requestAnimationFrame(() => this.animate());
   }
