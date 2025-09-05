@@ -277,7 +277,7 @@ export class NavTargetUI {
       this.previewScene.add(this._previewObject);
     }
     if (this._previewObject) {
-      this._previewObject.rotation.y += 0.01;
+      this._previewObject.rotation.y += 0.005; // slowed (was 0.01)
       this._previewObject.rotation.x = 0.3;
     }
     if (this.previewRenderer && this.previewCamera) {

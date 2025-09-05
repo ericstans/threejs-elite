@@ -211,6 +211,42 @@ export class TargetUI {
 
   _buildPreviewObject(target) {
     const type = target.getType ? target.getType() : 'unknown';
+    // If supplied with original mesh hierarchy (e.g., FBX) build aggregated edges
+    if (target.previewSource) {
+      const group = new THREE.Group();
+      const edgeMat = new THREE.LineBasicMaterial({ color: 0xffdddd, transparent: true, opacity: 0.38 });
+      target.previewSource.traverse(child => {
+        if (child.isMesh && child.geometry) {
+          try {
+            const geo = child.geometry; // don't mutate
+            const edges = new THREE.EdgesGeometry(geo, 25);
+            const lines = new THREE.LineSegments(edges, edgeMat);
+            // Capture world transform relative to root
+            lines.position.copy(child.getWorldPosition(new THREE.Vector3()));
+            lines.quaternion.copy(child.getWorldQuaternion(new THREE.Quaternion()));
+            lines.scale.copy(child.getWorldScale(new THREE.Vector3()));
+            group.add(lines);
+          } catch(_) {}
+        }
+      });
+      // Recenter & uniformly scale to desired preview size
+      if (group.children.length) {
+        const box = new THREE.Box3().setFromObject(group);
+        if (!box.isEmpty()) {
+          const center = new THREE.Vector3();
+            const size = new THREE.Vector3();
+          box.getCenter(center);
+          box.getSize(size);
+          const longest = Math.max(size.x, size.y, size.z) || 1;
+          const TARGET_PREVIEW_SIZE = 1.4; // smaller overall footprint
+          const scaleFactor = TARGET_PREVIEW_SIZE / longest;
+          group.children.forEach(c => c.position.sub(center));
+          group.scale.setScalar(scaleFactor);
+        }
+        return group;
+      }
+      // fallback to generic if traversal failed
+    }
     if (type === 'asteroid') {
       // Use low-detail icosahedron edges to mimic rocky silhouette
       const geom = new THREE.IcosahedronGeometry(1, 0);
@@ -250,7 +286,7 @@ export class TargetUI {
       this.previewScene.add(this._previewObject);
     }
     if (this._previewObject) {
-      this._previewObject.rotation.y += 0.02;
+      this._previewObject.rotation.y += 0.01; // slowed (was 0.02)
       this._previewObject.rotation.x = 0.35;
     }
     if (this.previewRenderer && this.previewCamera) {
