@@ -226,12 +226,12 @@ export class UI {
     this.commsMessage = document.createElement('div');
     this.commsMessage.style.marginBottom = '20px';
     this.commsMessage.style.textAlign = 'center';
-    this.commsMessage.style.fontStyle = 'italic';
     this.commsContent.appendChild(this.commsMessage);
 
     // Comms modal options
     this.commsOptions = document.createElement('div');
     this.commsOptions.style.marginBottom = '20px';
+    this.commsOptions.style.fontStyle = 'italic';
     this.commsContent.appendChild(this.commsOptions);
 
     // Comms modal close instruction

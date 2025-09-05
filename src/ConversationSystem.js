@@ -11,10 +11,10 @@ export class ConversationSystem {
   }
 
   getGreeting(planetName) {
-  const planet = this.conversations[planetName];
-  if (planet) return planet.greeting;
-  // Fallback to generic procedural template
-  return genericProceduralConversation.greeting;
+    const planet = this.conversations[planetName];
+    if (planet) return planet.greeting;
+    // Fallback to generic procedural template
+    return genericProceduralConversation.greeting;
   }
 
   getConversationNode(planetName, nodeId, playerFlags = {}) {
@@ -25,7 +25,7 @@ export class ConversationSystem {
       planet = genericProceduralConversation;
     }
     if (!planet.conversationTree) return null;
-    
+
     const node = planet.conversationTree[nodeId];
     if (!node) {
       return null;
@@ -41,7 +41,7 @@ export class ConversationSystem {
       hasMoon: !!planetEntity.moon
     } : { name: planetName };
     const context = { playerFlags, planet: planetEntity, planetAttributes };
-    
+
     // Process options with inline conditional logic
     if (node.options) {
       // node.options can itself be: (a) an array, (b) a function returning an array, (c) array containing functions.
@@ -66,7 +66,7 @@ export class ConversationSystem {
           return option;
         })
         .filter(option => option !== null && option !== undefined);
-      
+
       return {
         ...node,
         response: typeof node.response === 'function' ? this._safeEvalNodeResponse(node.response, context) : node.response,
@@ -95,17 +95,17 @@ export class ConversationSystem {
     if (!planet || !planet.conversationTree) {
       return [];
     }
-    
+
     // Base options with inline conditional logic
     const baseOptions = [
       { id: 'information', text: `Information about ${planetName}` },
       dockable ? (
         playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
-        (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
-         playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
+          (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
+            playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
       ) : { id: 'docking_unavailable', text: 'Docking unavailable' }
     ];
-    
+
     // Filter out null/undefined options
     return baseOptions.filter(option => option !== null && option !== undefined);
   }
@@ -122,11 +122,11 @@ export class ConversationSystem {
         conversationTree: {}
       };
     }
-    
+
     if (!this.conversations[planetName].conversationTree) {
       this.conversations[planetName].conversationTree = {};
     }
-    
+
     this.conversations[planetName].conversationTree[nodeId] = nodeData;
   }
 }

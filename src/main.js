@@ -51,7 +51,8 @@ class Game {
       { id: 'sector-1', name: 'Aridus Sector', seed: 0x1a2b, center: { x: -50, y: 50, z: -650 }, size: 1200 },
       { id: 'sector-2', name: 'random(33dd)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
       { id: 'sector-3', name: 'random(55aa)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
-      { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 }
+      { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+      { id: 'sector-5', name: 'random(1234)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 }
     ];
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
@@ -71,8 +72,8 @@ class Game {
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
         }
-  },
-  environmentSystem: () => this.environmentSystem
+      },
+      environmentSystem: () => this.environmentSystem
     });
 
     this.targetingSystem = new TargetingSystem({
@@ -407,8 +408,8 @@ class Game {
       }
     };
     addNPC();
-  // Create stardust around derelict vessel
-  this.environmentSystem.createDerelictStardustField(npcShipPos);
+    // Create stardust around derelict vessel
+    this.environmentSystem.createDerelictStardustField(npcShipPos);
 
     // Position camera at spaceship center (cockpit view)
     this.gameEngine.camera.position.set(0, 0, 0);
@@ -421,30 +422,30 @@ class Game {
     // Handle shooting
     this.controls.setOnShoot(() => {
       if (this.spaceship.flags.firingEnabled) {
-  this.combatSystem.shootLaser();
+        this.combatSystem.shootLaser();
       }
     });
 
     // Handle targeting
     this.controls.setOnTarget(() => {
-  this.targetingSystem.targetNearestCombat();
+      this.targetingSystem.targetNearestCombat();
     });
 
     // Handle navigation targeting
     this.controls.setOnNavTarget(() => {
-  this.targetingSystem.targetNearestNav();
+      this.targetingSystem.targetNearestNav();
     });
 
     // Handle communications (V key: only for current target)
     this.controls.setOnComms(() => {
-  const tgt = this.targetingSystem.getCurrentCombatTarget();
-  if (tgt && tgt.isCommable) this.openComms();
+      const tgt = this.targetingSystem.getCurrentCombatTarget();
+      if (tgt && tgt.isCommable) this.openComms();
     });
 
     // Handle nav target comms (C key)
     this.controls.setOnNavComms(() => {
-  const nav = this.targetingSystem.getCurrentNavTarget();
-  if (nav && nav.isCommable) this.openNavComms();
+      const nav = this.targetingSystem.getCurrentNavTarget();
+      if (nav && nav.isCommable) this.openNavComms();
     });
 
     // Handle closing communications
@@ -514,15 +515,15 @@ class Game {
 
     // Create new laser with calculated direction
     const laser = new Laser(laserStartPos, laserDirection);
-  this.combatSystem.shootLaser();
+    this.combatSystem.shootLaser();
   }
 
   update(deltaTime) {
     // Update controls
     this.controls.update(deltaTime);
 
-  // Navigation (auto-slow + landing vector lock)
-  this.navigationSystem.update(deltaTime);
+    // Navigation (auto-slow + landing vector lock)
+    this.navigationSystem.update(deltaTime);
 
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
@@ -557,30 +558,30 @@ class Game {
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
 
-  // Docking UI/status
-  this.dockingManager.update(deltaTime);
+    // Docking UI/status
+    this.dockingManager.update(deltaTime);
 
-  // Combat system update (lasers, explosions, collisions)
-  this.combatSystem.update(deltaTime);
+    // Combat system update (lasers, explosions, collisions)
+    this.combatSystem.update(deltaTime);
 
-  // Persist asteroid field diff every frame (cheap to store small object)
-  if (this.environmentSystem) {
-    this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
-  }
+    // Persist asteroid field diff every frame (cheap to store small object)
+    if (this.environmentSystem) {
+      this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+    }
 
-  // Update target info (combat) via targeting system
-  this.targetingSystem.updateTargetInfo();
+    // Update target info (combat) via targeting system
+    this.targetingSystem.updateTargetInfo();
 
     // --- Update auto-aim cone color (homing radius indicator) ---
     // Default: green (not in range)
-  const homingActive = this.targetingSystem.computeHomingState();
+    const homingActive = this.targetingSystem.computeHomingState();
     if (homingActive) {
       this.ui.autoAimCone.style.border = '1px solid #ff0000'; // Red if homing active
     } else {
       this.ui.autoAimCone.style.border = '1px solid #00ff00'; // Green if not
     }
 
-  this.targetingSystem.updateNavTargetInfo();
+    this.targetingSystem.updateNavTargetInfo();
 
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
@@ -633,7 +634,7 @@ class Game {
     if (!isActuallyDocked) {
       this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
     }
-  // (landing vector lock handled by navigationSystem)
+    // (landing vector lock handled by navigationSystem)
     // Hide crosshair and auto-aim cone if firing is disabled
     if (!this.spaceship.flags.firingEnabled) {
       this.ui.crosshair.style.display = 'none';
@@ -702,7 +703,7 @@ class Game {
     if (fieldState) {
       this.environmentSystem.configureAsteroidField(fieldState);
     } else {
-      const fallback = sMeta || { seed: Date.now() & 0xffff, center: { x:0,y:0,z:-800 }, size: 1200 };
+      const fallback = sMeta || { seed: Date.now() & 0xffff, center: { x: 0, y: 0, z: -800 }, size: 1200 };
       this.environmentSystem.configureAsteroidField({ seed: fallback.seed, destroyedIds: [], center: fallback.center, size: fallback.size });
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
@@ -713,8 +714,8 @@ class Game {
       this.gameEngine.camera.position.copy(this.spaceship.position);
     }
     this.asteroids = this.environmentSystem.asteroids;
-  this.planets = this.environmentSystem.planets;
-  this.oceanusStation = this.environmentSystem.oceanusStation;
+    this.planets = this.environmentSystem.planets;
+    this.oceanusStation = this.environmentSystem.oceanusStation;
   }
 
   checkNavTargetProximity() {
