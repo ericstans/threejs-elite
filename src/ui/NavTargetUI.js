@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class NavTargetUI {
   constructor(container) {
     this.container = container;
@@ -46,6 +48,26 @@ export class NavTargetUI {
     this.navCommableIndicator.style.fontSize = '16px';
     this.navCommableIndicator.style.display = 'none';
     this.navTargetPanel.appendChild(this.navCommableIndicator);
+
+    // Preview container (behind text)
+    this.previewWrapper = document.createElement('div');
+    this.previewWrapper.style.position = 'absolute';
+    this.previewWrapper.style.left = '50%';
+    this.previewWrapper.style.top = '50%';
+    this.previewWrapper.style.transform = 'translate(-50%, -50%)';
+    this.previewWrapper.style.width = '100%';
+    this.previewWrapper.style.height = '100%';
+    this.previewWrapper.style.pointerEvents = 'none';
+    this.previewWrapper.style.zIndex = '0';
+    this.navTargetPanel.appendChild(this.previewWrapper);
+
+    // Elevate text above
+    for (const child of this.navTargetPanel.children) {
+      if (child !== this.previewWrapper) child.style.position = child.style.position || 'relative';
+      if (child !== this.previewWrapper) child.style.zIndex = '1';
+    }
+
+    this._initPreviewScene();
   }
 
   createNavTargetIndicator() {
@@ -92,6 +114,10 @@ export class NavTargetUI {
     
     // Update nav target indicator position
     this.updateNavTargetIndicator(targetPosition, camera);
+    // Update preview wireframe (pass through extra original target reference if supplied)
+    if (navTargetInfo.__ref) {
+      this._updatePreview(navTargetInfo.__ref);
+    }
   }
 
   updateNavTargetIndicator(targetPosition, camera) {
@@ -146,5 +172,122 @@ export class NavTargetUI {
     this.navTargetIndicator.style.display = 'none';
     this.navCommableIndicator.style.display = 'none';
   if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
+    this._clearPreview();
+  }
+
+  _initPreviewScene() {
+    this.previewScene = new THREE.Scene();
+    this.previewCamera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    this.previewCamera.position.set(0, 0, 6);
+    this.previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    this.previewRenderer.setSize(200, 200);
+    this.previewRenderer.domElement.style.width = '100%';
+    this.previewRenderer.domElement.style.height = '100%';
+    this.previewRenderer.domElement.style.opacity = '0.18';
+    this.previewWrapper.appendChild(this.previewRenderer.domElement);
+    // Light (subtle)
+    const light = new THREE.AmbientLight(0xffffff, 0.6);
+    this.previewScene.add(light);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.4);
+    dir.position.set(3,4,5);
+    this.previewScene.add(dir);
+  }
+
+  _clearPreview() {
+    if (this._previewObject) {
+      // Recursively dispose
+      this._previewObject.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose?.();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose?.());
+          else obj.material.dispose?.();
+        }
+      });
+      this.previewScene.remove(this._previewObject);
+      this._previewObject = null;
+    }
+  }
+
+  _buildPreviewObject(target) {
+    const type = target.getType ? target.getType() : 'unknown';
+    if (type === 'planet' || type === 'moon') {
+      // Latitude/longitude grid (quads only impression, no triangle diagonals)
+      const group = new THREE.Group();
+      const mat = new THREE.LineBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 0.32 });
+      const meridians = 12; // number of longitude lines
+      const parallels = 8;  // number of horizontal latitude rings (excluding poles)
+      const parallelSegments = 64; // smoothness of each ring
+      const meridianSegments = 96; // smoothness of meridian curves
+
+      // Build latitude rings (skip poles for cleaner look)
+      for (let i = 1; i < parallels; i++) {
+        const theta = Math.PI * i / parallels; // 0..PI
+        const y = Math.cos(theta);
+        const r = Math.sin(theta);
+        const pts = [];
+        for (let s = 0; s <= parallelSegments; s++) {
+          const phi = 2 * Math.PI * s / parallelSegments;
+          pts.push(r * Math.cos(phi), y, r * Math.sin(phi));
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+        const ring = new THREE.LineLoop(geo, mat);
+        group.add(ring);
+      }
+
+      // Build meridians
+      for (let m = 0; m < meridians; m++) {
+        const phi = 2 * Math.PI * m / meridians;
+        const pts = [];
+        for (let s = 0; s <= meridianSegments; s++) {
+          const t = Math.PI * s / meridianSegments; // 0..PI
+            const y = Math.cos(t);
+            const r = Math.sin(t);
+            const x = r * Math.cos(phi);
+            const z = r * Math.sin(phi);
+            pts.push(x, y, z);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+        const line = new THREE.Line(geo, mat);
+        group.add(line);
+      }
+      return group;
+    }
+    // For station / others: outline edges only
+    let baseGeom;
+    if (type === 'station') {
+      baseGeom = new THREE.CylinderGeometry(0.7, 0.7, 1.6, 16, 1, true);
+    } else {
+      baseGeom = new THREE.IcosahedronGeometry(1, 1);
+    }
+    const edges = new THREE.EdgesGeometry(baseGeom, 5); // threshold angle deg-ish
+    const mat = new THREE.LineBasicMaterial({ color: 0xffff99, transparent: true, opacity: 0.4 });
+    const lines = new THREE.LineSegments(edges, mat);
+    return lines;
+  }
+
+  _updatePreview(target) {
+    if (!this.previewScene) return;
+    const tid = target.getId ? target.getId() : null;
+    if (this._previewTargetId !== tid) {
+      this._previewTargetId = tid;
+      this._clearPreview();
+      this._previewObject = this._buildPreviewObject(target);
+      this.previewScene.add(this._previewObject);
+    }
+    if (this._previewObject) {
+      this._previewObject.rotation.y += 0.01;
+      this._previewObject.rotation.x = 0.3;
+    }
+    if (this.previewRenderer && this.previewCamera) {
+      const w = this.navTargetPanel.clientWidth;
+      const h = this.navTargetPanel.clientHeight;
+      const size = Math.min(w, h);
+      this.previewRenderer.setSize(size, size, false);
+      this.previewCamera.aspect = 1;
+      this.previewCamera.updateProjectionMatrix();
+      this.previewRenderer.render(this.previewScene, this.previewCamera);
+    }
   }
 }

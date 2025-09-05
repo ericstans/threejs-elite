@@ -181,7 +181,8 @@ export class TargetingSystem {
         name: this.currentNavTarget.getName(),
         mass: this.currentNavTarget.getMass(),
         distance,
-        isCommable: this.currentNavTarget.isCommable
+        isCommable: this.currentNavTarget.isCommable,
+        __ref: this.currentNavTarget
       }, targetPos, this.camera);
     } else {
       this.ui.clearNavTargetInfo();
