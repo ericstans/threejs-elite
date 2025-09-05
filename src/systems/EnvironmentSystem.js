@@ -18,6 +18,11 @@ export class EnvironmentSystem {
     this.asteroids = [];
     this.oceanusStation = null;
     this.derelictStardust = null;
+  // Procedural asteroid field state
+  this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
+  this.destroyedAsteroidIds = new Set();
+  this.asteroidFieldCenter = new THREE.Vector3(-50, 50, -650);
+  this.asteroidFieldSize = 1200;
   }
 
   init() {
@@ -33,20 +38,76 @@ export class EnvironmentSystem {
     }
   }
 
-  createAsteroidField() {
+  // Deterministic pseudo-random generator (Mulberry32) to allow consistent regeneration
+  _rng(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ t >>> 15, 1 | t);
+      r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+      return ((r ^ r >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  configureAsteroidField({ seed, destroyedIds = [], center, size }) {
+    this.clearAsteroidField();
+    this.asteroidSeed = seed;
+    this.destroyedAsteroidIds = new Set(destroyedIds);
+    if (center) this.asteroidFieldCenter = new THREE.Vector3(center.x, center.y, center.z);
+    if (size) this.asteroidFieldSize = size;
+    this._generateAsteroidField();
+  }
+
+  clearAsteroidField() {
+    for (const a of this.asteroids) {
+      if (this.gameEngine.removeEntity) this.gameEngine.removeEntity(a);
+      if (a.mesh && a.mesh.parent) a.mesh.parent.remove(a.mesh);
+    }
+    this.asteroids.length = 0;
+  }
+
+  _generateAsteroidField() {
     const asteroidCount = 25;
-    const fieldCenter = new THREE.Vector3(-50, 50, -650);
-    const fieldSize = 1200;
+    const fieldCenter = this.asteroidFieldCenter.clone();
+    const fieldSize = this.asteroidFieldSize;
+    const rand = this._rng(this.asteroidSeed);
     for (let i = 0; i < asteroidCount; i++) {
+      const idSeed = Math.floor(rand() * 1e9).toString(36);
+      if (this.destroyedAsteroidIds.has(idSeed)) continue; // skip destroyed asteroids
       const position = new THREE.Vector3(
-        fieldCenter.x + (Math.random() - 0.5) * fieldSize,
-        fieldCenter.y + (Math.random() - 0.5) * fieldSize,
-        fieldCenter.z + (Math.random() - 0.5) * fieldSize
+        fieldCenter.x + (rand() - 0.5) * fieldSize,
+        fieldCenter.y + (rand() - 0.5) * fieldSize,
+        fieldCenter.z + (rand() - 0.5) * fieldSize
       );
-      const size = 0.5 + Math.random() * 1.5;
+      const size = 0.5 + rand() * 1.5;
       const asteroid = new Asteroid(position, size);
+      // Overwrite generated random id with deterministic idSeed for persistence mapping
+      asteroid.id = idSeed;
       this.asteroids.push(asteroid);
       this.gameEngine.addEntity(asteroid);
+    }
+  }
+
+  // Call this when an asteroid is destroyed so future regenerations omit it
+  markAsteroidDestroyed(asteroid) {
+    if (asteroid && asteroid.id) {
+      this.destroyedAsteroidIds.add(asteroid.id);
+    }
+  }
+
+  getAsteroidFieldState() {
+    return {
+      seed: this.asteroidSeed,
+  destroyedIds: Array.from(this.destroyedAsteroidIds),
+  center: { x: this.asteroidFieldCenter.x, y: this.asteroidFieldCenter.y, z: this.asteroidFieldCenter.z },
+  size: this.asteroidFieldSize
+    };
+  }
+
+  // Backward compatible method (legacy calls in main.js)
+  createAsteroidField() {
+    if (!this.asteroids.length) {
+      this._generateAsteroidField();
     }
   }
 

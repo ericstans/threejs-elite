@@ -26,6 +26,17 @@ export class Asteroid {
     this.mesh.position.copy(this.position);
   }
 
+  getType() { return 'asteroid'; }
+
+  serializeState() {
+    return {
+      id: this.id,
+      position: { x: this.position.x, y: this.position.y, z: this.position.z },
+      size: this.size,
+      health: this.health
+    };
+  }
+
   createAsteroidMesh() {
     // Create a random asteroid geometry
     const geometry = new THREE.DodecahedronGeometry(this.size, 0);

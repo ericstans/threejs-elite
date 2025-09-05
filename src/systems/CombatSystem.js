@@ -28,7 +28,8 @@ export class CombatSystem {
     getNPCShip,
     getAsteroids,
   onHitFeedback,
-  onNPCShipDestroyed
+  onNPCShipDestroyed,
+  environmentSystem // optional, used for marking destroyed asteroids for procedural diff
   }) {
     this.gameEngine = gameEngine;
     this.soundManager = soundManager;
@@ -40,6 +41,8 @@ export class CombatSystem {
     this.getAsteroids = getAsteroids;
   this.onHitFeedback = onHitFeedback;
   this.onNPCShipDestroyed = onNPCShipDestroyed;
+  // Accept either direct instance or function returning instance
+  this.environmentSystem = typeof environmentSystem === 'function' ? { markAsteroidDestroyed: (a)=>environmentSystem()?.markAsteroidDestroyed(a) } : environmentSystem;
 
     this.lasers = [];
     this.explosions = [];
@@ -150,6 +153,7 @@ export class CombatSystem {
       this.gameEngine.createSpatialExplosion(asteroid.getPosition());
       this.gameEngine.removeEntity(asteroid);
       asteroidsArray.splice(asteroidIndex, 1);
+      this.environmentSystem?.markAsteroidDestroyed(asteroid);
     } else {
       const hitPosition = asteroid.getPosition().clone();
       hitPosition.x += (Math.random() - 0.5) * asteroid.getSize();

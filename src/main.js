@@ -12,6 +12,8 @@ import { DockingManager } from './systems/DockingManager.js';
 import { EnvironmentSystem } from './systems/EnvironmentSystem.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
+import { SectorManager } from './systems/SectorManager.js';
+import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
 
 import { NPCShip } from './NPCShip.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -28,6 +30,19 @@ class Game {
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
     this.asteroids = [];
+    // Sector persistence
+    this.sectorManager = new SectorManager({
+      gameEngine: this.gameEngine,
+      createByType: () => null // creation handled by serializers directly
+    });
+    registerDefaultSerializers(this.sectorManager);
+    this.activeSectorEntities = [];
+    // Predefine sectors (seeded procedural asteroid fields)
+    this.availableSectors = [
+      { id: 'sector-1', name: 'Aridus Sector', seed: 0x1a2b, center: { x: -50, y: 50, z: -650 }, size: 1200 },
+      { id: 'sector-2', name: 'random(1)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+      { id: 'sector-3', name: 'random(2)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 }
+    ];
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
       gameEngine: this.gameEngine,
@@ -46,7 +61,8 @@ class Game {
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
         }
-      }
+  },
+  environmentSystem: () => this.environmentSystem
     });
 
     this.targetingSystem = new TargetingSystem({
@@ -314,11 +330,28 @@ class Game {
       npcShipFactory: () => this.npcShip
     });
     this.environmentSystem.init();
-    this.environmentSystem.createAsteroidField();
-  // Backwards compatibility: expose references
-  this.planets = this.environmentSystem.planets;
-  this.oceanusStation = this.environmentSystem.oceanusStation;
-  this.asteroids = this.environmentSystem.asteroids;
+    const defaultSector = this.availableSectors[0];
+    this.sectorManager.currentSectorId = defaultSector.id;
+    let existingField = this.sectorManager.getAsteroidFieldState(defaultSector.id);
+    if (!existingField) {
+      // initialize using predefined seed + center/size
+      this.environmentSystem.configureAsteroidField({ seed: defaultSector.seed, destroyedIds: [], center: defaultSector.center, size: defaultSector.size });
+      this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+      existingField = this.environmentSystem.getAsteroidFieldState();
+    } else {
+      this.environmentSystem.configureAsteroidField(existingField);
+    }
+    // Pre-cache other sectors' asteroid fields (only store seed/diff)
+    for (let i = 1; i < this.availableSectors.length; i++) {
+      const s = this.availableSectors[i];
+      if (!this.sectorManager.getAsteroidFieldState(s.id)) {
+        this.sectorManager.sectors.set(s.id, { id: s.id, dynamic: { entities: [] }, asteroidField: { seed: s.seed, destroyedIds: [], center: s.center, size: s.size } });
+      }
+    }
+    // Backwards compatibility references
+    this.planets = this.environmentSystem.planets;
+    this.oceanusStation = this.environmentSystem.oceanusStation;
+    this.asteroids = this.environmentSystem.asteroids;
 
     // --- Add static NPC ship near the asteroid field ---
     // Place it 60 units beside the field center
@@ -376,6 +409,21 @@ class Game {
     // Handle closing communications
     this.controls.setOnCloseComms(() => {
       this.closeComms();
+    });
+
+    // Map toggle
+    this.controls.setOnMapToggle(() => {
+      if (this.ui.mapModal.style.display === 'block') {
+        this.ui.hideMapModal();
+      } else {
+        this.ui.showMapModal(this.availableSectors);
+      }
+    });
+
+    // Map selection
+    this.ui.setOnMapSelect((sectorId) => {
+      this.switchSector(sectorId);
+      this.ui.hideMapModal();
     });
 
     // Handle conversation option selection
@@ -474,6 +522,11 @@ class Game {
   // Combat system update (lasers, explosions, collisions)
   this.combatSystem.update(deltaTime);
 
+  // Persist asteroid field diff every frame (cheap to store small object)
+  if (this.environmentSystem) {
+    this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+  }
+
   // Update target info (combat) via targeting system
   this.targetingSystem.updateTargetInfo();
 
@@ -548,6 +601,29 @@ class Game {
       this.ui.crosshair.style.display = 'block';
       this.ui.autoAimCone.style.display = 'block';
     }
+  }
+
+  switchSector(sectorId) {
+    if (this.sectorManager.currentSectorId === sectorId) return; // already there
+    if (this.environmentSystem) {
+      this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+    }
+    this.sectorManager.currentSectorId = sectorId;
+    const fieldState = this.sectorManager.getAsteroidFieldState(sectorId);
+    if (fieldState) {
+      this.environmentSystem.configureAsteroidField(fieldState);
+    } else {
+      const s = this.availableSectors.find(s => s.id === sectorId) || { seed: Date.now() & 0xffff };
+      this.environmentSystem.configureAsteroidField({ seed: s.seed, destroyedIds: [], center: s.center, size: s.size });
+      this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+    }
+    // Move player near new sector center for immediate feedback
+    const activeSector = this.availableSectors.find(s => s.id === sectorId);
+    if (activeSector && activeSector.center) {
+      this.spaceship.position.set(activeSector.center.x, activeSector.center.y, activeSector.center.z + 150); // offset slightly in front
+      this.gameEngine.camera.position.copy(this.spaceship.position);
+    }
+    this.asteroids = this.environmentSystem.asteroids;
   }
 
   checkNavTargetProximity() {

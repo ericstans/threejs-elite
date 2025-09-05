@@ -14,6 +14,17 @@ export class NPCShip {
     this.loadModel();
   }
 
+  getType() { return 'npcShip'; }
+
+  serializeState() {
+    return {
+      position: { x: this.position.x, y: this.position.y, z: this.position.z },
+      health: this.health,
+      maxHealth: this.maxHealth,
+      destroyed: this.destroyed
+    };
+  }
+
   getWorldPosition() {
     // Return the world position of the first visible mesh, or fallback to group position
     let meshCenter = null;

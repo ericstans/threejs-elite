@@ -145,6 +145,14 @@ export class Controls {
       }
       this.keys['KeyC'] = false;
     }
+
+    // Map (M key)
+    if (this.keys['KeyM']) {
+      if (this.onMapToggle) {
+        this.onMapToggle();
+      }
+      this.keys['KeyM'] = false;
+    }
     
     // ESC to close comms modal
     if (this.keys['Escape']) {
@@ -203,6 +211,8 @@ export class Controls {
   setOnComms(callback) {
     this.onComms = callback;
   }
+
+  setOnMapToggle(callback) { this.onMapToggle = callback; }
 
   setOnCloseComms(callback) {
     this.onCloseComms = callback;

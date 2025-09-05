@@ -9,6 +9,44 @@ export class UI {
   constructor() {
     this.createUI();
     this.firstPersonMode = true; // start in cockpit view
+  // Map modal (reuses comms styling for quick implementation)
+  this.mapModal = document.createElement('div');
+  this.mapModal.style.position = 'fixed';
+  this.mapModal.style.top = '0';
+  this.mapModal.style.left = '0';
+  this.mapModal.style.width = '100%';
+  this.mapModal.style.height = '100%';
+  this.mapModal.style.background = 'rgba(0, 0, 0, 0.8)';
+  this.mapModal.style.display = 'none';
+  this.mapModal.style.zIndex = '2100';
+  this.mapModal.style.pointerEvents = 'auto';
+  document.body.appendChild(this.mapModal);
+
+  this.mapContent = document.createElement('div');
+  this.mapContent.style.position = 'absolute';
+  this.mapContent.style.top = '50%';
+  this.mapContent.style.left = '50%';
+  this.mapContent.style.transform = 'translate(-50%, -50%)';
+  this.mapContent.style.width = '540px';
+  this.mapContent.style.maxHeight = '70%';
+  this.mapContent.style.overflowY = 'auto';
+  this.mapContent.style.background = 'rgba(0,0,0,0.5)';
+  this.mapContent.style.border = '2px solid #00ff00';
+  this.mapContent.style.padding = '20px';
+  this.mapContent.style.color = '#ffffff';
+  this.mapContent.style.fontFamily = 'monospace';
+  this.mapContent.style.boxShadow = '0 0 10px rgba(0,255,0,0.5)';
+  this.mapModal.appendChild(this.mapContent);
+
+  this.mapTitle = document.createElement('h2');
+  this.mapTitle.style.marginTop = '0';
+  this.mapTitle.style.fontFamily = 'monospace';
+  this.mapTitle.style.color = '#00ff00';
+  this.mapTitle.textContent = 'SECTOR MAP';
+  this.mapContent.appendChild(this.mapTitle);
+
+  this.mapList = document.createElement('div');
+  this.mapContent.appendChild(this.mapList);
   }
 
   createUI() {
@@ -487,6 +525,37 @@ export class UI {
   isCommsModalVisible() {
     return this.commsModal.style.display === 'block';
   }
+
+  showMapModal(sectors) {
+    this.mapList.innerHTML = '';
+    sectors.forEach((sector, index) => {
+      const el = document.createElement('div');
+      el.style.marginBottom = '10px';
+      el.style.padding = '8px';
+      el.style.border = '1px solid #00ff00';
+      el.style.cursor = 'pointer';
+      el.style.transition = 'all 0.2s ease';
+      el.innerHTML = `<span style="color:#ffff00;">${index + 1}.</span> ${sector.name}`;
+      el.dataset.sectorId = sector.id;
+      el.addEventListener('mouseenter', () => {
+        el.style.background = 'rgba(0,255,0,0.1)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.background = 'transparent';
+      });
+      el.addEventListener('click', () => {
+        this.onMapSelect && this.onMapSelect(el.dataset.sectorId);
+      });
+      this.mapList.appendChild(el);
+    });
+    this.mapModal.style.display = 'block';
+  }
+
+  hideMapModal() {
+    this.mapModal.style.display = 'none';
+  }
+
+  setOnMapSelect(cb) { this.onMapSelect = cb; }
 
   setOnCommsOptionClick(callback) {
     this.onCommsOptionClick = callback;
