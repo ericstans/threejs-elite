@@ -4,6 +4,7 @@ import { ControlsUI } from './ui/ControlsUI.js';
 import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
+import * as THREE from 'three';
 
 export class UI {
   constructor() {
@@ -182,6 +183,45 @@ export class UI {
     this.autoAimCone.style.opacity = '0.5';
     this.uiContainer.appendChild(this.autoAimCone);
 
+  // Radar (two concentric circles) bottom center
+  this.radarWrapper = document.createElement('div');
+  this.radarWrapper.style.position = 'absolute';
+  this.radarWrapper.style.left = '50%';
+  this.radarWrapper.style.bottom = '120px';
+  this.radarWrapper.style.transform = 'translateX(-50%)';
+  this.radarWrapper.style.width = '160px';
+  this.radarWrapper.style.height = '160px';
+  this.radarWrapper.style.pointerEvents = 'none';
+  this.radarWrapper.style.opacity = '0.9';
+  this.uiContainer.appendChild(this.radarWrapper);
+  const radarOuter = document.createElement('div');
+  radarOuter.style.position = 'absolute';
+  radarOuter.style.left = '0';
+  radarOuter.style.top = '0';
+  radarOuter.style.width = '100%';
+  radarOuter.style.height = '100%';
+  radarOuter.style.border = '2px solid #00aa55';
+  radarOuter.style.borderRadius = '50%';
+  radarOuter.style.boxShadow = '0 0 8px rgba(0,255,128,0.4)';
+  this.radarWrapper.appendChild(radarOuter);
+  const radarInner = document.createElement('div');
+  radarInner.style.position = 'absolute';
+  radarInner.style.left = '25%';
+  radarInner.style.top = '25%';
+  radarInner.style.width = '50%';
+  radarInner.style.height = '50%';
+  radarInner.style.border = '2px solid #00aa55';
+  radarInner.style.borderRadius = '50%';
+  this.radarWrapper.appendChild(radarInner);
+  this.radarBlipLayer = document.createElement('div');
+  this.radarBlipLayer.style.position = 'absolute';
+  this.radarBlipLayer.style.left = '0';
+  this.radarBlipLayer.style.top = '0';
+  this.radarBlipLayer.style.width = '100%';
+  this.radarBlipLayer.style.height = '100%';
+  this.radarWrapper.appendChild(this.radarBlipLayer);
+  this._radarBlips = new Map();
+
     // Communications modal (initially hidden)
     this.commsModal = document.createElement('div');
     this.commsModal.style.position = 'fixed';
@@ -352,6 +392,89 @@ export class UI {
 
   clearNavTargetInfo() {
     this.navTargetUI.clearNavTargetInfo();
+  }
+
+  updateRadar(playerPos, playerQuat, targets) {
+    if (!this.radarWrapper) return;
+    const outerR = 80; // wrapper half-size
+    const innerR = 40; // inner circle radius
+    const forward = new THREE.Vector3(0,0,-1).applyQuaternion(playerQuat).normalize();
+    const up = new THREE.Vector3(0,1,0).applyQuaternion(playerQuat).normalize();
+    const right = new THREE.Vector3().copy(forward).cross(up).normalize(); // ship right
+    const live = new Set();
+    for (const t of targets) {
+      const key = t._radarId || t.id || t.getId?.() || t.getName?.();
+      if (!key) continue;
+      const pos = t.getPosition ? t.getPosition() : t.position;
+      if (!pos) continue;
+      const rel = pos.clone().sub(playerPos);
+      const len = rel.length();
+      if (!len) continue;
+      rel.divideScalar(len);
+      const dotF = rel.dot(forward); // 1 front, -1 behind
+      const vertical = THREE.MathUtils.clamp(rel.dot(up), -1, 1);
+      const lateral = THREE.MathUtils.clamp(rel.dot(right), -1, 1);
+      // Amount the object is behind (>0 means behind)
+      const behindFactor = Math.max(0, -dotF); // 0 front hemisphere, up to 2? actually dotF>=-1 so max 1
+      // Base positions inside inner circle for front / side objects
+      let x = lateral * innerR;
+      let y = -vertical * innerR; // screen y inverted
+      if (behindFactor > 0) {
+        // Scale outward toward outer ring proportionally to how far behind
+        const scale = innerR + behindFactor * (outerR - innerR);
+        // If exactly directly behind (lateral & vertical near 0), pin to outer ring top
+        if (Math.abs(lateral) < 0.05 && Math.abs(vertical) < 0.05 && dotF < -0.95) {
+          x = 0;
+          y = -outerR + 2; // top of outer ring
+        } else {
+          // Renormalize direction in lateral/vertical plane to preserve orientation
+          const mag = Math.hypot(lateral, vertical) || 1;
+            x = (lateral / mag) * scale;
+            y = -(vertical / mag) * scale;
+        }
+      }
+      // Clamp final within outer bounds
+      const radial = Math.hypot(x, y);
+      if (radial > outerR - 2) {
+        const k = (outerR - 2) / radial;
+        x *= k; y *= k;
+      }
+      let blip = this._radarBlips.get(key);
+      if (!blip) {
+        blip = document.createElement('div');
+        blip.style.position = 'absolute';
+        blip.style.borderRadius = '50%';
+        blip.style.pointerEvents = 'none';
+        this.radarBlipLayer.appendChild(blip);
+        this._radarBlips.set(key, blip);
+      }
+      const baseColor = t.isNavTargetable ? '#ffff00' : '#ff0000';
+      const highlighted = !!t._radarHighlight;
+      if (highlighted) {
+        blip.style.width = '8px';
+        blip.style.height = '8px';
+        blip.style.marginLeft = '-4px';
+        blip.style.marginTop = '-4px';
+        blip.style.background = baseColor;
+        blip.style.boxShadow = t.isNavTargetable ? '0 0 6px rgba(255,255,0,0.9)' : '0 0 6px rgba(255,0,0,0.9)';
+        blip.style.border = '1px solid #fff';
+      } else {
+        blip.style.width = '2px';
+        blip.style.height = '2px';
+        blip.style.marginLeft = '-1px';
+        blip.style.marginTop = '-1px';
+        blip.style.background = baseColor;
+        blip.style.boxShadow = 'none';
+        blip.style.border = 'none';
+      }
+      blip.style.left = (outerR + x) + 'px';
+      blip.style.top = (outerR + y) + 'px';
+      live.add(key);
+    }
+    // Cleanup stale blips
+    for (const [k, el] of this._radarBlips.entries()) {
+      if (!live.has(k)) { el.remove(); this._radarBlips.delete(k); }
+    }
   }
 
   showCommsModal(planetName, greeting, options = null) {

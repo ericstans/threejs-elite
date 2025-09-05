@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Asteroid } from '../Asteroid.js';
 import { SpaceStation } from '../SpaceStation.js';
 import { Planet } from '../Planet.js';
+import { hashSeed } from '../util/seedUtils.js';
 
 /**
  * EnvironmentSystem creates and updates passive world elements:
@@ -19,71 +20,67 @@ export class EnvironmentSystem {
     this.asteroids = [];
     this.oceanusStation = null;
     this.derelictStardust = null;
-    // Additional procedural stardust field centered on planet cluster
-    this.planetClusterStardust = null;
-    // Procedural asteroid field state
-    this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
-    this.destroyedAsteroidIds = new Set();
-    this.asteroidFieldCenter = new THREE.Vector3(-50, 50, -650);
-    this.asteroidFieldSize = 1200;
+  // Additional procedural stardust field centered on planet cluster
+  this.planetClusterStardust = null;
+  // Procedural asteroid field state
+  this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
+  this.destroyedAsteroidIds = new Set();
+  this.asteroidFieldCenter = new THREE.Vector3(-50, 50, -650);
+  this.asteroidFieldSize = 1200;
     this.procedural = procedural; // if true, ignore provided planetFactory and generate
   }
 
   initProcedural(seed) {
-    // Generate planets & optional stations deterministically
+    // Hierarchical deterministic generation using namespaced hash seeds.
     this.clearPlanetsAndStations();
-    // Remove any prior procedural stardust cluster
     if (this.planetClusterStardust && this.planetClusterStardust.parent) {
       this.planetClusterStardust.parent.remove(this.planetClusterStardust);
       this.planetClusterStardust = null;
-      // Shader stardust uniforms tracking
-      this._stardustTime = 0;
     }
-    const rand = this._rng(seed ^ 0x9e3779b9);
+    this._stardustTime = 0;
     const planetTypes = this._getPlanetArchetypes();
-    const planetCount = 2 + Math.floor(rand() * 3); // 2-4 planets
     const radiusRange = [35, 110];
-    const spread = 1800; // spatial extent
+    const spread = 1800;
+    const countRng = this._rng(hashSeed(seed, 'planetCount'));
+    const planetCount = 2 + Math.floor(countRng() * 3);
     const chosen = [];
     for (let i = 0; i < planetCount; i++) {
-      const archetype = planetTypes[Math.floor(rand() * planetTypes.length)];
-      const radius = radiusRange[0] + rand() * (radiusRange[1] - radiusRange[0]);
+      const pSeed = hashSeed(seed, 'planet', i);
+      const prng = this._rng(pSeed);
+      const archetype = planetTypes[Math.floor(prng() * planetTypes.length)];
+      const radius = radiusRange[0] + prng() * (radiusRange[1] - radiusRange[0]);
       const pos = new THREE.Vector3(
-        (rand() - 0.5) * spread,
-        (rand() - 0.5) * spread * 0.6,
-        -400 - rand() * spread
+        (prng() - 0.5) * spread,
+        (prng() - 0.5) * spread * 0.6,
+        -400 - prng() * spread
       );
       const planet = new Planet(radius, pos, archetype.color, archetype.name, archetype.greeting);
-      // Variation in rotation speed
-      planet.rotationSpeed = 0.02 + rand() * 0.15;
-      planet.commable = rand() < 0.5; // 50% chance to be commable
-      // Randomly mark some commable planets dockable
-      planet.dockable = planet.commable && rand() < 0.55;
+      planet.rotationSpeed = 0.02 + prng() * 0.15;
+      planet.dockable = prng() < 0.55;
       this.planets.push(planet);
       this.gameEngine.addEntity(planet);
       this.gameEngine.scene.add(planet.mesh);
-      // Rare rings
-      if (rand() < 0.18) this._addPlanetRings(planet, rand);
-      // Rare moon
-      if (rand() < 0.22) this._addMoon(planet, rand);
+      if (prng() < 0.18) this._addPlanetRings(planet, prng);
+      if (prng() < 0.22) this._addMoon(planet, prng);
       chosen.push(planet);
     }
-    // Random 0-2 stations around distinct planets
-    const stationCount = Math.floor(rand() * 3); // 0,1,2
+    const stationCountRng = this._rng(hashSeed(seed, 'stationCount'));
+    const stationCount = Math.floor(stationCountRng() * 3);
     const indices = [...Array(chosen.length).keys()];
     for (let s = 0; s < stationCount && indices.length; s++) {
-      const idx = indices.splice(Math.floor(rand() * indices.length), 1)[0];
+      const idxPickRng = this._rng(hashSeed(seed, 'stationIndex', s));
+      const idx = indices.splice(Math.floor(idxPickRng() * indices.length), 1)[0];
       const pl = chosen[idx];
-      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + rand() * 1.5), size: pl.radius * (0.3 + rand() * 0.3) });
+      const stRng = this._rng(hashSeed(seed, 'station', s));
+      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3) });
       this.gameEngine.addEntity(station);
       this.gameEngine.scene.add(station.mesh);
-      // Track one (for targeting system compatibility expecting oceanusStation)
       if (!this.oceanusStation) this.oceanusStation = station;
     }
-    // Large spanning stardust field covering region
-    this._createWideStardust(rand);
-    // Denser localized cluster field encompassing all planets
-    this._createPlanetClusterStardust(rand);
+    const wideRand = this._rng(hashSeed(seed, 'stardustWide'));
+    const clusterRand = this._rng(hashSeed(seed, 'stardustCluster'));
+    this._createWideStardust(wideRand);
+    this._createPlanetClusterStardust(clusterRand);
   }
 
   init() {
@@ -141,9 +138,9 @@ export class EnvironmentSystem {
     ringGeo.rotateX(Math.PI / 2 + (rand() - 0.5) * 0.6);
     const mat = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const ring = new THREE.Mesh(ringGeo, mat);
-    // Parent ring to planet so it follows position (prevents orphaned rings on sector reload)
-    ring.position.set(0, 0, 0);
-    planet.mesh.add(ring);
+  // Parent ring to planet so it follows position (prevents orphaned rings on sector reload)
+  ring.position.set(0, 0, 0);
+  planet.mesh.add(ring);
     planet.rings = ring;
   }
 
@@ -453,7 +450,7 @@ export class EnvironmentSystem {
   // Deterministic pseudo-random generator (Mulberry32) to allow consistent regeneration
   _rng(seed) {
     let t = seed >>> 0;
-    return function () {
+    return function() {
       t += 0x6D2B79F5;
       let r = Math.imul(t ^ t >>> 15, 1 | t);
       r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
@@ -510,9 +507,9 @@ export class EnvironmentSystem {
   getAsteroidFieldState() {
     return {
       seed: this.asteroidSeed,
-      destroyedIds: Array.from(this.destroyedAsteroidIds),
-      center: { x: this.asteroidFieldCenter.x, y: this.asteroidFieldCenter.y, z: this.asteroidFieldCenter.z },
-      size: this.asteroidFieldSize
+  destroyedIds: Array.from(this.destroyedAsteroidIds),
+  center: { x: this.asteroidFieldCenter.x, y: this.asteroidFieldCenter.y, z: this.asteroidFieldCenter.z },
+  size: this.asteroidFieldSize
     };
   }
 

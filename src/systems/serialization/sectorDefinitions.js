@@ -14,27 +14,22 @@ export const sectorDefinitions = {
     ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 }
   },
-  // Sector-2: Hybrid - some explicit handcrafted planets + allow procedural augment (flag hybrid:true)
   'sector-2': {
     id: 'sector-2',
-    name: 'Hybrid Fringe',
-    hybrid: true,
+    name: 'Zephyrus Spur',
+    // Two handcrafted anchor planets
     planets: [
-      { type: 'planet', name: 'Vestige', radius: 72, color: 0x555577, greeting: 'Vestige relay active.', position: { x: -150, y: -40, z: -700 }, rotationSpeed: 0.04, hasMoon: false },
-      { type: 'planet', name: 'Chroma', radius: 52, color: 0x44aa88, greeting: 'Chroma spectrum balanced.', position: { x: 340, y: 80, z: -1050 }, rotationSpeed: 0.11, hasMoon: true }
+      { type: 'planet', name: 'Zephyrus Alpha', radius: 70, color: 0x446677, greeting: 'Zephyrus Alpha relay active.', position: { x: 600, y: 40, z: -1400 }, rotationSpeed: 0.06 },
+      { type: 'planet', name: 'Vela Gate', radius: 55, color: 0x8844aa, greeting: 'Vela Gate administrative uplink.', position: { x: -520, y: -60, z: -1100 }, rotationSpeed: 0.08 }
+      // Three additional planets will be procedurally generated on load (not listed here)
     ],
-    stations: [
-      { type: 'station', name: 'Chroma Outpost', planetName: 'Chroma', orbitRadius: 140, size: 24, orbitSpeed: 0.06 }
-    ],
-    asteroidField: { seed: 0x33dd, destroyedIds: [], center: { x: 400, y: 0, z: -1200 }, size: 1400 }
-  },
-  // Sector-3: Legacy style (old system) - will be constructed via factory path, not definition usage in switchSector
-  'sector-3': {
-    id: 'sector-3',
-    name: 'Legacy Expanse',
-    legacy: true,
-    // Keep minimal data for asteroid field only; planets created by factory code path
-    asteroidField: { seed: 0x55aa, destroyedIds: [], center: { x: -600, y: -100, z: -300 }, size: 1000 }
+    // Optionally a station could be added later; leave empty for now
+    stations: [],
+    asteroidField: { seed: 0x33dd, destroyedIds: [], center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+    hybridProceduralExtras: {
+      proceduralPlanetCount: 3, // number of additional procedural planets to spawn
+      seedOffset: 0x9e // unique offset so procedural portion differs from baseline seed
+    }
   }
 };
 

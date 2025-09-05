@@ -16,6 +16,9 @@ export class NPCShip {
 
   getType() { return 'npcShip'; }
 
+  // Provide stable id for targeting / radar systems
+  getId() { return 'npcship'; }
+
   serializeState() {
     return {
       position: { x: this.position.x, y: this.position.y, z: this.position.z },
