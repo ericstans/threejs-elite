@@ -187,10 +187,10 @@ export class UI {
   this.radarWrapper = document.createElement('div');
   this.radarWrapper.style.position = 'absolute';
   this.radarWrapper.style.left = '50%';
-  this.radarWrapper.style.bottom = '120px';
+  this.radarWrapper.style.bottom = '13%';
   this.radarWrapper.style.transform = 'translateX(-50%)';
-  this.radarWrapper.style.width = '160px';
-  this.radarWrapper.style.height = '160px';
+  this.radarWrapper.style.width = '140px';
+  this.radarWrapper.style.height = '140px';
   this.radarWrapper.style.pointerEvents = 'none';
   this.radarWrapper.style.opacity = '0.9';
   this.uiContainer.appendChild(this.radarWrapper);
@@ -386,7 +386,7 @@ export class UI {
     // Default cockpit view radar placement & size.
     if (this.radarWrapper) {
       this.radarWrapper.style.left = '50%';
-      this.radarWrapper.style.bottom = '120px';
+      this.radarWrapper.style.bottom = '14%';
       this.radarWrapper.style.transform = 'translateX(-50%)';
       this.radarWrapper.style.width = '160px';
       this.radarWrapper.style.height = '160px';
@@ -414,9 +414,11 @@ export class UI {
   }
 
   updateRadar(playerPos, playerQuat, targets) {
-    if (!this.radarWrapper) return;
-    const outerR = 80; // wrapper half-size
-    const innerR = 40; // inner circle radius
+  if (!this.radarWrapper) return;
+  // Derive current radar radii from actual DOM size so resizing (e.g. 140px vs 160px) is reflected.
+  const rect = this.radarWrapper.getBoundingClientRect();
+  const outerR = rect.width * 0.5;           // outer circle radius (wrapper is square)
+  const innerR = outerR * 0.5;               // keep inner circle at 50% of outer diameter
     const forward = new THREE.Vector3(0,0,-1).applyQuaternion(playerQuat).normalize();
     const up = new THREE.Vector3(0,1,0).applyQuaternion(playerQuat).normalize();
     const right = new THREE.Vector3().copy(forward).cross(up).normalize(); // ship right
@@ -454,7 +456,7 @@ export class UI {
       }
       // Clamp final within outer bounds
       const radial = Math.hypot(x, y);
-      if (radial > outerR - 2) {
+      if (radial > outerR - 2) { // small padding so dots stay inside stroke
         const k = (outerR - 2) / radial;
         x *= k; y *= k;
       }
