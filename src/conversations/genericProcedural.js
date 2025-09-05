@@ -42,8 +42,8 @@ export const genericProceduralConversation = {
         let base = 'Surface telemetry nominal.';
         if (planet.hasRings) base += ' Orbital ring debris monitoring active.';
         if (planet.hasMoon) base += ' Auxiliary lunar relay synchronized.';
-        base += planet.dockable ? ' Limited docking infrastructure detected.' : ' No sanctioned docking infrastructure.';
-        if (station) {
+        base += planet.dockable ? ' Docking available on planet surface.' : ' No sanctioned docking infrastructure.';
+        if (station && playerFlags.dockContext === 'planet') {
           base += ` Station ${station.name} in orbit radius ${Math.round(station.orbitRadius)}.`;
         }
         return base;
