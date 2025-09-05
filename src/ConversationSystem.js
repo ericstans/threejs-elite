@@ -98,7 +98,7 @@ export class ConversationSystem {
 
     // Base options with inline conditional logic
     const baseOptions = [
-      { id: 'information', text: `Information about ${planetName}` },
+      { id: 'information', text: `Tell me about ${planetName}.` },
       dockable ? (
         playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
           (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
