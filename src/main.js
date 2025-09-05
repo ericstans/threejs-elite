@@ -54,9 +54,10 @@ class Game {
     this.activeSectorEntities = [];
     // Predefine sectors (seeded procedural asteroid fields)
     this.availableSectors = [
-      { id: 'sector-1', name: 'Aridus Sector', seed: 0x1a2b, center: { x: -50, y: 50, z: -650 }, size: 1200 },
-      { id: 'sector-2', name: 'random(33dd)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
-      { id: 'sector-3', name: 'random(55aa)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+      { id: 'sector-1', name: 'Aridus Sector', center: { x: -50, y: 50, z: -650 } },
+      { id: 'sector-2', name: 'Hybrid Fringe', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+      { id: 'sector-3', name: 'Legacy Expanse', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+      // Additional purely procedural test sectors
       { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 },
       { id: 'sector-5', name: 'random(1234)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 }
     ];
@@ -363,6 +364,28 @@ class Game {
         this.gameEngine.addEntity(planet);
         this.gameEngine.scene.add(planet.mesh);
         loadedPlanets.push(planet);
+        // Attach moon if definition requests one
+        if (p.hasMoon) {
+          // Simple moon creation mirroring procedural helper (inline to avoid accessing private method)
+          const moonRadius = planet.radius * 0.18;
+          const dist = planet.radius * 3.6;
+          const geo = new THREE.SphereGeometry(moonRadius, 8, 6);
+          const mat = new THREE.MeshLambertMaterial({ color: 0xdddddd, flatShading: true });
+          const moon = new THREE.Mesh(geo, mat);
+          moon.userData.orbit = { center: planet.mesh.position.clone(), radius: dist, angle: Math.random() * Math.PI * 2, speed: 0.18 };
+          moon.position.set(planet.mesh.position.x + dist, planet.mesh.position.y, planet.mesh.position.z);
+          moon.userData.update = (dt) => {
+            const o = moon.userData.orbit;
+            o.angle += o.speed * dt * 0.05;
+            moon.position.set(
+              o.center.x + Math.cos(o.angle) * o.radius,
+              o.center.y + (Math.sin(o.angle * 0.7) * o.radius * 0.05),
+              o.center.z + Math.sin(o.angle) * o.radius
+            );
+          };
+          this.gameEngine.scene.add(moon);
+          planet.moon = moon;
+        }
       }
       if (def.stations) {
         for (const s of def.stations) {
@@ -464,7 +487,7 @@ class Game {
       if (this.ui.mapModal.style.display === 'block') {
         this.ui.hideMapModal();
       } else {
-        this.ui.showMapModal(this.availableSectors);
+        this.ui.showMapModal(this.getSectorListForMap());
       }
     });
 
@@ -522,6 +545,22 @@ class Game {
     // Create new laser with calculated direction
     const laser = new Laser(laserStartPos, laserDirection);
     this.combatSystem.shootLaser();
+  }
+
+  getSectorListForMap() {
+    // Merge definition metadata (hybrid/legacy) if present
+    return this.availableSectors.map(s => {
+      const def = getSectorDefinition(s.id);
+      let label = s.name;
+      if (def) {
+        if (def.hybrid) label += ' [HYBRID]';
+        else if (def.legacy) label += ' [LEGACY]';
+        else label += ' [HANDCRAFTED]';
+      } else {
+        label += ' [PROC]';
+      }
+      return { id: s.id, name: label };
+    });
   }
 
   update(deltaTime) {
@@ -672,17 +711,30 @@ class Game {
     this.sectorManager.currentSectorId = sectorId;
     const fieldState = this.sectorManager.getAsteroidFieldState(sectorId);
     const sMeta = this.availableSectors.find(s => s.id === sectorId);
-    const procedural = sectorId !== 'sector-1';
-    this.environmentSystem.procedural = procedural;
-    if (procedural) {
-      // Generate procedural planets/stations before asteroid field so station reference is valid
-      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff));
-    } else {
-      // Load from sector definition (ensures deterministic handcrafted layout)
-      const def = getSectorDefinition('sector-1');
-      if (def) {
-        this.environmentSystem.clearPlanetsAndStations();
-        const loadedPlanets = [];
+    const def = getSectorDefinition(sectorId);
+    const isLegacy = def && def.legacy;
+    const isHybrid = def && def.hybrid;
+    const handcrafted = def && !def.legacy; // includes hybrid explicit subset
+    this.environmentSystem.clearPlanetsAndStations();
+
+    if (isLegacy) {
+      // Legacy factory style: resurrect original Aridus-style two-planet layout (renamed) for demonstration
+      this.environmentSystem.procedural = false;
+      const legacyPlanets = [
+        new Planet(78, new THREE.Vector3(180, -20, -420), 0x9B5523, 'Old Aridus', 'Legacy channel active.'),
+        new Planet(54, new THREE.Vector3(-260, 60, -760), 0x3a60d5, 'Old Oceanus', 'Legacy aquatic relay.')
+      ];
+      for (const lp of legacyPlanets) {
+        this.environmentSystem.planets.push(lp);
+        this.gameEngine.addEntity(lp);
+        this.gameEngine.scene.add(lp.mesh);
+      }
+      // No station by default
+    } else if (handcrafted) {
+      // Pure or hybrid handcrafted planets
+      this.environmentSystem.procedural = false; // we manually add
+      const loadedPlanets = [];
+      if (def.planets) {
         for (const p of def.planets) {
           const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
           planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
@@ -690,21 +742,64 @@ class Game {
           this.gameEngine.addEntity(planet);
           this.gameEngine.scene.add(planet.mesh);
           loadedPlanets.push(planet);
-        }
-        if (def.stations) {
-          for (const s of def.stations) {
-            const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
-            if (host) {
-              const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
-              this.environmentSystem.oceanusStation = station;
-              this.gameEngine.addEntity(station);
-              this.gameEngine.scene.add(station.mesh);
-            }
+          if (p.hasMoon) {
+            const moonRadius = planet.radius * 0.18;
+            const dist = planet.radius * 3.4;
+            const geo = new THREE.SphereGeometry(moonRadius, 8, 6);
+            const mat = new THREE.MeshLambertMaterial({ color: 0xdddddd, flatShading: true });
+            const moon = new THREE.Mesh(geo, mat);
+            moon.userData.orbit = { center: planet.mesh.position.clone(), radius: dist, angle: Math.random() * Math.PI * 2, speed: 0.16 };
+            moon.position.set(planet.mesh.position.x + dist, planet.mesh.position.y, planet.mesh.position.z);
+            moon.userData.update = (dt) => {
+              const o = moon.userData.orbit;
+              o.angle += o.speed * dt * 0.05;
+              moon.position.set(
+                o.center.x + Math.cos(o.angle) * o.radius,
+                o.center.y + (Math.sin(o.angle * 0.7) * o.radius * 0.05),
+                o.center.z + Math.sin(o.angle) * o.radius
+              );
+            };
+            this.gameEngine.scene.add(moon);
+            planet.moon = moon;
           }
         }
-      } else if (!this.environmentSystem.planets.length) {
-        this.environmentSystem.init();
       }
+      if (def.stations) {
+        for (const s of def.stations) {
+          const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
+          if (host) {
+            const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
+            this.environmentSystem.oceanusStation = station;
+            this.gameEngine.addEntity(station);
+            this.gameEngine.scene.add(station.mesh);
+          }
+        }
+      }
+      if (isHybrid) {
+        // Add procedural augmentation (e.g., 1-2 extra random planets & maybe station) without clearing handcrafted
+        const seed = (sMeta ? sMeta.seed : (Date.now() & 0xffff)) ^ 0x5eed1234;
+        // Temporarily keep existing planets, but we want to append procedural ones using EnvironmentSystem helper
+        // Use initProcedural-like generation but without clearing
+        const rand = this.environmentSystem._rng(seed);
+        const arche = this.environmentSystem._getPlanetArchetypes();
+        const extraCount = 1 + Math.floor(rand() * 2); // 1-2 extra
+        const spread = 1600;
+        for (let i = 0; i < extraCount; i++) {
+          const at = arche[Math.floor(rand() * arche.length)];
+          const radius = 38 + rand() * 55;
+          const pos = new THREE.Vector3((rand() - 0.5) * spread, (rand() - 0.5) * spread * 0.5, -500 - rand() * spread);
+          const planet = new Planet(radius, pos, at.color, at.name, at.greeting);
+          planet.rotationSpeed = 0.02 + rand() * 0.1;
+          planet.dockable = rand() < 0.5;
+          this.environmentSystem.planets.push(planet);
+          this.gameEngine.addEntity(planet);
+          this.gameEngine.scene.add(planet.mesh);
+        }
+      }
+    } else {
+      // Fully procedural fallback (if no definition)
+      this.environmentSystem.procedural = true;
+      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff));
     }
     if (fieldState) {
       this.environmentSystem.configureAsteroidField(fieldState);
@@ -921,11 +1016,11 @@ class Game {
         this.spaceship.setFlag('dockingAuthorized', true);
         this.ui.showDockingStatus();
         this.ui.updateDockingStatus('LANDING AUTHORIZED \n PROCEED TO LANDING VECTOR');
-  // Station docking context (authorization before physical dock)
-  this.spaceship.flags.dockContext = 'station';
-  this.spaceship.flags.docketPlanetId = null;
-  const station = this.currentNavTarget;
-  this.spaceship.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
+        // Station docking context (authorization before physical dock)
+        this.spaceship.flags.dockContext = 'station';
+        this.spaceship.flags.docketPlanetId = null;
+        const station = this.currentNavTarget;
+        this.spaceship.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
         this.closeComms();
         return;
       }
