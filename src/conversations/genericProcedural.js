@@ -38,21 +38,33 @@ export const genericProceduralConversation = {
       ]
     },
     information: {
-      response: (playerFlags, planet) => {
+      response: (playerFlags, planet, planetEntity, station, stationEntity) => {
         let base = 'Surface telemetry nominal.';
         if (planet.hasRings) base += ' Orbital ring debris monitoring active.';
         if (planet.hasMoon) base += ' Auxiliary lunar relay synchronized.';
         base += planet.dockable ? ' Limited docking infrastructure detected.' : ' No sanctioned docking infrastructure.';
+        if (station) {
+          base += ` Station ${station.name} in orbit radius ${Math.round(station.orbitRadius)}.`;
+        }
         return base;
       },
-      options: (playerFlags, planet) => [
+      options: (playerFlags, planet, station) => [
         { id: 'resources', text: 'Ask about known resources' },
+        station ? { id: 'station_ops', text: 'Inquire about orbital station' } : null,
         planet.dockable ? { id: 'docking', text: 'Proceed to docking channel' } : null,
         { id: 'end', text: 'Goodbye. (End conversation)' }
       ].filter(o => o)
     },
+    station_ops: {
+      response: (playerFlags, planet, planetEntity, station) => station ? `Orbital facility ${station.name}: orbit radius ${Math.round(station.orbitRadius)}, rotation period stable. Provides navigation relay & limited cargo buffering.` : 'No registered orbital facility.',
+      options: (playerFlags, planet, station) => [
+        { id: 'information', text: 'Back to planetary status' },
+        station ? { id: 'docking', text: 'Open docking channel' } : null,
+        { id: 'end', text: 'Conclude (End conversation)' }
+      ].filter(o => o)
+    },
     resources: {
-      response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${planet.radius.toFixed(0)} sample profiles.`,
+      response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${(planet.radius||0).toFixed(0)} sample profiles.`,
       options: [
         { id: 'back_information', text: 'Back to information' },
         { id: 'end', text: 'Goodbye. (End conversation)' }

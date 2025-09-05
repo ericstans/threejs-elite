@@ -38,6 +38,12 @@ class Game {
     this.conversationSystem._getPlanetEntity = (planetName) => {
       return this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName) || null;
     };
+    this.conversationSystem._getStationForPlanet = (planetName) => {
+      // Current environment tracks a single station (oceanusStation) possibly orbiting a planet
+      const st = this.environmentSystem?.oceanusStation;
+      if (st && st.planet && st.planet.getName && st.planet.getName() === planetName) return st;
+      return null;
+    };
     this.asteroids = [];
     // Sector persistence
     this.sectorManager = new SectorManager({
@@ -883,8 +889,27 @@ class Game {
             console.warn('Invalid flags data:', selectedOption.dataset.flags);
           }
         }
+        if (optionId === 'confirm_dock') {
+          // Determine if docking target is a planet (no station landing vector API)
+          const target = this.currentNavTarget;
+          if (target && !target.getLandingVectorStartWorld) {
+            // Planet docking context
+            this.spaceship.flags.dockContext = 'planet';
+            this.spaceship.flags.docketPlanetId = target.id || (target.getId && target.getId()) || null;
+            this.spaceship.flags.dockedStationId = null;
+          } else if (target && target.getLandingVectorStartWorld) {
+            // Station docking context begins authorization stage
+            this.spaceship.flags.dockContext = 'station';
+            this.spaceship.flags.docketPlanetId = null;
+            this.spaceship.flags.dockedStationId = target.id || (target.getId && target.getId()) || null;
+          }
+        }
         if (optionId === 'confirm_takeoff') {
           this.initiatePlanetTakeoff();
+          // Clear docking context on takeoff start
+          this.spaceship.flags.dockContext = null;
+          this.spaceship.flags.docketPlanetId = null;
+          this.spaceship.flags.dockedStationId = null;
         }
         this.closeComms();
         return;
@@ -896,6 +921,11 @@ class Game {
         this.spaceship.setFlag('dockingAuthorized', true);
         this.ui.showDockingStatus();
         this.ui.updateDockingStatus('LANDING AUTHORIZED \n PROCEED TO LANDING VECTOR');
+  // Station docking context (authorization before physical dock)
+  this.spaceship.flags.dockContext = 'station';
+  this.spaceship.flags.docketPlanetId = null;
+  const station = this.currentNavTarget;
+  this.spaceship.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
         this.closeComms();
         return;
       }

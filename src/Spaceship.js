@@ -39,6 +39,9 @@ export class Spaceship {
       rotationLockAcquired: false, // finished rotating to horizontal slot-facing orientation
       hasVisitedAridusPrime: false,
       hasVisitedOceanus: false,
+  dockContext: null,           // 'planet' | 'station'
+  docketPlanetId: null,        // planet id when docked to planet (spelling per request)
+  dockedStationId: null,       // station id when docked to station
       // Add more flags as needed
     };
 
@@ -241,6 +244,10 @@ export class Spaceship {
             this.dockedLocalOffset = new THREE.Vector3(0, 0, 0);
             const stationQuatInv = station.mesh.quaternion.clone().invert();
             this.dockedRelativeQuat = stationQuatInv.multiply(this.quaternion.clone());
+            // Ensure station docking context flags
+            this.flags.dockContext = 'station';
+            this.flags.docketPlanetId = null;
+            this.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
           }
           this.flags.dockingAuthorized = false;
           this.flags.landingVectorLocked = false;
@@ -308,6 +315,9 @@ export class Spaceship {
         this.flags.isDocked = false;
         this.dockingProgress = 0;
         this.flags.firingEnabled = true;
+  this.flags.dockContext = null;
+  this.flags.docketPlanetId = null;
+  this.flags.dockedStationId = null;
       }
       return;
     }

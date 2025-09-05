@@ -31,7 +31,8 @@ export class ConversationSystem {
       return null;
     }
     // Resolve planet entity (if hook provided) to expose attributes
-    const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
+  const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
+  const stationEntity = this._getStationForPlanet ? this._getStationForPlanet(planetName) : null;
     const planetAttributes = planetEntity ? {
       name: planetEntity.getName ? planetEntity.getName() : planetName,
       radius: planetEntity.radius,
@@ -40,7 +41,13 @@ export class ConversationSystem {
       hasRings: !!planetEntity.rings,
       hasMoon: !!planetEntity.moon
     } : { name: planetName };
-    const context = { playerFlags, planet: planetEntity, planetAttributes };
+    const stationAttributes = stationEntity ? {
+      name: stationEntity.getName ? stationEntity.getName() : 'Station',
+      orbitRadius: stationEntity.orbitRadius,
+      size: stationEntity.size,
+      orbitSpeed: stationEntity.orbitSpeed
+    } : null;
+    const context = { playerFlags, planet: planetEntity, planetAttributes, station: stationEntity, stationAttributes };
 
     // Process options with inline conditional logic
     if (node.options) {
@@ -48,7 +55,7 @@ export class ConversationSystem {
       let rawOptions = node.options;
       if (typeof rawOptions === 'function') {
         try {
-          rawOptions = rawOptions(playerFlags, planetAttributes) || [];
+          rawOptions = rawOptions(playerFlags, planetAttributes, stationAttributes) || [];
         } catch (e) {
           console.warn('ConversationSystem: option function threw', e);
           rawOptions = [];
@@ -61,7 +68,7 @@ export class ConversationSystem {
       const processedOptions = rawOptions
         .map(option => {
           if (typeof option === 'function') {
-            try { return option(playerFlags, planetAttributes); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
+            try { return option(playerFlags, planetAttributes, stationAttributes); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
           }
           return option;
         })
@@ -81,7 +88,7 @@ export class ConversationSystem {
 
   _safeEvalNodeResponse(fn, context) {
     try {
-      return fn(context.playerFlags, context.planetAttributes, context.planet);
+  return fn(context.playerFlags, context.planetAttributes, context.planet, context.stationAttributes, context.station);
     } catch (e) {
       console.warn('ConversationSystem: response function error', e);
       return '...signal distortion...';
