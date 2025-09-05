@@ -576,6 +576,16 @@ export class MusicManager {
             const node = inst.play(note.midi, noteStart, { gain: velocityGain, duration: noteDuration });
             if (node && typeof node.stop === 'function') {
               scheduledNodes.push(node);
+              // Manually cut off note at note-off time (noteStart + noteDuration)
+              const stopTime = noteStart + noteDuration;
+              // Use Web Audio time for precise scheduling
+              if (typeof this._audioCtx !== 'undefined' && this._audioCtx) {
+                // Use setTimeout for scheduling stop, but convert to ms
+                setTimeout(() => { try { node.stop(); } catch(_){} }, (stopTime - this._audioCtx.currentTime) * 1000);
+              } else {
+                // Fallback: stop after duration
+                setTimeout(() => { try { node.stop(); } catch(_){} }, noteDuration * 1000);
+              }
             }
           } catch (err) {
             console.warn('MusicManager: note schedule failed', err);

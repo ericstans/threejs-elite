@@ -96,7 +96,7 @@ export class UI {
     this.cockpitWrapper.appendChild(this.cockpitBitmap);
 
     // Bottom overscan extension: only the bottom 1px row of the cockpit stretched downward
-    const OVERSCAN_PX = 80; // amount of hidden extension below viewport
+    const OVERSCAN_PX = 160; // amount of hidden extension below viewport
     this._cockpitOverscanDiv = document.createElement('div');
     const overscan = this._cockpitOverscanDiv;
     overscan.style.position = 'absolute';
