@@ -161,6 +161,19 @@ export class EnvironmentSystem {
         o.center.z + Math.sin(o.angle) * o.radius
       );
     };
+  // Provide  nav-target interface (moons are nav-targetable but NOT commable)
+  moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
+  moon.userData.navName = `${planet.getName()} Moon`;
+  moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
+  moon.userData.isNavTargeted = false;
+  moon.userData.isCommable = false; // explicitly not commable
+  moon.getId = () => moon.userData.navId;
+  moon.getName = () => moon.userData.navName;
+  moon.getMass = () => moon.userData.navMass;
+  moon.setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
+  moon.isNavTarget = () => moon.userData.isNavTargeted;
+  moon.getPosition = () => moon.position.clone();
+  moon.getType = () => 'moon';
     this.gameEngine.scene.add(moon);
     planet.moon = moon;
   }

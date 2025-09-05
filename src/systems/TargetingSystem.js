@@ -141,6 +141,12 @@ export class TargetingSystem {
     const camera = this.camera;
     const crosshairCenter = new THREE.Vector2(0, 0);
     const navTargets = [...(this.getPlanets?.() || [])];
+    // Add moons (if any) from planets
+    if (this.getPlanets) {
+      for (const pl of this.getPlanets() || []) {
+        if (pl.moon) navTargets.push(pl.moon);
+      }
+    }
     const station = this.getStation?.();
     if (station) navTargets.push(station);
 
