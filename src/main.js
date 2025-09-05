@@ -9,6 +9,7 @@ import { CombatSystem } from './systems/CombatSystem.js';
 import { TargetingSystem } from './systems/TargetingSystem.js';
 import { NavigationSystem } from './systems/NavigationSystem.js';
 import { DockingManager } from './systems/DockingManager.js';
+import { EnvironmentSystem } from './systems/EnvironmentSystem.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 
@@ -302,26 +303,22 @@ class Game {
     // Hide the spaceship mesh since we're in cockpit view
     this.spaceship.mesh.visible = false;
 
-    // Create planets (10x larger and much farther apart)
-    // Scaled up: planets now 4x previous radii (20->80, 15->60)
-    const planet1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet (4x size)
-    const planet2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet (4x size)
-
-    this.planets.push(planet1);
-    this.planets.push(planet2);
-    this.gameEngine.addEntity(planet1);
-    this.gameEngine.addEntity(planet2);
-
-    // Add an orbital space station around Oceanus
-    // Space station: only 2x its former absolute size (previous size ~7.2). New size target ~14.4 => factor 14.4 / 60 = 0.24.
-    // Also adjust orbit so it isn't pushed too far out by planet scaling (use 2x original orbit distance: old 15*4=60, new 60*2=120).
-    // Double previous station size (0.24 -> 0.48 radius factor)
-    this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 2, size: planet2.radius * 0.48 });
-    this.gameEngine.addEntity(this.oceanusStation);
-    this.gameEngine.scene.add(this.oceanusStation.mesh);
-
-    // Create asteroid field between the planets
-    this.createAsteroidField();
+    // Environment system initialization
+    this.environmentSystem = new EnvironmentSystem({
+      gameEngine: this.gameEngine,
+      planetFactory: () => {
+        const p1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime.");
+        const p2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus.");
+        return [p1, p2];
+      },
+      npcShipFactory: () => this.npcShip
+    });
+    this.environmentSystem.init();
+    this.environmentSystem.createAsteroidField();
+  // Backwards compatibility: expose references
+  this.planets = this.environmentSystem.planets;
+  this.oceanusStation = this.environmentSystem.oceanusStation;
+  this.asteroids = this.environmentSystem.asteroids;
 
     // --- Add static NPC ship near the asteroid field ---
     // Place it 60 units beside the field center
@@ -336,96 +333,15 @@ class Game {
       }
     };
     addNPC();
-    // Create a dense stardust field localized around the derelict vessel
-    this.createDerelictStardustField(npcShipPos);
+  // Create stardust around derelict vessel
+  this.environmentSystem.createDerelictStardustField(npcShipPos);
 
     // Position camera at spaceship center (cockpit view)
     this.gameEngine.camera.position.set(0, 0, 0);
     this.gameEngine.camera.rotation.set(0, 0, 0);
   }
 
-  createDerelictStardustField(center) {
-    // Parameters for local stardust
-    const particleCount = 50; // denser than general background
-    const radius = 250; // spherical radius around derelict
-    const innerVoid = 25; // keep a small hollow so ship remains readable
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    const tmpColor = new THREE.Color();
-    let i = 0;
-    for (let p = 0; p < particleCount; p++) {
-      // Rejection sample to enforce hollow inner sphere
-      let x, y, z, d;
-      do {
-        x = (Math.random() * 2 - 1);
-        y = (Math.random() * 2 - 1);
-        z = (Math.random() * 2 - 1);
-        d = Math.sqrt(x * x + y * y + z * z);
-      } while (d === 0 || d > 1 || d * radius < innerVoid);
-      const falloff = d; // 0..1
-      const rScaled = d * radius;
-      // Slight clustering bias toward mid-shell: distort radius
-      const bias = Math.pow(falloff, 0.6);
-      const finalR = bias * radius;
-      const px = center.x + x / d * finalR;
-      const py = center.y + y / d * finalR;
-      const pz = center.z + z / d * finalR;
-      positions[i] = px; positions[i + 1] = py; positions[i + 2] = pz;
-      // Color: faint bluish-white variance
-      const hueJitter = 0.58 + (Math.random() - 0.5) * 0.04; // around blue/cyan
-      const sat = 0.15 + Math.random() * 0.2;
-      const val = 0.7 + Math.random() * 0.3;
-      tmpColor.setHSL(hueJitter, sat, val);
-      colors[i] = tmpColor.r; colors[i + 1] = tmpColor.g; colors[i + 2] = tmpColor.b;
-      i += 3;
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({
-      size: 1.2,
-      sizeAttenuation: true,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const points = new THREE.Points(geometry, material);
-    points.name = 'DerelictStardustField';
-    // Mild slow rotation for subtle motion
-    points.userData.update = (dt) => {
-      points.rotation.y += dt * 0.0005; // gentle spin
-    };
-    this.derelictStardust = points;
-    this.gameEngine.scene.add(points);
-    // Hook into game loop via simple array or direct call in update
-    if (!this._extraUpdatables) this._extraUpdatables = [];
-    this._extraUpdatables.push(points);
-  }
-
-  createAsteroidField() {
-    // Create asteroid field between the two planets (scaled up for new planet distances)
-    const asteroidCount = 25;
-    const fieldCenter = new THREE.Vector3(-50, 50, -650); // Keep center same for now
-    const fieldSize = 1200; // Expand field size 4x to match planet scale increase
-
-    for (let i = 0; i < asteroidCount; i++) {
-      // Random position within the field
-      const position = new THREE.Vector3(
-        fieldCenter.x + (Math.random() - 0.5) * fieldSize,
-        fieldCenter.y + (Math.random() - 0.5) * fieldSize,
-        fieldCenter.z + (Math.random() - 0.5) * fieldSize
-      );
-
-      // Random size between 0.5 and 2.0
-      const size = 0.5 + Math.random() * 1.5;
-
-      const asteroid = new Asteroid(position, size);
-      this.asteroids.push(asteroid);
-      this.gameEngine.addEntity(asteroid);
-    }
-  }
+  // createDerelictStardustField & createAsteroidField removed (handled by EnvironmentSystem)
 
   setupControls() {
     // Handle shooting
