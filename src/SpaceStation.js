@@ -25,6 +25,20 @@ export class SpaceStation {
     this.updatePosition();
   }
 
+  getType() { return 'station'; }
+
+  serializeState() {
+    return {
+      id: this.id,
+      name: this.name,
+      planetName: this.planet?.getName?.(),
+      orbitRadius: this.orbitRadius,
+      size: this.size,
+      orbitSpeed: this.orbitSpeed,
+      angle: this.angle
+    };
+  }
+
   createStationMesh() {
     const group = new THREE.Group();
   // Core cylinder side walls (open ended so we can add a custom top cap with a real slot hole)

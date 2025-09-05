@@ -15,9 +15,25 @@ export class Planet {
     this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
     this.isNavTargeted = false;
     this.isCommable = true; // All planets are commable
+  this.dockable = true; // default; procedural generation may override
     
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
+  }
+
+  getType() { return 'planet'; }
+
+  serializeState() {
+    return {
+      id: this.id,
+      name: this.name,
+      radius: this.radius,
+      color: this.color,
+      greeting: this.greeting,
+      rotationSpeed: this.rotationSpeed,
+  position: { x: this.position.x, y: this.position.y, z: this.position.z },
+  dockable: this.dockable
+    };
   }
 
   createPlanetMesh() {

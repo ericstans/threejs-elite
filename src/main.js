@@ -14,6 +14,7 @@ import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 import { SectorManager } from './systems/SectorManager.js';
 import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
+import { getSectorDefinition } from './systems/serialization/sectorDefinitions.js';
 
 import { NPCShip } from './NPCShip.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -29,6 +30,11 @@ class Game {
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
+    // Provide dockable query hook for conversation system
+    this.conversationSystem._isPlanetDockable = (planetName) => {
+      const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
+      return planet ? planet.dockable : true;
+    };
     this.asteroids = [];
     // Sector persistence
     this.sectorManager = new SectorManager({
@@ -40,8 +46,9 @@ class Game {
     // Predefine sectors (seeded procedural asteroid fields)
     this.availableSectors = [
       { id: 'sector-1', name: 'Aridus Sector', seed: 0x1a2b, center: { x: -50, y: 50, z: -650 }, size: 1200 },
-      { id: 'sector-2', name: 'random(1)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
-      { id: 'sector-3', name: 'random(2)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 }
+      { id: 'sector-2', name: 'random(33dd)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+      { id: 'sector-3', name: 'random(55aa)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+      { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 }
     ];
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
@@ -327,19 +334,50 @@ class Game {
         const p2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus.");
         return [p1, p2];
       },
-      npcShipFactory: () => this.npcShip
+      npcShipFactory: () => this.npcShip,
+      procedural: false
     });
+    // Aridus sector uses predefined planets; procedural sectors will regenerate on switch
     this.environmentSystem.init();
     const defaultSector = this.availableSectors[0];
     this.sectorManager.currentSectorId = defaultSector.id;
-    let existingField = this.sectorManager.getAsteroidFieldState(defaultSector.id);
-    if (!existingField) {
-      // initialize using predefined seed + center/size
-      this.environmentSystem.configureAsteroidField({ seed: defaultSector.seed, destroyedIds: [], center: defaultSector.center, size: defaultSector.size });
+    const def = getSectorDefinition(defaultSector.id);
+    if (def) {
+      // Load explicit planets & station from definition once
+      this.environmentSystem.clearPlanetsAndStations();
+      const loadedPlanets = [];
+      for (const p of def.planets) {
+        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
+        planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
+        this.environmentSystem.planets.push(planet);
+        this.gameEngine.addEntity(planet);
+        this.gameEngine.scene.add(planet.mesh);
+        loadedPlanets.push(planet);
+      }
+      if (def.stations) {
+        for (const s of def.stations) {
+          const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
+          if (host) {
+            const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
+            this.environmentSystem.oceanusStation = station; // keep compatibility reference
+            this.gameEngine.addEntity(station);
+            this.gameEngine.scene.add(station.mesh);
+          }
+        }
+      }
+      // Asteroid field seed from definition
+      this.environmentSystem.configureAsteroidField(def.asteroidField);
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
-      existingField = this.environmentSystem.getAsteroidFieldState();
     } else {
-      this.environmentSystem.configureAsteroidField(existingField);
+      // fallback to old behavior if definition missing
+      let existingField = this.sectorManager.getAsteroidFieldState(defaultSector.id);
+      if (!existingField) {
+        this.environmentSystem.configureAsteroidField({ seed: defaultSector.seed, destroyedIds: [], center: defaultSector.center, size: defaultSector.size });
+        this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
+        existingField = this.environmentSystem.getAsteroidFieldState();
+      } else {
+        this.environmentSystem.configureAsteroidField(existingField);
+      }
     }
     // Pre-cache other sectors' asteroid fields (only store seed/diff)
     for (let i = 1; i < this.availableSectors.length; i++) {
@@ -608,13 +646,61 @@ class Game {
     if (this.environmentSystem) {
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
+    // Clear combat & nav targets prior to environment regeneration
+    if (this.targetingSystem) {
+      const currentCombat = this.targetingSystem.getCurrentCombatTarget?.();
+      if (currentCombat && currentCombat.setTargeted) currentCombat.setTargeted(false);
+      this.targetingSystem.currentTarget = null;
+      this.ui.clearTargetInfo && this.ui.clearTargetInfo();
+      const currentNav = this.targetingSystem.getCurrentNavTarget?.();
+      if (currentNav && currentNav.setNavTargeted) currentNav.setNavTargeted(false);
+      this.targetingSystem.currentNavTarget = null;
+      this.ui.clearNavTargetInfo && this.ui.clearNavTargetInfo();
+    }
+    this.currentTarget = null;
+    this.currentNavTarget = null;
     this.sectorManager.currentSectorId = sectorId;
     const fieldState = this.sectorManager.getAsteroidFieldState(sectorId);
+    const sMeta = this.availableSectors.find(s => s.id === sectorId);
+    const procedural = sectorId !== 'sector-1';
+    this.environmentSystem.procedural = procedural;
+    if (procedural) {
+      // Generate procedural planets/stations before asteroid field so station reference is valid
+      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff));
+    } else {
+      // Load from sector definition (ensures deterministic handcrafted layout)
+      const def = getSectorDefinition('sector-1');
+      if (def) {
+        this.environmentSystem.clearPlanetsAndStations();
+        const loadedPlanets = [];
+        for (const p of def.planets) {
+          const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
+          planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
+          this.environmentSystem.planets.push(planet);
+          this.gameEngine.addEntity(planet);
+          this.gameEngine.scene.add(planet.mesh);
+          loadedPlanets.push(planet);
+        }
+        if (def.stations) {
+          for (const s of def.stations) {
+            const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
+            if (host) {
+              const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
+              this.environmentSystem.oceanusStation = station;
+              this.gameEngine.addEntity(station);
+              this.gameEngine.scene.add(station.mesh);
+            }
+          }
+        }
+      } else if (!this.environmentSystem.planets.length) {
+        this.environmentSystem.init();
+      }
+    }
     if (fieldState) {
       this.environmentSystem.configureAsteroidField(fieldState);
     } else {
-      const s = this.availableSectors.find(s => s.id === sectorId) || { seed: Date.now() & 0xffff };
-      this.environmentSystem.configureAsteroidField({ seed: s.seed, destroyedIds: [], center: s.center, size: s.size });
+      const fallback = sMeta || { seed: Date.now() & 0xffff, center: { x:0,y:0,z:-800 }, size: 1200 };
+      this.environmentSystem.configureAsteroidField({ seed: fallback.seed, destroyedIds: [], center: fallback.center, size: fallback.size });
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
     // Move player near new sector center for immediate feedback
@@ -624,6 +710,8 @@ class Game {
       this.gameEngine.camera.position.copy(this.spaceship.position);
     }
     this.asteroids = this.environmentSystem.asteroids;
+  this.planets = this.environmentSystem.planets;
+  this.oceanusStation = this.environmentSystem.oceanusStation;
   }
 
   checkNavTargetProximity() {

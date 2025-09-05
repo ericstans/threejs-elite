@@ -1,5 +1,6 @@
 import { aridusPrimeConversation } from './conversations/aridusPrime.js';
 import { oceanusConversation } from './conversations/oceanus.js';
+import { genericProceduralConversation } from './conversations/genericProcedural.js';
 
 export class ConversationSystem {
   constructor() {
@@ -10,15 +11,20 @@ export class ConversationSystem {
   }
 
   getGreeting(planetName) {
-    const planet = this.conversations[planetName];
-    return planet ? planet.greeting : "Thank you for contacting us.";
+  const planet = this.conversations[planetName];
+  if (planet) return planet.greeting;
+  // Fallback to generic procedural template
+  return genericProceduralConversation.greeting;
   }
 
   getConversationNode(planetName, nodeId, playerFlags = {}) {
-    const planet = this.conversations[planetName];
-    if (!planet || !planet.conversationTree) {
-      return null;
+    let planet = this.conversations[planetName];
+    if (!planet) {
+      // Attach generic on-demand so subsequent lookups see it
+      this.conversations[planetName] = genericProceduralConversation;
+      planet = genericProceduralConversation;
     }
+    if (!planet.conversationTree) return null;
     
     const node = planet.conversationTree[nodeId];
     if (!node) {
@@ -61,6 +67,8 @@ export class ConversationSystem {
 
   getInitialOptions(planetName, playerFlags = {}) {
     const planet = this.conversations[planetName];
+    // Dockable detection: we rely on external planet entity lookup via optional hook
+    const dockable = this._isPlanetDockable?.(planetName) !== false; // default true if unknown
     if (!planet || !planet.conversationTree) {
       return [];
     }
@@ -68,9 +76,11 @@ export class ConversationSystem {
     // Base options with inline conditional logic
     const baseOptions = [
       { id: 'information', text: `Information about ${planetName}` },
-      playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } : 
-      playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : 
-      playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } : null
+      dockable ? (
+        playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+        (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
+         playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
+      ) : { id: 'docking_unavailable', text: 'Docking unavailable' }
     ];
     
     // Filter out null/undefined options
