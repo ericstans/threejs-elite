@@ -27,7 +27,8 @@ export class CombatSystem {
     onRequestTargetInfoUpdate,
     getNPCShip,
     getAsteroids,
-    onHitFeedback
+  onHitFeedback,
+  onNPCShipDestroyed
   }) {
     this.gameEngine = gameEngine;
     this.soundManager = soundManager;
@@ -37,7 +38,8 @@ export class CombatSystem {
     this.onRequestTargetInfoUpdate = onRequestTargetInfoUpdate;
     this.getNPCShip = getNPCShip;
     this.getAsteroids = getAsteroids;
-    this.onHitFeedback = onHitFeedback;
+  this.onHitFeedback = onHitFeedback;
+  this.onNPCShipDestroyed = onNPCShipDestroyed;
 
     this.lasers = [];
     this.explosions = [];
@@ -186,14 +188,14 @@ export class CombatSystem {
       this.onRequestTargetInfoUpdate?.();
     }
 
-    if (wasDestroyed) {
+  if (wasDestroyed) {
       const explosion = new Explosion(hitPosition, npcShip.getSize() * 2, 1.0);
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       this.gameEngine.createSpatialExplosion(hitPosition);
       const current = this.getCurrentTarget?.();
       if (current && current.getId && current.getId() === 'npcship') {
-        // Let main clear target & UI; could emit event later
+    this.onNPCShipDestroyed?.();
       }
     } else {
       const explosion = new Explosion(hitPosition, 0.3, 0.3);

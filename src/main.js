@@ -4,10 +4,10 @@ import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
 import { Controls } from './Controls.js';
 import { UI } from './UI.js';
-import { Laser } from './Laser.js'; // (kept temporarily if other code references directly)
 import { Asteroid } from './Asteroid.js';
-import { Explosion } from './Explosion.js'; // (legacy references during transition)
 import { CombatSystem } from './systems/CombatSystem.js';
+import { TargetingSystem } from './systems/TargetingSystem.js';
+import { NavigationSystem } from './systems/NavigationSystem.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 
@@ -32,11 +32,61 @@ class Game {
       soundManager: this.soundManager,
       ui: this.ui,
       getSpaceship: () => this.spaceship,
-      getCurrentTarget: () => this.currentTarget,
-      onRequestTargetInfoUpdate: () => this.updateTargetInfo(),
+      getCurrentTarget: () => this.targetingSystem.getCurrentCombatTarget(),
+      onRequestTargetInfoUpdate: () => this.targetingSystem.updateTargetInfo(),
       getNPCShip: () => this.npcShip,
       getAsteroids: () => this.asteroids,
-      onHitFeedback: () => this.ui.blinkCrosshairRed()
+      onHitFeedback: () => this.ui.blinkCrosshairRed(),
+      onNPCShipDestroyed: () => {
+        const current = this.targetingSystem.getCurrentCombatTarget();
+        if (current && current.getId && current.getId() === 'npcship') {
+          // TargetingSystem will clear on next updateTargetInfo call
+          this.targetingSystem.currentTarget = null;
+          this.ui.clearTargetInfo();
+        }
+      }
+    });
+
+    this.targetingSystem = new TargetingSystem({
+      camera: this.gameEngine.camera,
+      ui: this.ui,
+      soundManager: this.soundManager,
+      getSpaceship: () => this.spaceship,
+      getAsteroids: () => this.asteroids,
+      getNPCShip: () => this.npcShip,
+      getPlanets: () => this.planets,
+      getStation: () => this.oceanusStation
+    });
+
+    this.navigationSystem = new NavigationSystem({
+      getSpaceship: () => this.spaceship,
+      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
+      ui: this.ui
+    });
+    this.navigationSystem.assignCamera(this.gameEngine.camera);
+
+    // Backwards compatibility proxies so existing controls logic (T/Y clearing & comms) still works
+    Object.defineProperty(this, 'currentTarget', {
+      get: () => this.targetingSystem.getCurrentCombatTarget(),
+      set: (val) => {
+        const existing = this.targetingSystem.currentTarget;
+        if (existing && existing !== val) {
+          existing.setTargeted && existing.setTargeted(false);
+          existing.setNavTargeted && existing.setNavTargeted(false);
+        }
+        this.targetingSystem.currentTarget = val;
+      }
+    });
+    Object.defineProperty(this, 'currentNavTarget', {
+      get: () => this.targetingSystem.getCurrentNavTarget(),
+      set: (val) => {
+        const existing = this.targetingSystem.currentNavTarget;
+        if (existing && existing !== val) {
+          existing.setNavTargeted && existing.setNavTargeted(false);
+          existing.setTargeted && existing.setTargeted(false);
+        }
+        this.targetingSystem.currentNavTarget = val;
+      }
     });
     this.currentTarget = null;
     this.currentNavTarget = null;
@@ -373,26 +423,24 @@ class Game {
 
     // Handle targeting
     this.controls.setOnTarget(() => {
-      this.targetNearestAsteroid();
+  this.targetingSystem.targetNearestCombat();
     });
 
     // Handle navigation targeting
     this.controls.setOnNavTarget(() => {
-      this.targetNearestPlanet();
+  this.targetingSystem.targetNearestNav();
     });
 
     // Handle communications (V key: only for current target)
     this.controls.setOnComms(() => {
-      if (this.currentTarget && this.currentTarget.isCommable) {
-        this.openComms();
-      }
+  const tgt = this.targetingSystem.getCurrentCombatTarget();
+  if (tgt && tgt.isCommable) this.openComms();
     });
 
     // Handle nav target comms (C key)
     this.controls.setOnNavComms(() => {
-      if (this.currentNavTarget && this.currentNavTarget.isCommable) {
-        this.openNavComms();
-      }
+  const nav = this.targetingSystem.getCurrentNavTarget();
+  if (nav && nav.isCommable) this.openNavComms();
     });
 
     // Handle closing communications
@@ -454,8 +502,8 @@ class Game {
     // Update controls
     this.controls.update(deltaTime);
 
-    // Check for nav target proximity and auto-slow
-    this.checkNavTargetProximity();
+  // Navigation (auto-slow + landing vector lock)
+  this.navigationSystem.update(deltaTime);
 
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
@@ -515,32 +563,19 @@ class Game {
   // Combat system update (lasers, explosions, collisions)
   this.combatSystem.update(deltaTime);
 
-    // Update target information
-    this.updateTargetInfo();
+  // Update target info (combat) via targeting system
+  this.targetingSystem.updateTargetInfo();
 
     // --- Update auto-aim cone color (homing radius indicator) ---
     // Default: green (not in range)
-    let homingActive = false;
-    if (this.currentTarget && this.currentTarget.isAlive()) {
-      const spaceshipPos = this.spaceship.getPosition();
-      const targetPos = this.currentTarget.getPosition();
-      const forward = new THREE.Vector3(0, 0, -1);
-      forward.applyEuler(this.spaceship.getRotation());
-      const toTarget = targetPos.clone().sub(spaceshipPos).normalize();
-      const angle = forward.angleTo(toTarget);
-      const maxAngle = Math.PI / 18; // 10 degrees in radians (same as auto-aim)
-      if (angle <= maxAngle) {
-        homingActive = true;
-      }
-    }
+  const homingActive = this.targetingSystem.computeHomingState();
     if (homingActive) {
       this.ui.autoAimCone.style.border = '1px solid #ff0000'; // Red if homing active
     } else {
       this.ui.autoAimCone.style.border = '1px solid #00ff00'; // Green if not
     }
 
-    // Update nav target information
-    this.updateNavTargetInfo();
+  this.targetingSystem.updateNavTargetInfo();
 
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
@@ -593,8 +628,7 @@ class Game {
     if (!isActuallyDocked) {
       this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
     }
-    // Check landing vector acquisition if applicable
-    this.checkLandingVectorLock();
+  // (landing vector lock handled by navigationSystem)
     // Hide crosshair and auto-aim cone if firing is disabled
     if (!this.spaceship.flags.firingEnabled) {
       this.ui.crosshair.style.display = 'none';
@@ -602,139 +636,6 @@ class Game {
     } else {
       this.ui.crosshair.style.display = 'block';
       this.ui.autoAimCone.style.display = 'block';
-    }
-  }
-
-
-  targetNearestAsteroid() {
-    // Clear current target
-    if (this.currentTarget) {
-      this.currentTarget.setTargeted(false);
-      this.currentTarget = null;
-    }
-
-    // Find asteroid or NPC ship closest to crosshair (center of screen)
-    const camera = this.gameEngine.camera;
-    const crosshairCenter = new THREE.Vector2(0, 0); // Center of screen in NDC
-    let closestTarget = null;
-    let closestScreenDistance = Infinity;
-
-    // Combine asteroids and NPC ship into one array
-    const targetables = [...this.asteroids];
-    if (this.npcShip && this.npcShip.loaded && this.npcShip.mesh) {
-      // Find the first visible mesh inside the NPCShip group
-      let meshCenter = null;
-      this.npcShip.mesh.traverse(child => {
-        if (!meshCenter && child.isMesh) {
-          // Get world position of the mesh
-          meshCenter = new THREE.Vector3();
-          child.getWorldPosition(meshCenter);
-        }
-      });
-      if (meshCenter) {
-        targetables.push({
-          getPosition: () => meshCenter,
-          isAlive: () => this.npcShip.isAlive(),
-          setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
-          getId: () => 'npcship',
-          getName: () => 'Derelict Cruiser',
-          getMass: () => 1000,
-          getHealth: () => this.npcShip.getHealth(),
-          getMaxHealth: () => this.npcShip.getMaxHealth(),
-          isCommable: true
-        });
-      }
-    }
-
-    for (const obj of targetables) {
-      if (!obj.isAlive()) continue;
-      // Convert 3D position to 2D screen coordinates
-      const pos = obj.getPosition();
-      const screenPos = pos.clone();
-      screenPos.project(camera);
-      // Check if in front of camera
-      if (screenPos.z > 1) continue;
-      // Calculate distance from crosshair center
-      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
-      if (screenDistance < closestScreenDistance) {
-        closestScreenDistance = screenDistance;
-        closestTarget = obj;
-      }
-    }
-
-    // Set new target
-    if (closestTarget) {
-      this.currentTarget = closestTarget;
-      this.currentTarget.setTargeted(true);
-      // Play target selected sound
-      this.soundManager.playTargetSelectedSound();
-    }
-  }
-
-  updateTargetInfo() {
-    if (this.currentTarget && this.currentTarget.isAlive()) {
-      // Update target information in UI
-      const spaceshipPos = this.spaceship.getPosition();
-      const targetPos = this.currentTarget.getPosition();
-      const distance = spaceshipPos.distanceTo(targetPos);
-
-      this.ui.updateTargetInfo({
-        id: this.currentTarget.getId(),
-        mass: this.currentTarget.getMass(),
-        distance: distance,
-        health: this.currentTarget.getHealth(),
-        maxHealth: this.currentTarget.getMaxHealth(),
-        isCommable: this.currentTarget.isCommable
-      }, targetPos, this.gameEngine.camera);
-    } else {
-      // Clear target if destroyed or invalid
-      if (this.currentTarget) {
-        this.currentTarget.setTargeted(false);
-        this.currentTarget = null;
-      }
-      this.ui.clearTargetInfo();
-    }
-  }
-
-  targetNearestPlanet() {
-    // Block nav target changes while docking or docked
-    if (this.spaceship.flags.isDocked || this.spaceship.flags.isDocking || this.spaceship.flags.landingVectorLocked) {
-      return;
-    }
-    // Clear current nav target
-    if (this.currentNavTarget) {
-      this.currentNavTarget.setNavTargeted(false);
-      this.currentNavTarget = null;
-    }
-
-    // Find planet closest to crosshair (center of screen)
-    const camera = this.gameEngine.camera;
-    const crosshairCenter = new THREE.Vector2(0, 0); // Center of screen in NDC
-    let closestPlanet = null;
-    let closestScreenDistance = Infinity;
-
-    const navTargets = [...this.planets];
-    if (this.oceanusStation) navTargets.push(this.oceanusStation);
-
-    for (const target of navTargets) {
-      const pos = target.getPosition();
-      const screenPos = pos.clone();
-      screenPos.project(camera);
-      if (screenPos.z > 1) continue;
-      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
-      if (screenDistance < closestScreenDistance) {
-        closestScreenDistance = screenDistance;
-        closestPlanet = target;
-      }
-    }
-
-    // Set new nav target
-    if (closestPlanet) {
-      this.currentNavTarget = closestPlanet;
-      this.currentNavTarget.setNavTargeted(true);
-
-      // Play target selected sound
-      this.soundManager.playTargetSelectedSound();
     }
   }
 
@@ -760,24 +661,7 @@ class Game {
     }
   }
 
-  updateNavTargetInfo() {
-    if (this.currentNavTarget) {
-      // Update nav target information in UI
-      const spaceshipPos = this.spaceship.getPosition();
-      const targetPos = this.currentNavTarget.getPosition();
-      const distance = spaceshipPos.distanceTo(targetPos);
-
-      this.ui.updateNavTargetInfo({
-        id: this.currentNavTarget.getId(),
-        name: this.currentNavTarget.getName(),
-        mass: this.currentNavTarget.getMass(),
-        distance: distance,
-        isCommable: this.currentNavTarget.isCommable
-      }, targetPos, this.gameEngine.camera);
-    } else {
-      this.ui.clearNavTargetInfo();
-    }
-  }
+  // (updateNavTargetInfo removed - handled by TargetingSystem)
 
   openComms() {
     // Only open comms if we have a commable current target
