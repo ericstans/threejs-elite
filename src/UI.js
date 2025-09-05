@@ -150,6 +150,8 @@ export class UI {
       p.color = '#00ff00';
       p.fontFamily = 'monospace';
       p.fontSize = '12px';
+  p.width = '10%';
+  p.height = '20%';
     }
     if (this.navTargetUI && this.navTargetUI.navTargetPanel) {
       this.cockpitWrapper.appendChild(this.navTargetUI.navTargetPanel);
@@ -163,6 +165,8 @@ export class UI {
       p2.color = '#00ff00';
       p2.fontFamily = 'monospace';
       p2.fontSize = '12px';
+  p2.width = '10%';
+  p2.height = '20%';
     }
 
 
@@ -398,8 +402,8 @@ export class UI {
       p.left = '70.5%';
       p.top = '61%';
       p.transform = 'translate(-50%, -50%)';
-      p.width = '';
-      p.height = '';
+  p.width = '10%';
+  p.height = '20%';
       p.fontSize = '12px';
     }
     if (this.navTargetUI?.navTargetPanel) {
@@ -409,8 +413,8 @@ export class UI {
       p2.left = '29.5%';
       p2.top = '61%';
       p2.transform = 'translate(-50%, -50%)';
-      p2.width = '';
-      p2.height = '';
+  p2.width = '10%';
+  p2.height = '20%';
       p2.fontSize = '12px';
     }
     // Docking status back inside nav target panel bottom
