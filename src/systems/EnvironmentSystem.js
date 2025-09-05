@@ -19,6 +19,8 @@ export class EnvironmentSystem {
     this.asteroids = [];
     this.oceanusStation = null;
     this.derelictStardust = null;
+  // Additional procedural stardust field centered on planet cluster
+  this.planetClusterStardust = null;
   // Procedural asteroid field state
   this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
   this.destroyedAsteroidIds = new Set();
@@ -30,6 +32,11 @@ export class EnvironmentSystem {
   initProcedural(seed) {
     // Generate planets & optional stations deterministically
     this.clearPlanetsAndStations();
+    // Remove any prior procedural stardust cluster
+    if (this.planetClusterStardust && this.planetClusterStardust.parent) {
+      this.planetClusterStardust.parent.remove(this.planetClusterStardust);
+      this.planetClusterStardust = null;
+    }
     const rand = this._rng(seed ^ 0x9e3779b9);
     const planetTypes = this._getPlanetArchetypes();
     const planetCount = 2 + Math.floor(rand() * 3); // 2-4 planets
@@ -72,6 +79,8 @@ export class EnvironmentSystem {
     }
     // Large spanning stardust field covering region
     this._createWideStardust(rand);
+  // Denser localized cluster field encompassing all planets
+  this._createPlanetClusterStardust(rand);
   }
 
   init() {
@@ -206,6 +215,82 @@ export class EnvironmentSystem {
     const points = new THREE.Points(geometry, material);
     points.userData.update = (dt) => { points.rotation.y += dt * 0.00015; };
     this.derelictStardust = points;
+    this.gameEngine.scene.add(points);
+  }
+
+  _createPlanetClusterStardust(rand) {
+    if (!this.planets || this.planets.length === 0) return;
+    // Remove previous cluster
+    if (this.planetClusterStardust && this.planetClusterStardust.parent) {
+      this.planetClusterStardust.parent.remove(this.planetClusterStardust);
+    }
+    // Compute average center of planet positions
+    const center = new THREE.Vector3();
+    for (const p of this.planets) {
+      center.add(p.mesh ? p.mesh.position : p.position || new THREE.Vector3());
+    }
+    center.multiplyScalar(1 / this.planets.length);
+    // Compute max distance from center (include planet radius) to size field
+    let maxDist = 0;
+    for (const p of this.planets) {
+      const pos = p.mesh ? p.mesh.position : p.position || new THREE.Vector3();
+      const d = pos.distanceTo(center) + (p.radius || 0);
+      if (d > maxDist) maxDist = d;
+    }
+    // Add margin so planets sit well inside
+    const radius = maxDist + 600; // generous padding
+    const particleCount = Math.min(3500, Math.max(1200, Math.floor(radius * 0.6))); // density scaling with cap
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const tmp = new THREE.Color();
+    const planetColors = (this.planets || []).map(p => new THREE.Color(p.color));
+    let i = 0;
+    for (let n = 0; n < particleCount; n++) {
+      // Random point in sphere (rejection sampling)
+      let x, y, z, d2;
+      do {
+        x = (rand() * 2 - 1);
+        y = (rand() * 2 - 1);
+        z = (rand() * 2 - 1);
+        d2 = x * x + y * y + z * z;
+      } while (d2 > 1);
+      const d = Math.sqrt(d2);
+      // Slightly bias density towards shell for visual depth (expand radius by d^0.75)
+      const r = Math.pow(d, 0.75) * radius;
+      const px = center.x + x * r;
+      const py = center.y + y * r * 0.6; // vertical squash for disc-like feel
+      const pz = center.z + z * r;
+      positions[i] = px; positions[i + 1] = py; positions[i + 2] = pz;
+      if (planetColors.length && rand() < 0.85) {
+        const base = planetColors[Math.floor(rand() * planetColors.length)].clone();
+        const hsl = { h: 0, s: 0, l: 0 };
+        base.getHSL(hsl);
+        hsl.h = (hsl.h + (rand() - 0.5) * 0.06 + 1) % 1;
+        hsl.s = Math.min(1, Math.max(0, hsl.s * (0.6 + rand() * 0.8)));
+        hsl.l = Math.min(1, Math.max(0, hsl.l * (0.7 + rand() * 0.5)));
+        tmp.setHSL(hsl.h, hsl.s, hsl.l);
+      } else {
+        tmp.setHSL(0.58 + (rand() - 0.5) * 0.03, 0.25 + rand() * 0.3, 0.55 + rand() * 0.25);
+      }
+      colors[i] = tmp.r; colors[i + 1] = tmp.g; colors[i + 2] = tmp.b;
+      i += 3;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({
+      size: 1.2,
+      sizeAttenuation: true,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const points = new THREE.Points(geometry, material);
+    points.name = 'PlanetClusterStardust';
+    points.userData.update = (dt) => { points.rotation.y += dt * 0.0001; };
+    this.planetClusterStardust = points;
     this.gameEngine.scene.add(points);
   }
 
