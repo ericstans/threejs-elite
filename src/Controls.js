@@ -34,6 +34,13 @@ export class Controls {
 
   update(deltaTime) {
     const sensitivity = 1.0;
+    // Minimal auto-start music: first detected key press triggers ambient if not already started
+    if (this.game && !this.game.musicStarted) {
+      // If any key currently held (excluding modifier keys if desired later) start music
+      if (Object.values(this.keys).some(v => v)) {
+        this.startMusic();
+      }
+    }
     
     // WASD movement
     if (this.keys['KeyW']) {
@@ -63,11 +70,9 @@ export class Controls {
       this.spaceship.setThrottle(currentThrottle + 1.0 * deltaTime);
       
       // Start music on first X press
-      if (this.game && !this.game.musicStarted) {
-        if (DEBUG) console.log('Controls: X key pressed, starting music');
-        this.startMusic();
-      } else {
-        if (DEBUG) console.log('Controls: X key pressed but music already started or game not available');
+      // (Retained for debug logging but auto-start now handled above)
+      if (DEBUG && this.game && !this.game.musicStarted) {
+        console.log('Controls: X key pressed; music will start via auto-start logic');
       }
     }
     if (this.keys['KeyZ']) {
@@ -232,6 +237,11 @@ export class Controls {
       this.game.musicStarted = true;
       
       try {
+        // Ensure audio context is resumed (user gesture just occurred triggering this call)
+        if (this.game.soundManager?.audioContext && this.game.soundManager.audioContext.state === 'suspended') {
+          if (DEBUG) console.log('startMusic: Resuming audio context');
+          try { await this.game.soundManager.audioContext.resume(); } catch(_) {}
+        }
         // Initialize music manager
         if (DEBUG) console.log('startMusic: Initializing music manager');
         await this.game.musicManager.init();
@@ -243,6 +253,13 @@ export class Controls {
         if (DEBUG) console.log('startMusic: Starting fade in');
         this.game.musicManager.fadeIn(3000); // 3 second fade in
         if (DEBUG) console.log('startMusic: Music system started successfully');
+
+        // Immediately kick engine rumble so it starts exactly with the music
+        if (this.game.soundManager && this.game.spaceship) {
+          const throttle = this.spaceship?.getThrottle ? this.spaceship.getThrottle() : 0;
+          // Provide one immediate update so layers fade in without waiting for next frame
+          this.game.soundManager.updateEngineRumble(throttle, false);
+        }
       } catch (error) {
         console.error('startMusic: Failed to start music system:', error);
         console.error('startMusic: Error details:', error.message);
