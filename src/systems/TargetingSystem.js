@@ -102,7 +102,8 @@ export class TargetingSystem {
         distance,
         health: this.currentTarget.getHealth(),
         maxHealth: this.currentTarget.getMaxHealth(),
-        isCommable: this.currentTarget.isCommable
+  isCommable: this.currentTarget.isCommable,
+  __ref: this.currentTarget
       }, targetPos, this.camera);
     } else {
       if (this.currentTarget) {

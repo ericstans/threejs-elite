@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class TargetUI {
   createOffscreenArrow() {
     // Red arrow for offscreen target
@@ -61,6 +63,26 @@ export class TargetUI {
     this.targetCommableIndicator.style.fontSize = '16px';
     this.targetCommableIndicator.style.display = 'none';
     this.targetPanel.appendChild(this.targetCommableIndicator);
+
+    // Preview underlay
+    this.previewWrapper = document.createElement('div');
+    this.previewWrapper.style.position = 'absolute';
+    this.previewWrapper.style.left = '50%';
+    this.previewWrapper.style.top = '50%';
+    this.previewWrapper.style.transform = 'translate(-50%, -50%)';
+    this.previewWrapper.style.width = '100%';
+    this.previewWrapper.style.height = '100%';
+    this.previewWrapper.style.pointerEvents = 'none';
+    this.previewWrapper.style.zIndex = '0';
+    this.targetPanel.appendChild(this.previewWrapper);
+    // Elevate text above underlay
+    for (const child of this.targetPanel.children) {
+      if (child !== this.previewWrapper) {
+        child.style.position = child.style.position || 'relative';
+        child.style.zIndex = '1';
+      }
+    }
+    this._initPreviewScene();
   }
 
   createTargetIndicator() {
@@ -91,7 +113,8 @@ export class TargetUI {
     }
     
     // Update target indicator position
-    this.updateTargetIndicator(targetPosition, camera);
+  this.updateTargetIndicator(targetPosition, camera);
+  if (targetInfo.__ref) this._updatePreview(targetInfo.__ref);
   }
 
   updateTargetIndicator(targetPosition, camera) {
@@ -155,5 +178,89 @@ export class TargetUI {
     this.targetPanel.style.display = 'none';
     this.targetIndicator.style.display = 'none';
     this.targetCommableIndicator.style.display = 'none';
+    this._clearPreview();
+  }
+
+  _initPreviewScene() {
+    this.previewScene = new THREE.Scene();
+    this.previewCamera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+    this.previewCamera.position.set(0, 0, 5);
+    this.previewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    this.previewRenderer.setSize(200, 200);
+    this.previewRenderer.domElement.style.width = '100%';
+    this.previewRenderer.domElement.style.height = '100%';
+    this.previewRenderer.domElement.style.opacity = '0.22';
+    this.previewWrapper.appendChild(this.previewRenderer.domElement);
+    const amb = new THREE.AmbientLight(0xffffff, 0.5);
+    this.previewScene.add(amb);
+  }
+
+  _clearPreview() {
+    if (this._previewObject) {
+      this._previewObject.traverse?.(o => {
+        if (o.geometry) o.geometry.dispose?.();
+        if (o.material) {
+          if (Array.isArray(o.material)) o.material.forEach(m => m.dispose?.());
+          else o.material.dispose?.();
+        }
+      });
+      this.previewScene.remove(this._previewObject);
+      this._previewObject = null;
+    }
+  }
+
+  _buildPreviewObject(target) {
+    const type = target.getType ? target.getType() : 'unknown';
+    if (type === 'asteroid') {
+      // Use low-detail icosahedron edges to mimic rocky silhouette
+      const geom = new THREE.IcosahedronGeometry(1, 0);
+      // Slight random vertex jitter for variation
+      const pos = geom.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        pos.setX(i, pos.getX(i) * (0.9 + Math.random() * 0.2));
+        pos.setY(i, pos.getY(i) * (0.9 + Math.random() * 0.2));
+        pos.setZ(i, pos.getZ(i) * (0.9 + Math.random() * 0.2));
+      }
+      pos.needsUpdate = true;
+      const edges = new THREE.EdgesGeometry(geom, 10);
+      const mat = new THREE.LineBasicMaterial({ color: 0xffaaaa, transparent: true, opacity: 0.45 });
+      return new THREE.LineSegments(edges, mat);
+    }
+    if (type === 'npcship' || target.getName?.() === 'Derelict Cruiser') {
+      // Simple elongated hull outline
+      const geom = new THREE.BoxGeometry(1.8, 0.5, 0.6);
+      const edges = new THREE.EdgesGeometry(geom, 10);
+      const mat = new THREE.LineBasicMaterial({ color: 0xffcccc, transparent: true, opacity: 0.5 });
+      return new THREE.LineSegments(edges, mat);
+    }
+    // Fallback generic outline
+    const g = new THREE.IcosahedronGeometry(1, 1);
+    const e = new THREE.EdgesGeometry(g, 10);
+    const m = new THREE.LineBasicMaterial({ color: 0xffbbbb, transparent: true, opacity: 0.4 });
+    return new THREE.LineSegments(e, m);
+  }
+
+  _updatePreview(target) {
+    if (!this.previewScene) return;
+    const tid = target.getId ? target.getId() : null;
+    if (this._previewTargetId !== tid) {
+      this._previewTargetId = tid;
+      this._clearPreview();
+      this._previewObject = this._buildPreviewObject(target);
+      this.previewScene.add(this._previewObject);
+    }
+    if (this._previewObject) {
+      this._previewObject.rotation.y += 0.02;
+      this._previewObject.rotation.x = 0.35;
+    }
+    if (this.previewRenderer && this.previewCamera) {
+      const w = this.targetPanel.clientWidth;
+      const h = this.targetPanel.clientHeight;
+      const size = Math.min(w, h);
+      this.previewRenderer.setSize(size, size, false);
+      this.previewCamera.aspect = 1;
+      this.previewCamera.updateProjectionMatrix();
+      this.previewRenderer.render(this.previewScene, this.previewCamera);
+    }
   }
 }
