@@ -12,7 +12,7 @@ export class NavTargetUI {
     this.navTargetPanel.style.position = 'absolute';
     this.navTargetPanel.style.height = '20%';
     this.navTargetPanel.style.width = '10%';
-    this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
+    //this.navTargetPanel.style.background = 'rgba(0, 0, 0, 0.7)';
     this.navTargetPanel.style.padding = '15px';
     //this.navTargetPanel.style.border = '1px solid #00ff00';
     this.navTargetPanel.style.fontSize = '16px';
