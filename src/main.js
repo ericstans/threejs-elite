@@ -623,6 +623,14 @@ class Game {
   }
   // Check landing vector acquisition if applicable
   this.checkLandingVectorLock();
+    // Hide crosshair and auto-aim cone if firing is disabled
+    if (!this.spaceship.flags.firingEnabled) {
+      this.ui.crosshair.style.display = 'none';
+      this.ui.autoAimCone.style.display = 'none';
+    } else {
+      this.ui.crosshair.style.display = 'block';
+      this.ui.autoAimCone.style.display = 'block';
+    }
   }
 
   updateLasers(deltaTime) {
