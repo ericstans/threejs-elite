@@ -8,6 +8,7 @@ import { Asteroid } from './Asteroid.js';
 import { CombatSystem } from './systems/CombatSystem.js';
 import { TargetingSystem } from './systems/TargetingSystem.js';
 import { NavigationSystem } from './systems/NavigationSystem.js';
+import { DockingManager } from './systems/DockingManager.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 
@@ -64,6 +65,19 @@ class Game {
       ui: this.ui
     });
     this.navigationSystem.assignCamera(this.gameEngine.camera);
+
+    this.dockingManager = new DockingManager({
+      ui: this.ui,
+      getSpaceship: () => this.spaceship,
+      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
+      clearCombatTarget: () => {
+        if (this.targetingSystem.currentTarget) {
+          this.targetingSystem.currentTarget.setTargeted && this.targetingSystem.currentTarget.setTargeted(false);
+          this.targetingSystem.currentTarget = null;
+          this.ui.clearTargetInfo();
+        }
+      }
+    });
 
     // Backwards compatibility proxies so existing controls logic (T/Y clearing & comms) still works
     Object.defineProperty(this, 'currentTarget', {
@@ -538,27 +552,8 @@ class Game {
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
 
-    // Landing alignment status update
-    if (this.spaceship.getFlag('landingVectorLocked') && this.spaceship.getFlag('landingAlignmentLocked') && this.ui.dockingStatus.textContent !== 'ALIGNMENT LOCK ACQUIRED') {
-      this.ui.updateDockingStatus('ALIGNMENT LOCK ACQUIRED');
-    }
-    if (this.spaceship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {
-      this.ui.updateDockingStatus('ROTATION LOCK ACQUIRED');
-    }
-    if (this.spaceship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKING COMPLETE') {
-      this.ui.updateDockingStatus('DOCKING COMPLETE');
-    }
-    // Fail-safe: if docking authorized but vector still hidden, reveal it (unless alignment lock already achieved, in which case it was intentionally hidden)
-    if (this.spaceship.getFlag('dockingAuthorized') && !this.spaceship.getFlag('landingAlignmentLocked') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
-      this.currentNavTarget.setLandingVectorVisible(true);
-    }
-
-    // Handle docking completion
-    if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
-      this.ui.updateDockingStatus('DOCKING COMPLETE');
-      this.ui.hideDockingStatus();
-      console.log('Docking completed! Ship is now docked on', this.currentNavTarget?.getName());
-    }
+  // Docking UI/status
+  this.dockingManager.update(deltaTime);
 
   // Combat system update (lasers, explosions, collisions)
   this.combatSystem.update(deltaTime);
@@ -726,52 +721,16 @@ class Game {
 
   // Process flags from conversation options
   processFlags(flags) {
-    if (flags.player) {
-      for (const [flagName, value] of Object.entries(flags.player)) {
-        this.spaceship.setFlag(flagName, value);
-        console.log(`Set player flag: ${flagName} = ${value}`);
-
-        // Handle special flag actions
-        if (flagName === 'isDocking' && value === true) {
-          this.startDockingProcess();
-        }
-        if (flagName === 'dockingAuthorized' && value === true) {
-          // New station flow: show authorization message
-          this.ui.showDockingStatus();
-          this.ui.updateDockingStatus('AUTHORIZED -- PROCEED TO LANDING VECTOR');
-          // Reveal landing vector guidance now that authorization granted
-          if (this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
-            this.currentNavTarget.setLandingVectorVisible(true);
-          }
-        }
-      }
-    }
-
+    // Delegate docking-related flag handling
+    this.dockingManager.processFlags(flags);
     if (flags.global) {
       for (const [flagName, value] of Object.entries(flags.global)) {
         this.setGlobalFlag(flagName, value);
-        console.log(`Set global flag: ${flagName} = ${value}`);
       }
     }
   }
 
-  startDockingProcess() {
-    if (this.currentNavTarget) {
-      // Clear current target when docking (but keep nav target)
-      if (this.currentTarget) {
-        this.currentTarget = null;
-        this.ui.clearTargetInfo();
-      }
-
-      // Show docking UI
-      this.ui.showDockingStatus();
-
-      // Start docking sequence
-      this.spaceship.startDocking(this.currentNavTarget);
-
-      console.log('Docking process started with', this.currentNavTarget.getName());
-    }
-  }
+  // startDockingProcess removed (handled by DockingManager)
 
   checkLandingVectorLock() {
     // Only if docking authorized, not already locked, and nav target is a station
