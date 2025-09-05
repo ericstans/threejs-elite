@@ -8,11 +8,11 @@ import cockpitImageSrc from './assets/png/cockpit.png';
 export class UI {
   constructor() {
     this.createUI();
-  this.firstPersonMode = true; // start in cockpit view
+    this.firstPersonMode = true; // start in cockpit view
   }
-  
+
   createUI() {
-  // Add bitmap cockpit graphic (bottom center) beneath UI
+    // Add bitmap cockpit graphic (bottom center) beneath UI
     // --- Cockpit wrapper (holds cockpit image + anchored panels) ---
     this.cockpitWrapper = document.createElement('div');
     this.cockpitWrapper.style.position = 'fixed';
@@ -45,9 +45,9 @@ export class UI {
     this.uiContainer.style.fontFamily = 'monospace';
     this.uiContainer.style.color = '#00ff00';
     this.uiContainer.style.fontSize = '14px';
-  this.uiContainer.style.zIndex = '1000'; // ensure above cockpit graphic
+    this.uiContainer.style.zIndex = '1000'; // ensure above cockpit graphic
     document.body.appendChild(this.uiContainer);
- 
+
     // Initialize UI components
     this.throttleUI = new ThrottleUI(this.uiContainer);
     this.debugFlagsUI = new DebugFlagsUI();
@@ -67,10 +67,10 @@ export class UI {
       p.right = 'auto';
       p.bottom = 'auto';
       p.transform = 'translate(-50%, -50%)';
-  // Re-apply text styling lost when moved out of uiContainer inheritance
-  p.color = '#00ff00';
-  p.fontFamily = 'monospace';
-  p.fontSize = '12px';
+      // Re-apply text styling lost when moved out of uiContainer inheritance
+      p.color = '#00ff00';
+      p.fontFamily = 'monospace';
+      p.fontSize = '12px';
     }
     if (this.navTargetUI && this.navTargetUI.navTargetPanel) {
       this.cockpitWrapper.appendChild(this.navTargetUI.navTargetPanel);
@@ -81,9 +81,9 @@ export class UI {
       p2.right = 'auto';
       p2.bottom = 'auto';
       p2.transform = 'translate(-50%, -50%)';
-  p2.color = '#00ff00';
-  p2.fontFamily = 'monospace';
-  p2.fontSize = '12px';
+      p2.color = '#00ff00';
+      p2.fontFamily = 'monospace';
+      p2.fontSize = '12px';
     }
 
 
@@ -319,10 +319,10 @@ export class UI {
   showCommsModal(planetName, greeting, options = null) {
     this.commsTitle.textContent = `COMMUNICATIONS - ${planetName}`;
     this.commsMessage.textContent = greeting;
-    
+
     // Clear previous options
     this.commsOptions.innerHTML = '';
-    
+
     // Add communication options
     if (options && options.length > 0) {
       options.forEach((option, index) => {
@@ -338,25 +338,25 @@ export class UI {
         if (option.flags) {
           optionElement.dataset.flags = JSON.stringify(option.flags);
         }
-        
+
         // Add hover effects
         optionElement.addEventListener('mouseenter', () => {
           optionElement.style.background = 'rgba(0, 255, 0, 0.1)';
           optionElement.style.border = '1px solid #00ff00';
         });
-        
+
         optionElement.addEventListener('mouseleave', () => {
           optionElement.style.background = 'transparent';
           optionElement.style.border = '1px solid #00ff00';
         });
-        
+
         // Add click handler
         optionElement.addEventListener('click', () => {
           if (this.onCommsOptionClick) {
             this.onCommsOptionClick(parseInt(optionElement.dataset.optionIndex));
           }
         });
-        
+
         this.commsOptions.appendChild(optionElement);
       });
     } else {
@@ -370,27 +370,27 @@ export class UI {
       option1.innerHTML = '<span style="color: #ffff00;">1.</span> Information about ' + planetName;
       option1.dataset.optionId = 'information';
       option1.dataset.optionIndex = '1';
-      
+
       // Add hover effects
       option1.addEventListener('mouseenter', () => {
         option1.style.background = 'rgba(0, 255, 0, 0.1)';
         option1.style.border = '1px solid #00ff00';
       });
-      
+
       option1.addEventListener('mouseleave', () => {
         option1.style.background = 'transparent';
         option1.style.border = '1px solid #00ff00';
       });
-      
+
       // Add click handler
       option1.addEventListener('click', () => {
         if (this.onCommsOptionClick) {
           this.onCommsOptionClick(1);
         }
       });
-      
+
       this.commsOptions.appendChild(option1);
-      
+
       const option2 = document.createElement('div');
       option2.style.marginBottom = '10px';
       option2.style.padding = '8px';
@@ -400,37 +400,37 @@ export class UI {
       option2.innerHTML = '<span style="color: #ffff00;">2.</span> Request docking';
       option2.dataset.optionId = 'docking';
       option2.dataset.optionIndex = '2';
-      
+
       // Add hover effects
       option2.addEventListener('mouseenter', () => {
         option2.style.background = 'rgba(0, 255, 0, 0.1)';
         option2.style.border = '1px solid #00ff00';
       });
-      
+
       option2.addEventListener('mouseleave', () => {
         option2.style.background = 'transparent';
         option2.style.border = '1px solid #00ff00';
       });
-      
+
       // Add click handler
       option2.addEventListener('click', () => {
         if (this.onCommsOptionClick) {
           this.onCommsOptionClick(2);
         }
       });
-      
+
       this.commsOptions.appendChild(option2);
     }
-    
+
     this.commsModal.style.display = 'block';
   }
 
   updateCommsModal(message, options) {
     this.commsMessage.textContent = message;
-    
+
     // Clear previous options
     this.commsOptions.innerHTML = '';
-    
+
     // Add new options
     if (options && options.length > 0) {
       options.forEach((option, index) => {
@@ -446,25 +446,25 @@ export class UI {
         if (option.flags) {
           optionElement.dataset.flags = JSON.stringify(option.flags);
         }
-        
+
         // Add hover effects
         optionElement.addEventListener('mouseenter', () => {
           optionElement.style.background = 'rgba(0, 255, 0, 0.1)';
           optionElement.style.border = '1px solid #00ff00';
         });
-        
+
         optionElement.addEventListener('mouseleave', () => {
           optionElement.style.background = 'transparent';
           optionElement.style.border = '1px solid #00ff00';
         });
-        
+
         // Add click handler
         optionElement.addEventListener('click', () => {
           if (this.onCommsOptionClick) {
             this.onCommsOptionClick(parseInt(optionElement.dataset.optionIndex));
           }
         });
-        
+
         this.commsOptions.appendChild(optionElement);
       });
     }
@@ -488,8 +488,6 @@ export class UI {
 
   // Docking UI methods
   showDockingStatus() {
-    this.crosshair.style.display = 'none';
-    this.autoAimCone.style.display = 'none';
     this.dockingStatus.style.display = 'block';
   }
 
@@ -498,8 +496,6 @@ export class UI {
   }
 
   hideDockingStatus() {
-    this.crosshair.style.display = 'block';
-    this.autoAimCone.style.display = 'block';
     this.dockingStatus.style.display = 'none';
   }
 

@@ -61,7 +61,6 @@ class Game {
     this.currentNavTarget = null;
     this.planets = [];
     this.musicStarted = false;
-    
     // Global flags
     this.globalFlags = {
       gameStarted: false,
@@ -386,7 +385,9 @@ class Game {
   setupControls() {
     // Handle shooting
     this.controls.setOnShoot(() => {
-      this.shootLaser();
+      if (this.spaceship.flags.firingEnabled) {
+        this.shootLaser();
+      }
     });
 
     // Handle targeting

@@ -30,6 +30,7 @@ export class Spaceship {
 
     // Player flags
     this.flags = {
+      firingEnabled: true,
       isDocking: false,
       isDocked: false,
       dockingAuthorized: false, // station granted docking
@@ -306,6 +307,7 @@ export class Spaceship {
         // Now mark undocked
         this.flags.isDocked = false;
         this.dockingProgress = 0;
+        this.flags.firingEnabled = true;
       }
       return;
     }
@@ -633,6 +635,8 @@ export class Spaceship {
 
   // Docking methods
   startDocking(targetPlanet) {
+    this.flags.isDocking = true;
+    this.flags.firingEnabled = false;
     this.dockingTarget = targetPlanet;
     this.dockingProgress = 0;
 
@@ -743,5 +747,12 @@ export class Spaceship {
     this.angularVelocity.set(0, 0, 0);
     this.setThrottle(0);
     // Remain docked during ascent so existing planet-follow transform is stable; we'll clear at completion
+  }
+
+  // When launching/takeoff completes
+  completeTakeoff() {
+    this.flags.isDocking = false;
+    this.flags.isDocked = false;
+    this.flags.firingEnabled = true;
   }
 }
