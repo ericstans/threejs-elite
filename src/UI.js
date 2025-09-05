@@ -18,6 +18,17 @@ export class UI {
       nav: { left: '29.5%', top: '61%' },
       radar: { left: '50%', top: '70%' }
     };
+    // Parallax tuning (motion/rotation driven)
+    this._parallaxParams = {
+      velScaleX: 3.0,
+      velScaleY: 3.0,
+      angScaleRoll: 25.0,
+      angScalePitch: 25.0,
+      maxOffset: 18,
+      followLerp: 0.12,
+      decayLerp: 0.08,
+      motionEps: 0.02
+    };
     // Build DOM after anchors so createUI can consume them
     this.createUI();
     // Map modal (reuses comms styling for quick implementation)
@@ -68,6 +79,7 @@ export class UI {
     this.cockpitWrapper.style.bottom = '0';
     this.cockpitWrapper.style.left = '50%';
     this.cockpitWrapper.style.transform = 'translateX(-50%)';
+  this.cockpitWrapper.style.transformOrigin = '50% 100%'; // pivot at bottom center to keep base sealed
     this.cockpitWrapper.style.width = '100%'; // existing scaling behavior retained
     this.cockpitWrapper.style.height = 'auto';
     this.cockpitWrapper.style.pointerEvents = 'none';
@@ -82,6 +94,25 @@ export class UI {
     this.cockpitBitmap.style.display = 'block';
     this.cockpitBitmap.style.pointerEvents = 'none';
     this.cockpitWrapper.appendChild(this.cockpitBitmap);
+
+    // Bottom overscan extension: only the bottom 1px row of the cockpit stretched downward
+    const OVERSCAN_PX = 80; // amount of hidden extension below viewport
+    this._cockpitOverscanDiv = document.createElement('div');
+    const overscan = this._cockpitOverscanDiv;
+    overscan.style.position = 'absolute';
+    overscan.style.left = '0';
+    overscan.style.bottom = `-${OVERSCAN_PX}px`;
+    overscan.style.width = '100%';
+    overscan.style.height = `${OVERSCAN_PX}px`;
+    overscan.style.pointerEvents = 'none';
+    overscan.style.background = 'transparent'; // will be filled after image load
+    this.cockpitWrapper.appendChild(overscan);
+    const ensureOverscan = () => this._buildCockpitOverscan();
+    if (this.cockpitBitmap.complete) {
+      ensureOverscan();
+    } else {
+      this.cockpitBitmap.addEventListener('load', ensureOverscan, { once: true });
+    }
 
     // Create UI container
     this.uiContainer = document.createElement('div');
@@ -520,22 +551,32 @@ export class UI {
     if (!this._parallaxEnabled || !this.cockpitWrapper || !spaceship) return;
     if (!this.firstPersonMode) { this.cockpitWrapper.style.transform = 'translateX(-50%)'; return; }
     try {
-      const rot = spaceship.mesh?.quaternion || spaceship.quaternion;
-      if (!rot) return;
-      // Extract approximate pitch & roll from quaternion.
-      const euler = new THREE.Euler();
-      euler.setFromQuaternion(rot, 'YXZ');
-      const roll = euler.z;   // left/right tilt
-      const pitch = euler.x;  // up/down tilt
-      // Clamp
-      const MAX_OFFSET_PX = 18; // maximum translation
-      const x = THREE.MathUtils.clamp(-roll * 40, -MAX_OFFSET_PX, MAX_OFFSET_PX);  // invert so roll visually counteracts
-      const y = THREE.MathUtils.clamp(pitch * 40, -MAX_OFFSET_PX, MAX_OFFSET_PX);
-      // Apply smooth easing
+      const p = this._parallaxParams;
+      const angVel = spaceship.angularVelocity || new THREE.Vector3();
+      const linVel = spaceship.velocity || new THREE.Vector3();
+      // Convert linear velocity to local ship space
+      const localVel = linVel.clone();
+      if (spaceship.quaternion) {
+        const invQ = spaceship.quaternion.clone().invert();
+        localVel.applyQuaternion(invQ);
+      }
+      // Desired offsets purely from motion
+      let desiredX = (-localVel.x * p.velScaleX) + (angVel.z * p.angScaleRoll);
+      let desiredY = (-localVel.y * p.velScaleY) + (-angVel.x * p.angScalePitch);
+      desiredX = THREE.MathUtils.clamp(desiredX, -p.maxOffset, p.maxOffset);
+      desiredY = THREE.MathUtils.clamp(desiredY, -p.maxOffset, p.maxOffset);
       const lerp = (a, b, t) => a + (b - a) * t;
-      this._parallaxState.lastX = lerp(this._parallaxState.lastX, x, 0.15);
-      this._parallaxState.lastY = lerp(this._parallaxState.lastY, y, 0.15);
-      const rotDeg = this._parallaxState.lastX * 0.15; // subtle roll based on lateral offset
+      this._parallaxState.lastX = lerp(this._parallaxState.lastX, desiredX, p.followLerp);
+      this._parallaxState.lastY = lerp(this._parallaxState.lastY, desiredY, p.followLerp);
+      const linMag = linVel.length();
+      const angMag = angVel.length();
+      if (linMag < p.motionEps && angMag < p.motionEps) {
+        this._parallaxState.lastX = lerp(this._parallaxState.lastX, 0, p.decayLerp);
+        this._parallaxState.lastY = lerp(this._parallaxState.lastY, 0, p.decayLerp);
+      }
+      // Invert roll-induced rotation so cockpit rotates opposite the ship's roll input (Q/E)
+      const MAX_COCKPIT_ROLL = 12; // degrees
+      const rotDeg = THREE.MathUtils.clamp((this._parallaxState.lastX * 0.3) - (angVel.z * MAX_COCKPIT_ROLL), -8, 8);
       this.cockpitWrapper.style.transform = `translateX(-50%) translate(${this._parallaxState.lastX}px, ${this._parallaxState.lastY}px) rotate(${rotDeg}deg)`;
     } catch (_) { }
   }
@@ -567,6 +608,31 @@ export class UI {
     const size = Math.max(90, Math.min(240, Math.round(90 * scale)));
     this.radarWrapper.style.width = size + 'px';
     this.radarWrapper.style.height = size + 'px';
+  }
+
+  _buildCockpitOverscan() {
+    if (!this._cockpitOverscanDiv || !this.cockpitBitmap) return;
+    const img = this.cockpitBitmap;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return;
+    // Create tiny canvas to capture only bottom row
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = 1; // single row
+    const ctx = canvas.getContext('2d');
+    try {
+      ctx.drawImage(img, 0, h - 1, w, 1, 0, 0, w, 1);
+      const dataURL = canvas.toDataURL('image/png');
+      const div = this._cockpitOverscanDiv;
+      // Use the 1px row stretched vertically
+      div.style.backgroundImage = `url(${dataURL})`;
+      div.style.backgroundRepeat = 'repeat-y';
+      div.style.backgroundSize = '100% 1px'; // stretch row downwards via repeat-y
+      div.style.backgroundPosition = 'bottom center';
+      // Optional gradient fade to pure black near bottom for subtle transition
+      // We can layer a linear-gradient if desired; leaving pure stretch for fidelity.
+    } catch (_) { /* ignore cross-origin or rendering errors */ }
   }
 
   showCommsModal(planetName, greeting, options = null) {
