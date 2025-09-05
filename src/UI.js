@@ -470,6 +470,16 @@ export class UI {
     }
   }
 
+  // Blink crosshair red when a laser hits something
+  blinkCrosshairRed() {
+    if (!this.crosshair) return;
+    this.crosshair.style.transition = 'border-color 0.1s';
+    this.crosshair.style.borderColor = '#ff2222';
+    setTimeout(() => {
+      this.crosshair.style.borderColor = '#00ff00';
+    }, 120);
+  }
+
   hideCommsModal() {
     this.commsModal.style.display = 'none';
   }

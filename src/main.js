@@ -17,6 +17,7 @@ import { SpaceStation } from './SpaceStation.js';
 
 class Game {
   handleLaserAsteroidCollision(laser, asteroid, laserIndex, asteroidIndex) {
+    this.ui.blinkCrosshairRed();
     // Remove the laser
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
@@ -67,7 +68,7 @@ class Game {
       firstDocking: false,
       // Add more global flags as needed
     };
-    
+
     this.setupGame();
     this.setupControls();
     this.start();
@@ -81,9 +82,9 @@ class Game {
     this._lastMouseX = 0;
     this._lastMouseY = 0;
     this._initOrbitEventHandlers();
-  // Orbit idle auto-exit
-  this.thirdPersonOrbitIdleSeconds = 0;
-  this.thirdPersonOrbitIdleThreshold = 3; // seconds
+    // Orbit idle auto-exit
+    this.thirdPersonOrbitIdleSeconds = 0;
+    this.thirdPersonOrbitIdleThreshold = 3; // seconds
   }
 
   _initOrbitEventHandlers() {
@@ -96,7 +97,7 @@ class Game {
         this._orbitDragging = true;
         this._lastMouseX = e.clientX;
         this._lastMouseY = e.clientY;
-  this.thirdPersonOrbitIdleSeconds = 0;
+        this.thirdPersonOrbitIdleSeconds = 0;
       }
     });
     document.addEventListener('mouseup', (e) => {
@@ -116,7 +117,7 @@ class Game {
       // Clamp pitch to avoid flip
       this.thirdPersonOrbitPitch = Math.max(-1.2, Math.min(1.2, this.thirdPersonOrbitPitch + dy * ROT_SPEED));
       this.thirdPersonOrbitActive = true;
-  this.thirdPersonOrbitIdleSeconds = 0;
+      this.thirdPersonOrbitIdleSeconds = 0;
     });
     // Scroll to zoom distance (optional)
     document.addEventListener('wheel', (e) => {
@@ -124,7 +125,7 @@ class Game {
       const delta = e.deltaY * 0.05;
       this.thirdPersonCameraDistance = Math.max(10, Math.min(200, this.thirdPersonCameraDistance + delta));
       if (this.thirdPersonOrbitActive) e.preventDefault();
-  if (this.thirdPersonOrbitActive) this.thirdPersonOrbitIdleSeconds = 0;
+      if (this.thirdPersonOrbitActive) this.thirdPersonOrbitIdleSeconds = 0;
     }, { passive: false });
   }
 
@@ -155,16 +156,16 @@ class Game {
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 5; 
+        const targetSize = 5;
         const scale = targetSize / maxDim;
-  object.scale.setScalar(scale);
+        object.scale.setScalar(scale);
         // Store scaled size for automatic camera calibration
         const scaledBox = new THREE.Box3().setFromObject(object);
         const scaledSize = new THREE.Vector3();
         scaledBox.getSize(scaledSize);
         this.spaceship.thirdPersonModelSize = scaledSize.clone();
         // Default: no manual visual offset; keep logical position at model center
-        this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0,0,0);
+        this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0, 0, 0);
         // Add group to scene and to spaceship
         this.spaceship.enableThirdPerson(object);
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
@@ -184,7 +185,7 @@ class Game {
 
   calibrateThirdPersonCamera() {
     // Derive camera offset dynamically from model size so we avoid hardcoded magic numbers
-    const size = this.spaceship.thirdPersonModelSize || new THREE.Vector3(5,5,10);
+    const size = this.spaceship.thirdPersonModelSize || new THREE.Vector3(5, 5, 10);
     const largest = Math.max(size.x, size.y, size.z);
     // Distance: a few times largest dimension so full ship is visible
     const distance = largest * 3.0; // tweak factor as desired
@@ -221,10 +222,10 @@ class Game {
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
       }
       this.spaceship.mesh.visible = false;
-  // Calibrate camera offset automatically from model size (or fallback defaults)
-  this.calibrateThirdPersonCamera();
-  // Switch UI to third-person layout
-  this.ui.applyThirdPersonLayout && this.ui.applyThirdPersonLayout();
+      // Calibrate camera offset automatically from model size (or fallback defaults)
+      this.calibrateThirdPersonCamera();
+      // Switch UI to third-person layout
+      this.ui.applyThirdPersonLayout && this.ui.applyThirdPersonLayout();
       // Ensure 3D model visible & centered exactly where first-person camera was
       this.spaceship.thirdPersonGroup.visible = true;
       const spawnPos = (this.lastFirstPersonCameraPos) ? this.lastFirstPersonCameraPos : this.spaceship.getPosition();
@@ -233,21 +234,21 @@ class Game {
       this.spaceship.position.copy(spawnPos);
       const shipQuat = this.spaceship.quaternion.clone();
       this.spaceship.thirdPersonGroup.quaternion.copy(shipQuat);
-  // Initialize orbit distance & angles from current offset vector
-  this.thirdPersonCameraDistance = this.thirdPersonCameraOffset.length();
-  this.thirdPersonOrbitYaw = 0; // forward
-  // derive pitch from existing offset
-  const off = this.thirdPersonCameraOffset;
-  this.thirdPersonOrbitPitch = Math.asin(off.y / off.length());
-  this.thirdPersonOrbitActive = false;
+      // Initialize orbit distance & angles from current offset vector
+      this.thirdPersonCameraDistance = this.thirdPersonCameraOffset.length();
+      this.thirdPersonOrbitYaw = 0; // forward
+      // derive pitch from existing offset
+      const off = this.thirdPersonCameraOffset;
+      this.thirdPersonOrbitPitch = Math.asin(off.y / off.length());
+      this.thirdPersonOrbitActive = false;
     } else {
       // Return to cockpit
       this.spaceship.mesh.visible = false; // still hidden because cockpit view uses camera at ship pos
       // camera will be reset each frame in update
-  this.ui.applyFirstPersonLayout && this.ui.applyFirstPersonLayout();
-  // Hide third-person visual representation
-  this.spaceship.thirdPersonGroup.visible = false;
-  this.thirdPersonOrbitActive = false;
+      this.ui.applyFirstPersonLayout && this.ui.applyFirstPersonLayout();
+      // Hide third-person visual representation
+      this.spaceship.thirdPersonGroup.visible = false;
+      this.thirdPersonOrbitActive = false;
     }
   }
 
@@ -256,25 +257,25 @@ class Game {
     this.gameEngine.addEntity(this.spaceship);
     // Hide the spaceship mesh since we're in cockpit view
     this.spaceship.mesh.visible = false;
-    
+
     // Create planets (10x larger and much farther apart)
-  // Scaled up: planets now 4x previous radii (20->80, 15->60)
-  const planet1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet (4x size)
-  const planet2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet (4x size)
-    
+    // Scaled up: planets now 4x previous radii (20->80, 15->60)
+    const planet1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime."); // Brown planet (4x size)
+    const planet2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus."); // Blue planet (4x size)
+
     this.planets.push(planet1);
     this.planets.push(planet2);
     this.gameEngine.addEntity(planet1);
-  this.gameEngine.addEntity(planet2);
+    this.gameEngine.addEntity(planet2);
 
-  // Add an orbital space station around Oceanus
-  // Space station: only 2x its former absolute size (previous size ~7.2). New size target ~14.4 => factor 14.4 / 60 = 0.24.
-  // Also adjust orbit so it isn't pushed too far out by planet scaling (use 2x original orbit distance: old 15*4=60, new 60*2=120).
-  // Double previous station size (0.24 -> 0.48 radius factor)
-  this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 2, size: planet2.radius * 0.48 });
-  this.gameEngine.addEntity(this.oceanusStation);
-  this.gameEngine.scene.add(this.oceanusStation.mesh);
-    
+    // Add an orbital space station around Oceanus
+    // Space station: only 2x its former absolute size (previous size ~7.2). New size target ~14.4 => factor 14.4 / 60 = 0.24.
+    // Also adjust orbit so it isn't pushed too far out by planet scaling (use 2x original orbit distance: old 15*4=60, new 60*2=120).
+    // Double previous station size (0.24 -> 0.48 radius factor)
+    this.oceanusStation = new SpaceStation(planet2, { orbitRadius: planet2.radius * 2, size: planet2.radius * 0.48 });
+    this.gameEngine.addEntity(this.oceanusStation);
+    this.gameEngine.scene.add(this.oceanusStation.mesh);
+
     // Create asteroid field between the planets
     this.createAsteroidField();
 
@@ -291,12 +292,12 @@ class Game {
       }
     };
     addNPC();
-  // Create a dense stardust field localized around the derelict vessel
-  this.createDerelictStardustField(npcShipPos);
-    
-  // Position camera at spaceship center (cockpit view)
-  this.gameEngine.camera.position.set(0, 0, 0);
-  this.gameEngine.camera.rotation.set(0, 0, 0);
+    // Create a dense stardust field localized around the derelict vessel
+    this.createDerelictStardustField(npcShipPos);
+
+    // Position camera at spaceship center (cockpit view)
+    this.gameEngine.camera.position.set(0, 0, 0);
+    this.gameEngine.camera.rotation.set(0, 0, 0);
   }
 
   createDerelictStardustField(center) {
@@ -315,7 +316,7 @@ class Game {
         x = (Math.random() * 2 - 1);
         y = (Math.random() * 2 - 1);
         z = (Math.random() * 2 - 1);
-        d = Math.sqrt(x*x + y*y + z*z);
+        d = Math.sqrt(x * x + y * y + z * z);
       } while (d === 0 || d > 1 || d * radius < innerVoid);
       const falloff = d; // 0..1
       const rScaled = d * radius;
@@ -325,13 +326,13 @@ class Game {
       const px = center.x + x / d * finalR;
       const py = center.y + y / d * finalR;
       const pz = center.z + z / d * finalR;
-      positions[i] = px; positions[i+1] = py; positions[i+2] = pz;
+      positions[i] = px; positions[i + 1] = py; positions[i + 2] = pz;
       // Color: faint bluish-white variance
-      const hueJitter = 0.58 + (Math.random()-0.5)*0.04; // around blue/cyan
-      const sat = 0.15 + Math.random()*0.2;
-      const val = 0.7 + Math.random()*0.3;
+      const hueJitter = 0.58 + (Math.random() - 0.5) * 0.04; // around blue/cyan
+      const sat = 0.15 + Math.random() * 0.2;
+      const val = 0.7 + Math.random() * 0.3;
       tmpColor.setHSL(hueJitter, sat, val);
-      colors[i] = tmpColor.r; colors[i+1] = tmpColor.g; colors[i+2] = tmpColor.b;
+      colors[i] = tmpColor.r; colors[i + 1] = tmpColor.g; colors[i + 2] = tmpColor.b;
       i += 3;
     }
     const geometry = new THREE.BufferGeometry();
@@ -362,9 +363,9 @@ class Game {
   createAsteroidField() {
     // Create asteroid field between the two planets (scaled up for new planet distances)
     const asteroidCount = 25;
-  const fieldCenter = new THREE.Vector3(-50, 50, -650); // Keep center same for now
-  const fieldSize = 1200; // Expand field size 4x to match planet scale increase
-    
+    const fieldCenter = new THREE.Vector3(-50, 50, -650); // Keep center same for now
+    const fieldSize = 1200; // Expand field size 4x to match planet scale increase
+
     for (let i = 0; i < asteroidCount; i++) {
       // Random position within the field
       const position = new THREE.Vector3(
@@ -372,10 +373,10 @@ class Game {
         fieldCenter.y + (Math.random() - 0.5) * fieldSize,
         fieldCenter.z + (Math.random() - 0.5) * fieldSize
       );
-      
+
       // Random size between 0.5 and 2.0
       const size = 0.5 + Math.random() * 1.5;
-      
+
       const asteroid = new Asteroid(position, size);
       this.asteroids.push(asteroid);
       this.gameEngine.addEntity(asteroid);
@@ -439,35 +440,35 @@ class Game {
     // Get spaceship position and forward direction
     const spaceshipPos = this.spaceship.getPosition();
     const spaceshipRot = this.spaceship.getRotation();
-    
+
     // Calculate forward direction from spaceship rotation
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(spaceshipRot);
-    
+
     // Check if we have a target and apply auto-aim
     let laserDirection = forward;
     if (this.currentTarget && this.currentTarget.isAlive()) {
       const targetPos = this.currentTarget.getPosition();
       const targetDirection = targetPos.clone().sub(spaceshipPos).normalize();
-      
+
       // Calculate angle between forward direction and target direction
       const angle = forward.angleTo(targetDirection);
       const maxAngle = Math.PI / 18; // 10 degrees in radians
-      
+
       // If target is within 10 degrees, aim at it
       if (angle <= maxAngle) {
         laserDirection = targetDirection;
       }
     }
-    
+
     // Create laser slightly in front of spaceship
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
-    
+
     // Create new laser with calculated direction
     const laser = new Laser(laserStartPos, laserDirection);
     this.lasers.push(laser);
     this.gameEngine.addEntity(laser);
-    
+
     // Play laser sound
     this.soundManager.playLaserSound();
   }
@@ -475,10 +476,10 @@ class Game {
   update(deltaTime) {
     // Update controls
     this.controls.update(deltaTime);
-    
+
     // Check for nav target proximity and auto-slow
     this.checkNavTargetProximity();
-    
+
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
     // Update any extra updatables (like rotating stardust field)
@@ -501,14 +502,14 @@ class Game {
     if (this.oceanusStation) {
       this.oceanusStation.update(deltaTime);
     }
-    
-  // Update UI
-  // Pass targetSpeed, currentSpeed, and maxSpeed for UI
-  const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
-  const currentSpeed = this.spaceship.getSpeed();
-  const maxSpeed = this.spaceship.maxSpeed;
-  this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
-    
+
+    // Update UI
+    // Pass targetSpeed, currentSpeed, and maxSpeed for UI
+    const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
+    const currentSpeed = this.spaceship.getSpeed();
+    const maxSpeed = this.spaceship.maxSpeed;
+    this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
+
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
 
@@ -526,23 +527,23 @@ class Game {
     if (this.spaceship.getFlag('dockingAuthorized') && !this.spaceship.getFlag('landingAlignmentLocked') && this.currentNavTarget && this.currentNavTarget.setLandingVectorVisible) {
       this.currentNavTarget.setLandingVectorVisible(true);
     }
-    
+
     // Handle docking completion
     if (this.spaceship.flags.isDocked && this.spaceship.dockingProgress === 1) {
       this.ui.updateDockingStatus('DOCKING COMPLETE');
       this.ui.hideDockingStatus();
       console.log('Docking completed! Ship is now docked on', this.currentNavTarget?.getName());
     }
-    
+
     // Update and cleanup lasers
     this.updateLasers(deltaTime);
-    
+
     // Update and cleanup explosions
     this.updateExplosions(deltaTime);
-    
+
     // Check for laser-asteroid collisions
     this.checkCollisions();
-    
+
     // Update target information
     this.updateTargetInfo();
 
@@ -566,10 +567,10 @@ class Game {
     } else {
       this.ui.autoAimCone.style.border = '1px solid #00ff00'; // Green if not
     }
-    
+
     // Update nav target information
     this.updateNavTargetInfo();
-    
+
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
     const spaceshipRot = this.spaceship.getRotation();
@@ -598,31 +599,31 @@ class Game {
       this.gameEngine.camera.rotation.copy(spaceshipRot);
     }
 
-  // Update continuous engine rumble based on throttle & docking (station or planet)
-  // Stop engine sound completely when docked, restart when undocked
-  let isActuallyDocked = false;
-  if (this.spaceship.flags.isDocked) {
-    if (this.spaceship.dockingTarget && this.spaceship.dockingTarget.getPosition && !this.spaceship.takeoffActive) {
-      isActuallyDocked = true;
+    // Update continuous engine rumble based on throttle & docking (station or planet)
+    // Stop engine sound completely when docked, restart when undocked
+    let isActuallyDocked = false;
+    if (this.spaceship.flags.isDocked) {
+      if (this.spaceship.dockingTarget && this.spaceship.dockingTarget.getPosition && !this.spaceship.takeoffActive) {
+        isActuallyDocked = true;
+      }
+      if (this.spaceship.flags.stationDocked) {
+        isActuallyDocked = true;
+      }
     }
-    if (this.spaceship.flags.stationDocked) {
-      isActuallyDocked = true;
+    if (!this._lastEngineDocked) this._lastEngineDocked = false;
+    if (isActuallyDocked && !this._lastEngineDocked) {
+      this.soundManager.stopEngineRumble();
     }
-  }
-  if (!this._lastEngineDocked) this._lastEngineDocked = false;
-  if (isActuallyDocked && !this._lastEngineDocked) {
-    this.soundManager.stopEngineRumble();
-  }
-  if (!isActuallyDocked && this._lastEngineDocked) {
-    // Resume engine rumble on undock
-    this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
-  }
-  this._lastEngineDocked = isActuallyDocked;
-  if (!isActuallyDocked) {
-    this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
-  }
-  // Check landing vector acquisition if applicable
-  this.checkLandingVectorLock();
+    if (!isActuallyDocked && this._lastEngineDocked) {
+      // Resume engine rumble on undock
+      this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
+    }
+    this._lastEngineDocked = isActuallyDocked;
+    if (!isActuallyDocked) {
+      this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
+    }
+    // Check landing vector acquisition if applicable
+    this.checkLandingVectorLock();
     // Hide crosshair and auto-aim cone if firing is disabled
     if (!this.spaceship.flags.firingEnabled) {
       this.ui.crosshair.style.display = 'none';
@@ -638,7 +639,7 @@ class Game {
     for (let i = this.lasers.length - 1; i >= 0; i--) {
       const laser = this.lasers[i];
       const shouldDestroy = laser.update(deltaTime);
-      
+
       if (shouldDestroy) {
         this.gameEngine.removeEntity(laser);
         this.lasers.splice(i, 1);
@@ -651,7 +652,7 @@ class Game {
     for (let i = this.explosions.length - 1; i >= 0; i--) {
       const explosion = this.explosions[i];
       const shouldDestroy = explosion.update(deltaTime);
-      
+
       if (shouldDestroy) {
         this.gameEngine.removeEntity(explosion);
         this.explosions.splice(i, 1);
@@ -691,6 +692,7 @@ class Game {
   }
 
   handleLaserNPCShipCollision(laser, npcShip, laserIndex) {
+    this.ui.blinkCrosshairRed();
     // Remove the laser
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
@@ -768,14 +770,14 @@ class Game {
       if (meshCenter) {
         targetables.push({
           getPosition: () => meshCenter,
-            isAlive: () => this.npcShip.isAlive(),
-            setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
-            getId: () => 'npcship',
-            getName: () => 'Derelict Cruiser',
-            getMass: () => 1000,
-            getHealth: () => this.npcShip.getHealth(),
-            getMaxHealth: () => this.npcShip.getMaxHealth(),
-            isCommable: true
+          isAlive: () => this.npcShip.isAlive(),
+          setTargeted: (v) => { this.npcShip.mesh.userData.targeted = v; },
+          getId: () => 'npcship',
+          getName: () => 'Derelict Cruiser',
+          getMass: () => 1000,
+          getHealth: () => this.npcShip.getHealth(),
+          getMaxHealth: () => this.npcShip.getMaxHealth(),
+          isCommable: true
         });
       }
     }
@@ -811,7 +813,7 @@ class Game {
       const spaceshipPos = this.spaceship.getPosition();
       const targetPos = this.currentTarget.getPosition();
       const distance = spaceshipPos.distanceTo(targetPos);
-      
+
       this.ui.updateTargetInfo({
         id: this.currentTarget.getId(),
         mass: this.currentTarget.getMass(),
@@ -866,7 +868,7 @@ class Game {
     if (closestPlanet) {
       this.currentNavTarget = closestPlanet;
       this.currentNavTarget.setNavTargeted(true);
-      
+
       // Play target selected sound
       this.soundManager.playTargetSelectedSound();
     }
@@ -874,18 +876,18 @@ class Game {
 
   checkNavTargetProximity() {
     if (!this.currentNavTarget) return;
-    
+
     const spaceshipPos = this.spaceship.getPosition();
     const targetPos = this.currentNavTarget.getPosition();
     const distance = spaceshipPos.distanceTo(targetPos);
-    
+
     // Check if nav target is within 100 units
     if (distance <= 100) {
       // Check if nav target is in the crosshair (center of screen)
       const camera = this.gameEngine.camera;
       const screenPos = targetPos.clone();
       screenPos.project(camera);
-      
+
       // Check if target is in front of camera and near center of screen
       if (screenPos.z <= 1 && Math.abs(screenPos.x) < 0.1 && Math.abs(screenPos.y) < 0.1) {
         // Nav target is in crosshair and within 100 units - slow to stop
@@ -900,7 +902,7 @@ class Game {
       const spaceshipPos = this.spaceship.getPosition();
       const targetPos = this.currentNavTarget.getPosition();
       const distance = spaceshipPos.distanceTo(targetPos);
-      
+
       this.ui.updateNavTargetInfo({
         id: this.currentNavTarget.getId(),
         name: this.currentNavTarget.getName(),
@@ -952,7 +954,7 @@ class Game {
   closeComms() {
     this.ui.hideCommsModal();
     this.currentConversationNode = null;
-    
+
     // Clear comm target in docking range flag
     this.spaceship.setFlag('commTargetInDockingRange', null);
   }
@@ -980,7 +982,7 @@ class Game {
       for (const [flagName, value] of Object.entries(flags.player)) {
         this.spaceship.setFlag(flagName, value);
         console.log(`Set player flag: ${flagName} = ${value}`);
-        
+
         // Handle special flag actions
         if (flagName === 'isDocking' && value === true) {
           this.startDockingProcess();
@@ -996,7 +998,7 @@ class Game {
         }
       }
     }
-    
+
     if (flags.global) {
       for (const [flagName, value] of Object.entries(flags.global)) {
         this.setGlobalFlag(flagName, value);
@@ -1012,13 +1014,13 @@ class Game {
         this.currentTarget = null;
         this.ui.clearTargetInfo();
       }
-      
+
       // Show docking UI
       this.ui.showDockingStatus();
-      
+
       // Start docking sequence
       this.spaceship.startDocking(this.currentNavTarget);
-      
+
       console.log('Docking process started with', this.currentNavTarget.getName());
     }
   }
@@ -1038,11 +1040,11 @@ class Game {
     if (proj < 0 || proj > length) return; // outside segment
     // Radial distance from axis
     const closestPoint = start.clone().add(dir.clone().multiplyScalar(proj));
-  const radialDist = shipPos.distanceTo(closestPoint);
-  // Expanded capture tolerance (logic-only) to make locking easier without changing visual thickness.
-  // Previously 0.15 * size; now using multiplier constant for easier tuning.
-  const LANDING_VECTOR_CAPTURE_FACTOR = 0.30; // was 0.15
-  const tolerance = this.currentNavTarget.size * LANDING_VECTOR_CAPTURE_FACTOR; // acceptable distance from line
+    const radialDist = shipPos.distanceTo(closestPoint);
+    // Expanded capture tolerance (logic-only) to make locking easier without changing visual thickness.
+    // Previously 0.15 * size; now using multiplier constant for easier tuning.
+    const LANDING_VECTOR_CAPTURE_FACTOR = 0.30; // was 0.15
+    const tolerance = this.currentNavTarget.size * LANDING_VECTOR_CAPTURE_FACTOR; // acceptable distance from line
     const forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
     if (radialDist < tolerance) {
       // Lock ship
@@ -1134,7 +1136,7 @@ class Game {
     }
   }
 
-  
+
 
   start() {
     // Override the game engine's update to include our custom update
@@ -1143,7 +1145,7 @@ class Game {
       originalUpdate(deltaTime);
       this.update(deltaTime);
     };
-    
+
     // Start the game loop
     this.gameEngine.animate();
   }
