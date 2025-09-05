@@ -30,6 +30,17 @@ export class ConversationSystem {
     if (!node) {
       return null;
     }
+    // Resolve planet entity (if hook provided) to expose attributes
+    const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
+    const planetAttributes = planetEntity ? {
+      name: planetEntity.getName ? planetEntity.getName() : planetName,
+      radius: planetEntity.radius,
+      color: planetEntity.color,
+      dockable: planetEntity.dockable,
+      hasRings: !!planetEntity.rings,
+      hasMoon: !!planetEntity.moon
+    } : { name: planetName };
+    const context = { playerFlags, planet: planetEntity, planetAttributes };
     
     // Process options with inline conditional logic
     if (node.options) {
@@ -37,7 +48,7 @@ export class ConversationSystem {
       let rawOptions = node.options;
       if (typeof rawOptions === 'function') {
         try {
-          rawOptions = rawOptions(playerFlags) || [];
+          rawOptions = rawOptions(playerFlags, planetAttributes) || [];
         } catch (e) {
           console.warn('ConversationSystem: option function threw', e);
           rawOptions = [];
@@ -50,7 +61,7 @@ export class ConversationSystem {
       const processedOptions = rawOptions
         .map(option => {
           if (typeof option === 'function') {
-            try { return option(playerFlags); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
+            try { return option(playerFlags, planetAttributes); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
           }
           return option;
         })
@@ -58,11 +69,23 @@ export class ConversationSystem {
       
       return {
         ...node,
+        response: typeof node.response === 'function' ? this._safeEvalNodeResponse(node.response, context) : node.response,
         options: processedOptions
       };
     }
-    
-    return node;
+    return {
+      ...node,
+      response: typeof node.response === 'function' ? this._safeEvalNodeResponse(node.response, context) : node.response
+    };
+  }
+
+  _safeEvalNodeResponse(fn, context) {
+    try {
+      return fn(context.playerFlags, context.planetAttributes, context.planet);
+    } catch (e) {
+      console.warn('ConversationSystem: response function error', e);
+      return '...signal distortion...';
+    }
   }
 
   getInitialOptions(planetName, playerFlags = {}) {

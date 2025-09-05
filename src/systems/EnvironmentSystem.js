@@ -36,6 +36,8 @@ export class EnvironmentSystem {
     if (this.planetClusterStardust && this.planetClusterStardust.parent) {
       this.planetClusterStardust.parent.remove(this.planetClusterStardust);
       this.planetClusterStardust = null;
+    // Shader stardust uniforms tracking
+    this._stardustTime = 0;
     }
     const rand = this._rng(seed ^ 0x9e3779b9);
     const planetTypes = this._getPlanetArchetypes();
@@ -97,6 +99,16 @@ export class EnvironmentSystem {
 
   clearPlanetsAndStations() {
     for (const p of this.planets) {
+      // Remove attached ring if it was created unparented in older sessions
+      if (p.rings) {
+        if (p.rings.parent) p.rings.parent.remove(p.rings);
+        p.rings = null;
+      }
+      // Remove moon
+      if (p.moon) {
+        if (p.moon.parent) p.moon.parent.remove(p.moon);
+        p.moon = null;
+      }
       if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh);
       this.gameEngine.removeEntity && this.gameEngine.removeEntity(p);
     }
@@ -128,8 +140,9 @@ export class EnvironmentSystem {
     ringGeo.rotateX(Math.PI / 2 + (rand() - 0.5) * 0.6);
     const mat = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const ring = new THREE.Mesh(ringGeo, mat);
-    ring.position.copy(planet.mesh.position);
-    this.gameEngine.scene.add(ring);
+  // Parent ring to planet so it follows position (prevents orphaned rings on sector reload)
+  ring.position.set(0, 0, 0);
+  planet.mesh.add(ring);
     planet.rings = ring;
   }
 
@@ -208,12 +221,18 @@ export class EnvironmentSystem {
       colors[i] = tmp.r; colors[i + 1] = tmp.g; colors[i + 2] = tmp.b;
       i += 3;
     }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({ size: 1.0, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
-    const points = new THREE.Points(geometry, material);
-    points.userData.update = (dt) => { points.rotation.y += dt * 0.00015; };
+    const points = this._buildInterstitialStardust({
+      positions,
+      colors,
+      baseSize: 14.0,
+      sizeJitter: 9.0,
+      saturation: 0.65,
+      fogDensity: 0.00018,
+      noiseThreshold: 0.18,
+      noiseScale: 0.0025,
+      opacity: 0.9,
+      rotationSpeed: 0.00015
+    });
     this.derelictStardust = points;
     this.gameEngine.scene.add(points);
   }
@@ -275,23 +294,159 @@ export class EnvironmentSystem {
       colors[i] = tmp.r; colors[i + 1] = tmp.g; colors[i + 2] = tmp.b;
       i += 3;
     }
+    const points = this._buildInterstitialStardust({
+      positions,
+      colors,
+      baseSize: 22.0,
+      sizeJitter: 16.0,
+      saturation: 0.55,
+      fogDensity: 0.00022,
+      noiseThreshold: 0.25,
+      noiseScale: 0.0035,
+      opacity: 0.95,
+      rotationSpeed: 0.0001
+    });
+    points.name = 'PlanetClusterStardust';
+    this.planetClusterStardust = points;
+    this.gameEngine.scene.add(points);
+  }
+
+  _buildInterstitialStardust({ positions, colors, baseSize, sizeJitter, saturation, fogDensity, noiseThreshold, noiseScale, opacity, rotationSpeed }) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({
-      size: 1.2,
-      sizeAttenuation: true,
-      vertexColors: true,
+    const count = positions.length / 3;
+    const sizes = new Float32Array(count);
+    const seeds = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      sizes[i] = baseSize + Math.random() * sizeJitter;
+      seeds[i] = Math.random() * 1000.0;
+    }
+    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+    const material = this._getStardustMaterial({ saturation, fogDensity, noiseThreshold, noiseScale, opacity });
+    const points = new THREE.Points(geometry, material);
+    points.userData.rotationSpeed = rotationSpeed;
+    return points;
+  }
+
+  _getStardustMaterial({ saturation, fogDensity, noiseThreshold, noiseScale, opacity }) {
+    // Cache by parameter signature to avoid many program variants
+    this._stardustMaterialCache = this._stardustMaterialCache || {};
+    const key = [saturation, fogDensity, noiseThreshold, noiseScale, opacity].join(':');
+    if (this._stardustMaterialCache[key]) return this._stardustMaterialCache[key];
+    const uniforms = {
+      uTime: { value: 0 },
+      uSaturation: { value: saturation },
+      uFogDensity: { value: fogDensity },
+      uNoiseThreshold: { value: noiseThreshold },
+      uNoiseScale: { value: noiseScale },
+      uOpacity: { value: opacity }
+    };
+    const vertex = /* glsl */`
+      uniform float uTime;
+      attribute float aSize;
+      attribute float aSeed;
+  attribute vec3 color; // added: geometry color attribute for per-point tint
+      varying vec3 vColor;
+      varying float vSeed;
+      varying vec3 vWorldPos;
+      void main(){
+        vColor = color;
+        vSeed = aSeed;
+        vec3 pos = position;
+        // Gentle drift using seed-based offset
+        float drift = sin(uTime*0.05 + aSeed*0.37);
+        pos.x += drift * 8.0;
+        pos.y += sin(uTime*0.04 + aSeed*0.19)*4.0;
+        vec4 mvPosition = modelViewMatrix * vec4(pos,1.0);
+        gl_PointSize = aSize * (120.0 / -mvPosition.z); // perspective size attenuation
+        vWorldPos = (modelMatrix * vec4(pos,1.0)).xyz;
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+    const fragment = /* glsl */`
+      precision highp float;
+      uniform float uTime;
+      uniform float uSaturation;
+      uniform float uFogDensity;
+      uniform float uNoiseThreshold;
+      uniform float uNoiseScale;
+      uniform float uOpacity;
+      varying vec3 vColor;
+      varying float vSeed;
+      varying vec3 vWorldPos;
+
+      // Simple 3D hash noise
+      float hash31(vec3 p){
+        p = fract(p*0.1031);
+        p += dot(p, p.yzx + 19.19);
+        return fract((p.x+p.y)*p.z);
+      }
+      float noise3(vec3 p){
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        // Trilinear interpolation of hashed values
+        float n000 = hash31(i + vec3(0.0,0.0,0.0));
+        float n100 = hash31(i + vec3(1.0,0.0,0.0));
+        float n010 = hash31(i + vec3(0.0,1.0,0.0));
+        float n110 = hash31(i + vec3(1.0,1.0,0.0));
+        float n001 = hash31(i + vec3(0.0,0.0,1.0));
+        float n101 = hash31(i + vec3(1.0,0.0,1.0));
+        float n011 = hash31(i + vec3(0.0,1.0,1.0));
+        float n111 = hash31(i + vec3(1.0,1.0,1.0));
+        vec3 u = f*f*(3.0-2.0*f);
+        float nx00 = mix(n000, n100, u.x);
+        float nx10 = mix(n010, n110, u.x);
+        float nx01 = mix(n001, n101, u.x);
+        float nx11 = mix(n011, n111, u.x);
+        float nxy0 = mix(nx00, nx10, u.y);
+        float nxy1 = mix(nx01, nx11, u.y);
+        return mix(nxy0, nxy1, u.z);
+      }
+
+      vec3 gradeColor(vec3 c){
+        float l = dot(c, vec3(0.299,0.587,0.114));
+        // Reduce saturation then re-add subtle hue shift using seed/time
+        vec3 desat = mix(vec3(l), c, uSaturation);
+        float hueShift = sin(uTime*0.03 + vSeed*0.17)*0.08;
+        desat.r += hueShift*0.15; // gentle warm/cool flicker
+        desat.b += -hueShift*0.15;
+        return clamp(desat,0.0,1.0);
+      }
+
+      void main(){
+        // Radial alpha falloff
+        vec2 uv = gl_PointCoord*2.0-1.0;
+        float r = dot(uv,uv);
+        if(r>1.0) discard; // circle
+        float radial = pow(1.0 - r, 1.5);
+        // Layered noise for density variation
+        float n = noise3(vWorldPos * uNoiseScale + vSeed*0.1 + uTime*0.01);
+        n = (n + noise3(vWorldPos * (uNoiseScale*2.1) + uTime*0.015))/2.0;
+        if(n < uNoiseThreshold) discard; // sparse holes
+        float alpha = radial * (n - uNoiseThreshold) / (1.0 - uNoiseThreshold);
+        // Depth based fog fade (simulate attenuation)
+        float dist = length(vWorldPos);
+        float fog = exp(-dist * uFogDensity);
+        vec3 col = gradeColor(vColor);
+        alpha *= fog * uOpacity;
+        // Soft fringe
+        alpha *= smoothstep(0.0,0.4,radial);
+        if(alpha < 0.02) discard;
+        gl_FragColor = vec4(col, alpha);
+      }
+    `;
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: vertex,
+      fragmentShader: fragment,
       transparent: true,
-      opacity: 0.9,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
-    const points = new THREE.Points(geometry, material);
-    points.name = 'PlanetClusterStardust';
-    points.userData.update = (dt) => { points.rotation.y += dt * 0.0001; };
-    this.planetClusterStardust = points;
-    this.gameEngine.scene.add(points);
+    this._stardustMaterialCache[key] = material;
+    return material;
   }
 
   // Deterministic pseudo-random generator (Mulberry32) to allow consistent regeneration
@@ -419,8 +574,16 @@ export class EnvironmentSystem {
   update(deltaTime) {
     if (this.oceanusStation) this.oceanusStation.update(deltaTime);
     // Stardust rotation handled via userData.update if needed by main (or we can call here):
-    if (this.derelictStardust && this.derelictStardust.userData.update) {
-      this.derelictStardust.userData.update(deltaTime);
-    }
+    this._stardustTime += deltaTime;
+    const updateDust = (points) => {
+      if (!points) return;
+      points.rotation.y += deltaTime * (points.userData.rotationSpeed || 0.0001);
+      const mat = points.material;
+      if (mat && mat.uniforms && mat.uniforms.uTime) {
+        mat.uniforms.uTime.value = this._stardustTime;
+      }
+    };
+    updateDust(this.derelictStardust);
+    updateDust(this.planetClusterStardust);
   }
 }

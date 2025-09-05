@@ -35,6 +35,9 @@ class Game {
       const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
       return planet ? planet.dockable : true;
     };
+    this.conversationSystem._getPlanetEntity = (planetName) => {
+      return this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName) || null;
+    };
     this.asteroids = [];
     // Sector persistence
     this.sectorManager = new SectorManager({
@@ -757,13 +760,14 @@ class Game {
   }
 
   openNavComms() {
+    const DOCKING_MAX_RANGE = 500;
     // Only open comms if we have a nav target and it's commable
     if (this.currentNavTarget && this.currentNavTarget.isCommable) {
       // Set comm target in docking range flag BEFORE generating options
       const spaceshipPos = this.spaceship.getPosition();
       const targetPos = this.currentNavTarget.getPosition();
       const distance = spaceshipPos.distanceTo(targetPos);
-      const inDockingRange = distance <= 200;
+      const inDockingRange = distance <= DOCKING_MAX_RANGE;
       this.spaceship.setFlag('commTargetInDockingRange', inDockingRange);
       const planetName = this.currentNavTarget.getName();
       const greeting = this.conversationSystem.getGreeting(planetName);
