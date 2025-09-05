@@ -557,32 +557,29 @@ export class MusicManager {
         }
       }
 
-      const stopFns = [];
+      // --- High precision scheduling (no per-note setTimeout jitter) ---
+      const scheduledNodes = [];
+      const scheduleAheadSafety = 0.01; // seconds; skip notes already too far in the past
       midi.tracks.forEach(track => {
         const isDrum = track.channel === DRUM_CHANNEL;
-    const program = (track.instrument && typeof track.instrument.number === 'number') ? track.instrument.number : 0;
+        const program = (track.instrument && typeof track.instrument.number === 'number') ? track.instrument.number : 0;
         const inst = isDrum ? this._instrumentsCache.get('percussion') : instruments[program];
+        if (!inst) return;
         track.notes.forEach(note => {
-          const noteStart = startTime + note.time; // time already in seconds (@tonejs/midi converts ticks)
+          const noteStart = startTime + note.time; // absolute AudioContext time
           const noteDuration = note.duration || 0.3;
-          const delayMs = Math.max(0, (noteStart - this._audioCtx.currentTime) * 1000);
-          const scheduleId = setTimeout(() => {
-            if (!this.isPlaying || this.currentTrack !== 'ambient') return;
-            if (!inst) return;
-            try {
-              const velocityGain = Math.min(1, (note.velocity || 0.5) * 0.9);
-              const audioNode = inst.play(note.midi, this._audioCtx.currentTime, { gain: velocityGain });
-              const stopDelay = Math.max(10, (noteDuration * 1000));
-              const stopId = setTimeout(() => {
-                try { audioNode.stop(); } catch (_) {}
-              }, stopDelay);
-              timeoutIds.push(stopId);
-              stopFns.push(() => { try { audioNode.stop(); } catch (_) {} });
-            } catch (err) {
-              console.warn('Note play failed', err);
+          // If the note would start in the past by more than a tiny safety window, skip it.
+          if (noteStart < this._audioCtx.currentTime - scheduleAheadSafety) return;
+          try {
+            const velocityGain = Math.min(1, (note.velocity || 0.5) * 0.9);
+            // Schedule directly at noteStart; provide duration so it auto stops without extra timers.
+            const node = inst.play(note.midi, noteStart, { gain: velocityGain, duration: noteDuration });
+            if (node && typeof node.stop === 'function') {
+              scheduledNodes.push(node);
             }
-          }, delayMs);
-          timeoutIds.push(scheduleId);
+          } catch (err) {
+            console.warn('MusicManager: note schedule failed', err);
+          }
         });
       });
 
@@ -594,9 +591,10 @@ export class MusicManager {
         }
       }, (totalDuration * 1000) + 1000);
       this._scheduledNextTimeout = nextId;
-
       this._currentPlayback = {
-        stop: () => stopFns.forEach(fn => fn()),
+        stop: () => {
+          scheduledNodes.forEach(n => { try { n.stop(); } catch(_){} });
+        },
         timeoutIds
       };
     } catch (err) {
