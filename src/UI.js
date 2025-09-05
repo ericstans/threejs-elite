@@ -328,6 +328,16 @@ export class UI {
         this.uiContainer.appendChild(this.dockingStatus);
       }
     }
+    // --- Radar layout (third-person) ---
+    // Customize radar size/position for third-person here.
+    // Current implementation copies first-person styling intentionally.
+    if (this.radarWrapper) {
+      this.radarWrapper.style.left = '50%';
+      this.radarWrapper.style.bottom = '120px'; // TODO: change for third-person if desired
+      this.radarWrapper.style.transform = 'translateX(-50%)';
+      this.radarWrapper.style.width = '160px';
+      this.radarWrapper.style.height = '160px';
+    }
   }
 
   // Switch back to first-person cockpit overlay layout
@@ -371,6 +381,15 @@ export class UI {
       this.dockingStatus.style.border = '1px solid #ffff00';
       this.dockingStatus.style.fontSize = '12px';
       this.dockingStatus.style.background = 'rgba(0,0,0,0.4)';
+    }
+    // --- Radar layout (first-person) ---
+    // Default cockpit view radar placement & size.
+    if (this.radarWrapper) {
+      this.radarWrapper.style.left = '50%';
+      this.radarWrapper.style.bottom = '120px';
+      this.radarWrapper.style.transform = 'translateX(-50%)';
+      this.radarWrapper.style.width = '160px';
+      this.radarWrapper.style.height = '160px';
     }
   }
 
