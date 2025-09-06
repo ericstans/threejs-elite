@@ -3,6 +3,7 @@ import { DebugFlagsUI } from './ui/DebugFlagsUI.js';
 import { ControlsUI } from './ui/ControlsUI.js';
 import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
+import { OptionsUI } from './ui/OptionsUI.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 
@@ -134,7 +135,10 @@ export class UI {
     this.controlsUI = new ControlsUI(this.uiContainer);
     this.targetUI = new TargetUI(this.uiContainer);
     this.navTargetUI = new NavTargetUI(this.uiContainer);
-    this.navTargetUI = new NavTargetUI(this.uiContainer);
+    this.optionsUI = new OptionsUI();
+
+    // Setup escape key handlers for modals
+    this.setupModalEventListeners();
 
     // Re-anchor target & nav target panels into cockpit wrapper for percentage placement.
     // Preserve existing DOM nodes while changing parent.
@@ -863,9 +867,61 @@ export class UI {
     this.dockingStatus.style.display = 'none';
   }
 
+  // Options UI methods
+  showOptions() {
+    this.optionsUI.show();
+  }
+
+  hideOptions() {
+    this.optionsUI.hide();
+  }
+
+  toggleOptions() {
+    this.optionsUI.toggle();
+  }
+
+  isOptionsVisible() {
+    return this.optionsUI.isVisible;
+  }
+
+  setupModalEventListeners() {
+    // Handle escape key for map and comms modals
+    this.modalEscapeKeyHandler = (event) => {
+      if (event.code === 'Escape') {
+        if (this.isCommsModalVisible()) {
+          this.hideCommsModal();
+        } else if (this.isMapModalVisible()) {
+          this.hideMapModal();
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', this.modalEscapeKeyHandler);
+  }
+
+  isMapModalVisible() {
+    return this.mapModal.style.display === 'block';
+  }
+
+  setGame(game) {
+    this.optionsUI.setGame(game);
+    this.optionsUI.onClose = () => {
+      if (game && game.resume) {
+        game.resume();
+      }
+    };
+  }
+
   destroy() {
     if (this.uiContainer && this.uiContainer.parentNode) {
       this.uiContainer.parentNode.removeChild(this.uiContainer);
+    }
+    if (this.optionsUI) {
+      this.optionsUI.destroy();
+    }
+    // Remove modal event listeners
+    if (this.modalEscapeKeyHandler) {
+      document.removeEventListener('keydown', this.modalEscapeKeyHandler);
     }
   }
 }

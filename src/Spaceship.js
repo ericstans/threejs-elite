@@ -259,15 +259,19 @@ export class Spaceship {
       return; // Skip rest while turning
     }
 
-    // Smooth planet takeoff (runs before any other movement once active)
+    // Smooth takeoff (planet or station) - runs before any other movement once active
     if (this.takeoffActive) {
       this.takeoffTimer += deltaTime;
       const t = Math.min(1, this.takeoffTimer / this.takeoffDuration);
       const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      // While still parented to planet, animate in local space
+      
       // Suppress any residual angular velocity during guided ascent
       this.angularVelocity.set(0, 0, 0);
-      if (this.takeoffPlanet && this.mesh.parent === this.takeoffPlanet.mesh) {
+      
+      // Check if this is a planet takeoff (has local coordinates)
+      const isPlanetTakeoff = this.takeoffPlanet && this.takeoffPlanet.getType && this.takeoffPlanet.getType() === 'planet';
+      
+      if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
         const localPos = this.takeoffLocalStart.clone().lerp(this.takeoffLocalTarget, ease);
         // Add small lift arc
         const arcLift = Math.sin(ease * Math.PI) * 0.05 * this.takeoffLocalStart.length();
@@ -282,9 +286,17 @@ export class Spaceship {
         this.position.copy(this.mesh.getWorldPosition(new THREE.Vector3()));
         this.quaternion.copy(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
       } else {
-        // After detachment, continue world-space interpolation (already had world targets stored)
+        // Station takeoff or post-detachment: use world-space interpolation
         this.position.copy(this.takeoffStartPos).lerp(this.takeoffTargetPos, ease);
-        const pitchAngle = THREE.MathUtils.degToRad(10) * ease;
+        
+        // Different pitch behavior for station vs planet
+        let pitchAngle;
+        if (isPlanetTakeoff) {
+          pitchAngle = THREE.MathUtils.degToRad(10) * ease; // Gentle pitch up for planet
+        } else {
+          pitchAngle = THREE.MathUtils.degToRad(5) * ease; // More subtle pitch for station
+        }
+        
         const pitchQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchAngle);
         this.quaternion.copy(this.takeoffBaseQuat.clone().multiply(pitchQ));
         this.mesh.position.copy(this.position);
@@ -294,8 +306,8 @@ export class Spaceship {
       this.mesh.rotation.copy(this.rotation);
   this.syncThirdPerson();
       if (t >= 1) {
-        // Detach if still parented
-        if (this.takeoffPlanet && this.mesh.parent === this.takeoffPlanet.mesh) {
+        // Detach if still parented (planet takeoff only)
+        if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
           const parent = this.takeoffPlanet.mesh.parent || this.takeoffSceneParent;
@@ -306,18 +318,26 @@ export class Spaceship {
           this.position.copy(worldPos);
           this.quaternion.copy(worldQuat);
         }
+        
+        // Set initial velocity and throttle
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
         this.velocity.copy(forward.multiplyScalar(this.maxSpeed * 0.3));
         this.setThrottle(0.6);
+        
+        // Complete takeoff
         this.takeoffActive = false;
         this.takeoffPlanet = null;
-        // Now mark undocked
+        
+        // Clear docking flags
         this.flags.isDocked = false;
         this.dockingProgress = 0;
         this.flags.firingEnabled = true;
-  this.flags.dockContext = null;
-  this.flags.docketPlanetId = null;
-  this.flags.dockedStationId = null;
+        this.flags.dockContext = null;
+        this.flags.docketPlanetId = null;
+        this.flags.dockedStationId = null;
+        this.flags.stationDocked = false;
+        this.dockedStation = null;
+        this.dockingTarget = null;
       }
       return;
     }
@@ -757,6 +777,48 @@ export class Spaceship {
     this.angularVelocity.set(0, 0, 0);
     this.setThrottle(0);
     // Remain docked during ascent so existing planet-follow transform is stable; we'll clear at completion
+  }
+
+  startStationTakeoff(station, scene) {
+    if (!this.flags.isDocked || !this.flags.stationDocked) return;
+    
+    // Store parent for later reattachment if needed
+    this.takeoffSceneParent = station.mesh.parent || scene;
+    
+    // Get current docked position (should be at the mail slot)
+    const currentPos = this.position.clone();
+    
+    // Calculate takeoff path: move forward through the mail slot, then up and away
+    const stationPos = station.getPosition();
+    const stationUp = new THREE.Vector3(0, 1, 0).applyQuaternion(station.mesh.quaternion);
+    const stationForward = new THREE.Vector3(0, 0, -1).applyQuaternion(station.mesh.quaternion);
+    
+    // Start position: current docked position
+    this.takeoffStartPos.copy(currentPos);
+    
+    // Target position: forward through slot, then up and away from station
+    const forwardDistance = station.size * 2.5; // Move forward through the slot
+    const upDistance = station.size * 1.5; // Then up and away
+    const targetPos = currentPos.clone()
+      .add(stationForward.clone().multiplyScalar(forwardDistance))
+      .add(stationUp.clone().multiplyScalar(upDistance));
+    
+    this.takeoffTargetPos.copy(targetPos);
+    
+    // Store current orientation as base
+    this.quaternion.copy(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
+    this.takeoffBaseQuat.copy(this.quaternion);
+    
+    // Initialize takeoff sequence
+    this.takeoffTimer = 0;
+    this.takeoffActive = true;
+    this.takeoffPlanet = station; // Reuse planet field for station
+    this.velocity.set(0, 0, 0);
+    this.angularVelocity.set(0, 0, 0);
+    this.setThrottle(0);
+    
+    // Update position to start
+    this.position.copy(currentPos);
   }
 
   // When launching/takeoff completes

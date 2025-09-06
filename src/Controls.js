@@ -34,6 +34,26 @@ export class Controls {
 
   update(deltaTime) {
     const sensitivity = 1.0;
+    
+    // Handle escape key for options menu (only if no other modals are open)
+    if (this.keys['Escape']) {
+      if (!this._escapeKeyHeld) {
+        this._escapeKeyHeld = true;
+        if (this.game && this.game.ui) {
+          // Only handle options if no other modals are open
+          if (!this.game.ui.isCommsModalVisible() && 
+              !this.game.ui.isMapModalVisible() && 
+              !this.game.ui.isOptionsVisible()) {
+            // No modals are open - open options and pause game
+            this.game.ui.showOptions();
+            this.game.pause();
+          }
+        }
+      }
+    } else {
+      this._escapeKeyHeld = false;
+    }
+    
     // Minimal auto-start music: first detected key press triggers ambient if not already started
     if (this.game && !this.game.musicStarted) {
       // If any key currently held (excluding modifier keys if desired later) start music

@@ -154,6 +154,10 @@ class Game {
 
     this.setupGame();
     this.setupControls();
+    
+    // Initialize OptionsUI with game reference
+    this.ui.setGame(this);
+    
     this.start();
 
     // Third-person orbit parameters
@@ -564,7 +568,35 @@ class Game {
     this.combatSystem.shootLaser();
   }
 
+  // Pause/Resume functionality
+  pause() {
+    this.isPaused = true;
+    // Pause music
+    if (this.musicManager && this.musicManager.pauseTrack) {
+      this.musicManager.pauseTrack();
+    }
+    // Stop engine rumble
+    if (this.soundManager && this.soundManager.stopEngineRumble) {
+      this.soundManager.stopEngineRumble();
+    }
+  }
+
+  resume() {
+    this.isPaused = false;
+    // Resume music
+    if (this.musicManager && this.musicManager.resumeTrack) {
+      this.musicManager.resumeTrack();
+    }
+    // Restart engine rumble with current throttle
+    if (this.soundManager && this.spaceship) {
+      const currentThrottle = this.spaceship.getThrottle();
+      this.soundManager.updateEngineRumble(currentThrottle, false);
+    }
+  }
+
   update(deltaTime) {
+    // Skip update if paused
+    if (this.isPaused) return;
     // Update controls
     this.controls.update(deltaTime);
 
@@ -971,6 +1003,17 @@ class Game {
     }
   }
 
+  initiateStationTakeoff() {
+    // Only proceed if currently docked to a station
+    if (!this.spaceship.flags.isDocked || !this.spaceship.flags.stationDocked) return;
+    const station = this.spaceship.dockedStation;
+    if (!station) return;
+    // Use smooth takeoff sequence (keeps isDocked true until ascent completes)
+    if (this.spaceship.startStationTakeoff) {
+      this.spaceship.startStationTakeoff(station, this.gameEngine.scene);
+    }
+  }
+
   selectCommsOption(optionNumber) {
     if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
       return;
@@ -1013,7 +1056,12 @@ class Game {
           }
         }
         if (optionId === 'confirm_takeoff') {
-          this.initiatePlanetTakeoff();
+          // Determine if this is a planet or station takeoff
+          if (this.spaceship.flags.stationDocked) {
+            this.initiateStationTakeoff();
+          } else {
+            this.initiatePlanetTakeoff();
+          }
           // Clear docking context on takeoff start
           this.spaceship.flags.dockContext = null;
           this.spaceship.flags.docketPlanetId = null;
