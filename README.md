@@ -53,4 +53,9 @@ npm run build
 
 ### Credits
 
-Spaceship models by https://mehrasaur.itch.io/3d-spaceships-pack under CC0 license
+Spaceship models by https://mehrasaur.itch.io/3d-spaceships-pack
+Icons by https://www.fontawesome.com
+Peaberry fonts by https://emhuo.itch.io/peaberry-pixel-font
+monogram fonts by https://datagoblin.itch.io/monogram
+m5x7 font by https://managore.itch.io/m5x7
+nico pixel fonts pack by https://emhuo.itch.io/nico-pixel-fonts-pack
