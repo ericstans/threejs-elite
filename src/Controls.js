@@ -257,7 +257,7 @@ export class Controls {
         // Immediately kick engine rumble so it starts exactly with the music
         if (this.game.soundManager && this.game.spaceship) {
           const throttle = this.spaceship?.getThrottle ? this.spaceship.getThrottle() : 0;
-          // Provide one immediate update so layers fade in without waiting for next frame
+          // Provide one immediate update so engine starts without waiting for next frame
           this.game.soundManager.updateEngineRumble(throttle, false);
         }
       } catch (error) {

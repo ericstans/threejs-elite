@@ -688,7 +688,7 @@ class Game {
       this.gameEngine.camera.rotation.copy(spaceshipRot);
     }
 
-    // Update continuous engine rumble based on throttle & docking (station or planet)
+    // Update engine rumble based on throttle & docking (station or planet)
     // Stop engine sound completely when docked, restart when undocked
     let isActuallyDocked = false;
     if (this.spaceship.flags.isDocked) {

@@ -3,11 +3,11 @@ export class SoundManager {
     this.audioContext = null;
     this.sounds = {};
     this.masterVolume = 0.3; // Default volume level
-    // Engine rumble
+    // Engine rumble - 3-layer system with phase diversity
     this._engine = {
       started: false,
-      layers: [], // each: { source, gain, filter, buffer, phaseOffset }
-      lastThrottle: 0
+      layers: [], // each: { source, gain, filter, phaseOffset }
+      currentThrottle: 0
     };
     
     this.initAudioContext();
@@ -142,6 +142,7 @@ export class SoundManager {
   }
 
   // ================= Engine Rumble =================
+  // CORE METHOD: Creates the engine rumble audio buffer - KEEP FOR TESTING
   _createEngineBuffer(duration = 2.0) {
     const ctx = this.audioContext;
     const sampleRate = ctx.sampleRate;
@@ -165,83 +166,151 @@ export class SoundManager {
     return buffer;
   }
 
+  // 3-layer engine initialization with random phase offsets
   _ensureEngine() {
     if (!this.audioContext || this._engine.started) return;
+    
     const ctx = this.audioContext;
-    const layerCount = 3; // base + 2 out-of-phase
+    const layerCount = 3;
     const layers = [];
+    
+    // Create buffer once for all layers
+    const buffer = this._createEngineBuffer(4.0);
+    
     for (let i = 0; i < layerCount; i++) {
+      // Create audio nodes for each layer
       const gain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      // Slightly stagger cutoff per layer
-      filter.frequency.value = 140 + i * 20;
-      filter.Q.value = 0.7;
-      const buffer = this._createEngineBuffer(2.0);
       const source = ctx.createBufferSource();
+      
+      // Configure filter with slight variations per layer
+      filter.type = 'lowpass';
+      filter.frequency.value = 180 + i * 30; // 180, 210, 240 Hz
+      filter.Q.value = 0.4 + i * 0.1; // 0.4, 0.5, 0.6
+      
+      // Configure source
       source.buffer = buffer;
       source.loop = true;
-      // Base playback rate plus minuscule detune per layer
-      source.playbackRate.value = (0.9 + Math.random() * 0.06) * (1 + i * 0.01);
+      source.playbackRate.value = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
+      
+      // Random phase offset for each layer (0 to 4 seconds)
+      const phaseOffset = Math.random() * buffer.duration;
+      
+      // Connect audio graph
       source.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
-      gain.gain.value = 0; // start silent
-      // Start each layer with a time offset for phase diversity
-      const offset = (buffer.duration / layerCount) * i;
-      try { source.start(0, offset % buffer.duration); } catch(_) {}
-      layers.push({ source, gain, filter, buffer, phaseOffset: offset });
+      
+      // Start silent
+      gain.gain.value = 0;
+      
+      // Start the source with phase offset
+      try {
+        source.start(0, phaseOffset % buffer.duration);
+      } catch (error) {
+        console.warn(`Failed to start engine layer ${i}:`, error);
+      }
+      
+      layers.push({ source, gain, filter, phaseOffset });
     }
-    this._engine = { started: true, layers, lastThrottle: 0 };
+    
+    this._engine.layers = layers;
+    this._engine.started = true;
+    
+    // Debug: Log layer creation
+    console.log(`Engine initialized with ${layers.length} layers`);
   }
 
-  updateEngineRumble(throttle = 0, isDocked = false, speedRatio = null) {
+  // Simple real-time engine rumble update
+  updateEngineRumble(throttle = 0, isDocked = false) {
     if (!this.audioContext) return;
+    
+    // Ensure engine is initialized
     this._ensureEngine();
     if (!this._engine.started) return;
-    // If caller didn't supply speed ratio, approximate with throttle
-    if (speedRatio == null) speedRatio = throttle;
-    speedRatio = Math.max(0, Math.min(1, speedRatio));
-    const idle = 0.15;
-    const dockSuppress = isDocked ? 0.0 : 1.0;
-    const target = throttle > 0 ? (idle + throttle * 0.50) * dockSuppress : (isDocked ? 0 : idle * 0.4);
+    
+    // Clamp throttle to 0-1 range
+    throttle = Math.max(0, Math.min(1, throttle));
+    
+    // Skip if throttle hasn't changed significantly (avoid unnecessary updates)
+    if (Math.abs(throttle - this._engine.currentThrottle) < 0.01) return;
+    
     const now = this.audioContext.currentTime;
-    const baseRate = 0.9;
-    const maxExtra = 0.25;
+    
+    // Calculate target volume based on throttle with exponential curve
+    const idleVolume = 0.1; // Base idle volume
+    const maxVolume = 1;  // Maximum volume at full throttle
+    
+    // Exponential curve: rises quickly in first half, levels out in second half
+    // Using throttle^0.6 gives a curve that rises fast then levels off
+    const curvedThrottle = Math.pow(throttle, 0.6);
+    const targetVolume = isDocked ? 0 : (idleVolume + curvedThrottle * (maxVolume - idleVolume));
+    
+    // Update each layer with slight variations
     this._engine.layers.forEach((layer, i) => {
-      const g = layer.gain.gain;
-      g.cancelScheduledValues(now);
-      g.setValueAtTime(g.value, now);
-      // Slight per-layer scaling (middle slightly louder)
-      const layerScale = i === 1 ? 1.1 : 0.9;
-      g.linearRampToValueAtTime(target * this.masterVolume * layerScale / this._engine.layers.length, now + 0.15);
-      if (layer.source && layer.source.playbackRate) {
-        const rateParam = layer.source.playbackRate;
-        const detune = (i - 1) * 0.03; // -0.03, 0, +0.03 approx
-        const newRate = (baseRate + throttle * maxExtra) * (1 + detune * 0.1);
-        try {
-          rateParam.cancelScheduledValues(now);
-          rateParam.setValueAtTime(rateParam.value, now);
-          rateParam.linearRampToValueAtTime(newRate, now + 0.3);
-        } catch(_) {}
+      // All layers at 100% of target volume
+      const layerVolume = targetVolume;
+      
+      // Debug: Log layer volumes (remove this after testing)
+      if (throttle > 0.5) {
+        console.log(`Layer ${i}: throttle=${throttle.toFixed(2)}, targetVolume=${targetVolume.toFixed(2)}, layerVolume=${layerVolume.toFixed(2)}`);
       }
-      // Dynamic filter cutoff: base per-layer + growth with speed ratio
-      const baseCut = 140 + i * 20; // original base
-      const extra = 180; // max additional Hz when at full speed
-      const targetCut = baseCut + extra * speedRatio; // up to ~320-360 Hz
-      const f = layer.filter.frequency;
-      try {
-        f.cancelScheduledValues(now);
-        f.setValueAtTime(f.value, now);
-        f.linearRampToValueAtTime(targetCut, now + 0.5); // slower smoothing
-      } catch(_) {}
+      
+      // Update gain (volume) - smooth transition
+      layer.gain.gain.cancelScheduledValues(now);
+      layer.gain.gain.setValueAtTime(layer.gain.gain.value, now);
+      layer.gain.gain.linearRampToValueAtTime(
+        layerVolume * this.masterVolume, 
+        now + 0.1 // Quick but smooth transition
+      );
+      
+      // Update playback rate based on throttle (engine revs up)
+      const baseRate = 0.8;
+      const maxRate = 1.2;
+      const detune = (i - 1) * 0.05; // -0.05, 0, +0.05
+      const targetRate = (baseRate + throttle * (maxRate - baseRate)) * (1 + detune);
+      
+      layer.source.playbackRate.cancelScheduledValues(now);
+      layer.source.playbackRate.setValueAtTime(layer.source.playbackRate.value, now);
+      layer.source.playbackRate.linearRampToValueAtTime(targetRate, now + 0.2);
+      
+      // Update filter frequency based on throttle (more aggressive scaling)
+      const baseFreq = 120 + i * 15; // 120, 135, 150 Hz base (lower starting point)
+      const maxFreq = 800 + i * 100; // 800, 900, 1000 Hz max (much higher max)
+      const targetFreq = baseFreq + throttle * (maxFreq - baseFreq);
+      
+      layer.filter.frequency.cancelScheduledValues(now);
+      layer.filter.frequency.setValueAtTime(layer.filter.frequency.value, now);
+      layer.filter.frequency.linearRampToValueAtTime(targetFreq, now + 0.3);
     });
-    this._engine.lastThrottle = throttle;
+    
+    this._engine.currentThrottle = throttle;
   }
 
+  // 3-layer engine rumble stop method
   stopEngineRumble() {
     if (!this._engine.started) return;
-    this._engine.layers.forEach(l => { try { l.source.stop(); } catch(_) {} });
-    this._engine.started = false;
+    
+    // Fade out all layers smoothly
+    const now = this.audioContext.currentTime;
+    this._engine.layers.forEach(layer => {
+      layer.gain.gain.cancelScheduledValues(now);
+      layer.gain.gain.setValueAtTime(layer.gain.gain.value, now);
+      layer.gain.gain.linearRampToValueAtTime(0, now + 0.5);
+    });
+    
+    // Stop all sources after fade out
+    setTimeout(() => {
+      this._engine.layers.forEach(layer => {
+        try {
+          if (layer.source) {
+            layer.source.stop();
+          }
+        } catch (error) {
+          // Source might already be stopped
+        }
+      });
+      this._engine.started = false;
+    }, 500);
   }
 }
