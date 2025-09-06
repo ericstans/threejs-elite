@@ -397,6 +397,8 @@ class Game {
     this.sectorManager.currentSectorId = defaultSector.id;
     const def = getSectorDefinition(defaultSector.id);
     if (def) {
+      // Load conversations from sector definition
+      this.conversationSystem.loadConversationsFromSector(def);
       // Load explicit planets & station from definition once
       this.environmentSystem.clearPlanetsAndStations();
       const loadedPlanets = [];
@@ -824,6 +826,8 @@ class Game {
     // Hybrid logic: sector-1 = handcrafted only, sector-2 = handcrafted + procedural extras, others = fully procedural
     const def = getSectorDefinition(sectorId);
     if (def && sectorId === 'sector-1') {
+      // Load conversations from sector definition
+      this.conversationSystem.loadConversationsFromSector(def);
       this.environmentSystem.procedural = false;
       this.environmentSystem.clearPlanetsAndStations();
       const loadedPlanets = [];

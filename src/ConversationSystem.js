@@ -1,17 +1,35 @@
-import { aridusPrimeConversation } from './conversations/aridusPrime.js';
-import { oceanusConversation } from './conversations/oceanus.js';
 import { genericProceduralConversation } from './conversations/genericProcedural.js';
 
 export class ConversationSystem {
   constructor() {
-    this.conversations = {
-      'Aridus Prime': aridusPrimeConversation,
-      'Oceanus': oceanusConversation
-    };
+    this.conversations = {};
     
     // Station detection and docking hooks
     this._isStation = null;
     this._isStationDockable = null;
+  }
+
+  // Load conversations from sector definitions
+  loadConversationsFromSector(sectorDefinition) {
+    if (!sectorDefinition) return;
+    
+    // Load planet conversations
+    if (sectorDefinition.planets) {
+      for (const planet of sectorDefinition.planets) {
+        if (planet.conversation) {
+          this.conversations[planet.name] = planet.conversation;
+        }
+      }
+    }
+    
+    // Load station conversations
+    if (sectorDefinition.stations) {
+      for (const station of sectorDefinition.stations) {
+        if (station.conversation) {
+          this.conversations[station.name] = station.conversation;
+        }
+      }
+    }
   }
 
   getGreeting(planetName) {
