@@ -303,7 +303,11 @@ export class MusicManager {
   // Volume handling
   setVolume(v) {
     this.volume = clamp(v, 0, 1);
-    if (this._masterGain) this._masterGain.gain.value = this.volume;
+    if (this._masterGain) {
+      this._masterGain.gain.value = this.volume;
+    } else {
+      console.warn('MusicManager: _masterGain not initialized, cannot set volume');
+    }
   }
   getVolume() { return this.volume; }
   isTrackPlaying() { return this.isPlaying; }
@@ -417,16 +421,9 @@ export class MusicManager {
   }
 
   _attachInstrumentToEffects(inst) {
-    if (!inst || !this._effectsInput) return;
-    try {
-      if (typeof inst.connect === 'function') {
-        inst.connect(this._effectsInput); // soundfont-player API
-      } else if (inst.output && typeof inst.output.connect === 'function') {
-        inst.output.connect(this._effectsInput);
-      }
-    } catch (e) {
-      console.warn('MusicManager: failed to attach instrument to effects chain', e);
-    }
+    // Note: soundfont-player instruments don't have connect methods
+    // Individual note nodes are handled in the playback code
+    // This method is kept for compatibility but doesn't need to do anything
   }
 
   // Internal: cancel scheduled notes/timeouts
@@ -575,6 +572,10 @@ export class MusicManager {
             // Schedule directly at noteStart; provide duration so it auto stops without extra timers.
             const node = inst.play(note.midi, noteStart, { gain: velocityGain, duration: noteDuration });
             if (node && typeof node.stop === 'function') {
+              // CRITICAL FIX: Disconnect from destination and reconnect to effects chain
+              node.disconnect();
+              node.connect(this._effectsInput);
+              
               scheduledNodes.push(node);
               // Manually cut off note at note-off time (noteStart + noteDuration)
               const stopTime = noteStart + noteDuration;
