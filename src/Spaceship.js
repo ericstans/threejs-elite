@@ -329,7 +329,7 @@ export class Spaceship {
         const currentStationForward = landingDir.clone(); // Don't negate for takeoff
         
         // Move forward from station's current position by the eased distance
-        const forwardDistance = station.size * 3.0 * ease; // Distance increases with ease
+        const forwardDistance = station.size * 0.8 * ease; // Distance increases with ease
         const worldPos = currentStationPos.clone()
           .add(currentStationForward.clone().multiplyScalar(forwardDistance));
         
@@ -354,8 +354,8 @@ export class Spaceship {
       this.mesh.rotation.copy(this.rotation);
   this.syncThirdPerson();
       if (t >= 1) {
-        // Detach if still parented (planet or station takeoff)
-        if ((isPlanetTakeoff || isStationTakeoff) && this.mesh.parent === this.takeoffPlanet.mesh) {
+        // Detach if still parented (only for planet takeoff - station takeoff is already in world space)
+        if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
           const parent = this.takeoffPlanet.mesh.parent || this.takeoffSceneParent;
@@ -863,7 +863,7 @@ export class Spaceship {
     this.takeoffStartPos.copy(currentWorldPos);
     
     // Target position: straight forward through the mail slot, clear of the station
-    const forwardDistance = station.size * 3.0; // Move forward through the slot and clear
+    const forwardDistance = station.size * 0.8; // Move forward through the slot and clear
     const targetWorldPos = currentWorldPos.clone()
       .add(stationForward.clone().multiplyScalar(forwardDistance));
     
