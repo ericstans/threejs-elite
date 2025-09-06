@@ -213,6 +213,18 @@ export function createPlayerShip(registry, scene) {
           this.flags.stationDocked = true;
           this.flags.landingVectorLocked = false;
           this.flags.rotationLockAcquired = true;
+          
+          // Parent ship to station for proper takeoff animation
+          const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
+          const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
+          const parent = this.mesh.parent;
+          console.log('ECS Station docking - before parenting. Parent:', parent?.name || 'none');
+          if (parent) parent.remove(this.mesh);
+          station.mesh.add(this.mesh);
+          this.mesh.position.copy(station.mesh.worldToLocal(worldPos));
+          this.mesh.quaternion.copy(station.mesh.quaternion.clone().invert().multiply(worldQuat));
+          console.log('ECS Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
+          console.log('Ship local position after ECS parenting:', this.mesh.position);
         }
       }
       this.syncThirdPerson?.();

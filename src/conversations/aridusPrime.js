@@ -7,7 +7,6 @@ export const aridusPrimeConversation = {
         { id: 'mining', text: 'Tell me more about mining.' },
         { id: 'planet', text: 'Tell me more about Aridus Prime.' },
         { id: 'system', text: 'Tell me more about the Aridus system.' },
-        
         playerFlags.hasVisitedOceanus ? { id: 'oceanus_comparison', text: 'How does this compare to Oceanus?' } : null,
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
       ].filter(o => o)
