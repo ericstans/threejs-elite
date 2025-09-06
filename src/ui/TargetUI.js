@@ -108,7 +108,7 @@ export class TargetUI {
     // Show/hide commable indicator
     if (targetInfo.isCommable) {
       this.targetCommableIndicator.style.display = 'block';
-      this.targetCommableIndicator.textContent = '📡V';
+      this.targetCommableIndicator.innerHTML = '<i class="fas fa-rss" style="color: #00ff00;margin-right:0.5rem;"></i>V';
     } else {
       this.targetCommableIndicator.style.display = 'none';
     }

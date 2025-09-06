@@ -1,14 +1,15 @@
 {
   "scripts": {
-  "prebuild": "node scripts/fetch-soundfonts.js",
+    "prebuild": "node scripts/fetch-soundfonts.js",
     "start": "npx vite",
     "dev": "npx vite",
-  "build": "npx vite build",
+    "build": "npx vite build",
     "preview": "npx vite preview"
   },
   "dependencies": {
-  "soundfont-player": "0.7.0",
     "@tonejs/midi": "^2.0.28",
+    "fontawesome-free": "^1.0.4",
+    "soundfont-player": "0.7.0",
     "three": "^0.179.1"
   },
   "devDependencies": {

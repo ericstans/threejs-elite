@@ -109,7 +109,7 @@ export class NavTargetUI {
     // Show/hide commable indicator
     if (navTargetInfo.isCommable) {
       this.navCommableIndicator.style.display = 'block';
-      this.navCommableIndicator.textContent = '📡C';
+      this.navCommableIndicator.innerHTML = '<i class="fas fa-rss" style="color: #00ff00;margin-right:0.5rem;"></i>C';
     } else {
       this.navCommableIndicator.style.display = 'none';
     }
