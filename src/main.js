@@ -19,6 +19,7 @@ import { hashSeed } from './util/seedUtils.js';
 
 import { NPCShip } from './NPCShip.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { EngineParticles } from './EngineParticles.js';
 import { ConversationSystem } from './ConversationSystem.js';
 import { SpaceStation } from './SpaceStation.js';
 
@@ -26,6 +27,7 @@ class Game {
   constructor() {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
+    this.engineParticles = new EngineParticles(this.gameEngine.scene, this.spaceship);
   // Expose spaceship to engine for starfield & UI parallax logic
   this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
@@ -309,6 +311,10 @@ class Game {
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
       }
       this.spaceship.mesh.visible = false;
+      // Show engine particles in third person view
+      if (this.engineParticles) {
+        this.engineParticles.setActive(true);
+      }
       // Calibrate camera offset automatically from model size (or fallback defaults)
       this.calibrateThirdPersonCamera();
       // Switch UI to third-person layout
@@ -331,6 +337,10 @@ class Game {
     } else {
       // Return to cockpit
       this.spaceship.mesh.visible = false; // still hidden because cockpit view uses camera at ship pos
+      // Hide engine particles in first person view
+      if (this.engineParticles) {
+        this.engineParticles.setActive(false);
+      }
       // camera will be reset each frame in update
       this.ui.applyFirstPersonLayout && this.ui.applyFirstPersonLayout();
       // Hide third-person visual representation
@@ -605,6 +615,13 @@ class Game {
 
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
+    
+    // Update engine particles
+    if (this.engineParticles) {
+      const throttle = this.spaceship.getThrottle();
+      this.engineParticles.update(deltaTime, throttle);
+    }
+    
     // Update any extra updatables (like rotating stardust field)
     if (this._extraUpdatables) {
       for (const obj of this._extraUpdatables) {
@@ -617,7 +634,11 @@ class Game {
     if (this.spaceship.thirdPersonMode && this.thirdPersonOrbitActive) {
       this.thirdPersonOrbitIdleSeconds += deltaTime;
       if (this.thirdPersonOrbitIdleSeconds >= this.thirdPersonOrbitIdleThreshold) {
-        this.thirdPersonOrbitActive = false; // auto-exit back to follow
+        // Check if camera re-centering is disabled via debug UI
+        const cameraRecenterDisabled = this.engineParticles && this.engineParticles.isCameraRecenterDisabled();
+        if (!cameraRecenterDisabled) {
+          this.thirdPersonOrbitActive = false; // auto-exit back to follow
+        }
       }
     }
 

@@ -96,19 +96,18 @@ import { Midi } from '@tonejs/midi';
 import ambient1 from './assets/midi/ambient/ambient1.mid';
 import ambient2 from './assets/midi/ambient/ambient2.mid';
 import ambient3 from './assets/midi/ambient/ambient3.mid';
+import ambient3stretchy from './assets/midi/ambient/ambient3-stretchy.mid';
 import ambient4 from './assets/midi/ambient/ambient4.mid';
 import ambient5 from './assets/midi/ambient/ambient5.mid';
+import ambient6 from './assets/midi/ambient/ambient6.mid';
 
 
-const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient4, ambient5];
+const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient3stretchy, ambient4, ambient5, ambient6];
 
 // Utility: clamp
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
-// Mapping of General MIDI program numbers (0-127) -> soundfont instruments names expected by soundfont-player.
-// soundfont-player uses instrument names (e.g. 'acoustic_grand_piano'). We'll keep a small map; extend as needed.
-// Fallback will be 'acoustic_grand_piano'.
-// Complete General MIDI Level 1 instrument map (0-127) to soundfont-player names.
+// Mapping of General MIDI program numbers (0-127) -> soundfont instruments names expected by soundfont-player. 
 const GM_PROGRAM_MAP = {
   0: 'acoustic_grand_piano',
   1: 'bright_acoustic_piano',
