@@ -9,6 +9,8 @@ export class EngineParticles {
     this.particles = [];
     this.isActive = false;
     this.disableCameraRecenter = false; // Camera re-centering control
+    this.materialApproach = 'global'; // Material approach selection
+    this.spaceshipModel = null; // Reference to the loaded FBX model
     
     // Hardcoded engine positions (relative to ship center)
     // Adjust these values to position the engines correctly
@@ -181,6 +183,56 @@ export class EngineParticles {
     
     cameraDiv.appendChild(cameraCheckboxDiv);
     
+    // Material approach control
+    const materialDiv = document.createElement('div');
+    materialDiv.style.marginBottom = '15px';
+    materialDiv.innerHTML = '<div style="color: #00aaff; margin-bottom: 5px;">Material Approach:</div>';
+    this.debugPanel.appendChild(materialDiv);
+    
+    // Material approach dropdown
+    const materialSelectDiv = document.createElement('div');
+    materialSelectDiv.style.marginBottom = '5px';
+    materialSelectDiv.style.display = 'flex';
+    materialSelectDiv.style.alignItems = 'center';
+    
+    const materialLabel = document.createElement('span');
+    materialLabel.textContent = 'Method:';
+    materialLabel.style.width = '60px';
+    materialLabel.style.fontSize = '11px';
+    materialSelectDiv.appendChild(materialLabel);
+    
+    const materialSelect = document.createElement('select');
+    materialSelect.style.flex = '1';
+    materialSelect.style.margin = '0 5px';
+    materialSelect.style.padding = '2px';
+    materialSelect.style.background = '#000';
+    materialSelect.style.color = '#00ff00';
+    materialSelect.style.border = '1px solid #00ff00';
+    
+    const options = [
+      { value: 'global', text: 'Global (Same Material)' },
+      { value: 'array', text: 'Material Array (Random)' },
+      { value: 'geometry', text: 'Geometry-Based (Size)' },
+      { value: 'position', text: 'Position-Based (Z-axis)' }
+    ];
+    
+    options.forEach(option => {
+      const optionEl = document.createElement('option');
+      optionEl.value = option.value;
+      optionEl.textContent = option.text;
+      materialSelect.appendChild(optionEl);
+    });
+    
+    materialSelect.value = 'global';
+    materialSelect.onchange = (e) => {
+      this.materialApproach = e.target.value;
+      console.log('Material approach changed to:', this.materialApproach);
+      this.applyMaterialApproach();
+    };
+    materialSelectDiv.appendChild(materialSelect);
+    
+    materialDiv.appendChild(materialSelectDiv);
+    
     // Add to document
     document.body.appendChild(this.debugPanel);
   }
@@ -329,6 +381,73 @@ export class EngineParticles {
 
   isCameraRecenterDisabled() {
     return this.disableCameraRecenter;
+  }
+
+  setSpaceshipModel(model) {
+    this.spaceshipModel = model;
+    this.applyMaterialApproach();
+  }
+
+  applyMaterialApproach() {
+    if (!this.spaceshipModel) return;
+
+    this.spaceshipModel.traverse((child) => {
+      if (child.isMesh) {
+        switch (this.materialApproach) {
+          case 'global':
+            // Global material replacement - same material for all meshes
+            child.material = new THREE.MeshLambertMaterial({
+              color: 0x444444, // Gray hull
+              emissive: 0x111111
+            });
+            break;
+
+          case 'array':
+            // Material array approach - random materials
+            const materials = [
+              new THREE.MeshLambertMaterial({ color: 0xff0000, emissive: 0x220000 }), // Red
+              new THREE.MeshLambertMaterial({ color: 0x00ff00, emissive: 0x002200 }), // Green
+              new THREE.MeshLambertMaterial({ color: 0x0000ff, emissive: 0x000022 }), // Blue
+              new THREE.MeshLambertMaterial({ color: 0xffff00, emissive: 0x222200 }), // Yellow
+              new THREE.MeshLambertMaterial({ color: 0xff00ff, emissive: 0x220022 })  // Magenta
+            ];
+            child.material = materials[Math.floor(Math.random() * materials.length)];
+            break;
+
+          case 'geometry':
+            // Geometry-based selection - based on vertex count
+            const vertexCount = child.geometry.attributes.position.count;
+            if (vertexCount > 1000) {
+              child.material = new THREE.MeshLambertMaterial({ 
+                color: 0x444444, 
+                emissive: 0x111111 
+              }); // Hull (large parts)
+            } else {
+              child.material = new THREE.MeshLambertMaterial({ 
+                color: 0xff0000, 
+                emissive: 0x220000 
+              }); // Small parts (engines, details)
+            }
+            break;
+
+          case 'position':
+            // Position-based selection - based on Z position
+            const position = child.position;
+            if (position.z > 0) {
+              child.material = new THREE.MeshLambertMaterial({ 
+                color: 0xff0000, 
+                emissive: 0x220000 
+              }); // Front parts
+            } else {
+              child.material = new THREE.MeshLambertMaterial({ 
+                color: 0x444444, 
+                emissive: 0x111111 
+              }); // Back parts
+            }
+            break;
+        }
+      }
+    });
   }
 
   destroy() {

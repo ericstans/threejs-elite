@@ -8,6 +8,10 @@ export class ConversationSystem {
       'Aridus Prime': aridusPrimeConversation,
       'Oceanus': oceanusConversation
     };
+    
+    // Station detection and docking hooks
+    this._isStation = null;
+    this._isStationDockable = null;
   }
 
   getGreeting(planetName) {
@@ -95,17 +99,23 @@ export class ConversationSystem {
     }
   }
 
-  getInitialOptions(planetName, playerFlags = {}) {
-    const planet = this.conversations[planetName];
+  getInitialOptions(targetName, playerFlags = {}) {
+    // Check if it's a station first
+    if (this._isStation?.(targetName)) {
+      return this.getInitialStationOptions(targetName, playerFlags);
+    }
+    
+    // Otherwise treat as planet
+    const planet = this.conversations[targetName];
     // Dockable detection: we rely on external planet entity lookup via optional hook
-    const dockable = this._isPlanetDockable?.(planetName) !== false; // default true if unknown
+    const dockable = this._isPlanetDockable?.(targetName) !== false; // default true if unknown
     if (!planet || !planet.conversationTree) {
       return [];
     }
 
     // Base options with inline conditional logic
     const baseOptions = [
-      { id: 'information', text: `Tell me about ${planetName}.` },
+      { id: 'information', text: `Tell me about ${targetName}.` },
       dockable ? (
         playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
           (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
@@ -117,8 +127,55 @@ export class ConversationSystem {
     return baseOptions.filter(option => option !== null && option !== undefined);
   }
 
+  getInitialStationOptions(stationName, playerFlags = {}) {
+    // Check if station has custom conversation data
+    const station = this.conversations[stationName];
+    if (station && station.conversationTree) {
+      // Use custom station conversation if available
+      const dockable = this._isStationDockable?.(stationName) !== false; // default true if unknown
+      
+      const baseOptions = [
+        { id: 'information', text: `Tell me about ${stationName}.` },
+        dockable ? (
+          playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+            (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
+              playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
+        ) : { id: 'docking_unavailable', text: 'Docking unavailable' }
+      ];
+
+      return baseOptions.filter(option => option !== null && option !== undefined);
+    }
+
+    // Default station options if no custom conversation
+    const dockable = this._isStationDockable?.(stationName) !== false; // default true if unknown
+    
+    const baseOptions = [
+      { id: 'information', text: `Tell me about ${stationName}.` },
+      { id: 'services', text: 'What services are available?' },
+      dockable ? (
+        playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+          (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
+            playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
+      ) : { id: 'docking_unavailable', text: 'Docking unavailable' }
+    ];
+
+    return baseOptions.filter(option => option !== null && option !== undefined);
+  }
+
   addConversation(planetName, conversationData) {
     this.conversations[planetName] = conversationData;
+  }
+
+  addStationConversation(stationName, conversationData) {
+    this.conversations[stationName] = conversationData;
+  }
+
+  setStationDetectionHook(isStationFunction) {
+    this._isStation = isStationFunction;
+  }
+
+  setStationDockableHook(isStationDockableFunction) {
+    this._isStationDockable = isStationDockableFunction;
   }
 
   // Method to add new conversation branches dynamically

@@ -8,7 +8,8 @@ import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 
 export class UI {
-  constructor() {
+  constructor(conversationSystem = null) {
+    this.conversationSystem = conversationSystem;
     // Anchors and state will be initialized before building DOM
     this.firstPersonMode = true; // start in cockpit view
     this._parallaxEnabled = true;
@@ -650,9 +651,19 @@ export class UI {
     // Clear previous options
     this.commsOptions.innerHTML = '';
 
+    // Use provided options or fallback to ConversationSystem.getInitialOptions()
+    let finalOptions = options;
+    if (!finalOptions || finalOptions.length === 0) {
+      if (this.conversationSystem && this.conversationSystem.getInitialOptions) {
+        // Get player flags from the game if available
+        const playerFlags = this.game ? this.game.spaceship.getAllFlags() : {};
+        finalOptions = this.conversationSystem.getInitialOptions(planetName, playerFlags);
+      }
+    }
+
     // Add communication options
-    if (options && options.length > 0) {
-      options.forEach((option, index) => {
+    if (finalOptions && finalOptions.length > 0) {
+      finalOptions.forEach((option, index) => {
         const optionElement = document.createElement('div');
         optionElement.style.marginBottom = '10px';
         optionElement.style.padding = '8px';
@@ -687,66 +698,13 @@ export class UI {
         this.commsOptions.appendChild(optionElement);
       });
     } else {
-      // Default options if none provided
-      const option1 = document.createElement('div');
-      option1.style.marginBottom = '10px';
-      option1.style.padding = '8px';
-      option1.style.border = '1px solid #00ff00';
-      option1.style.cursor = 'pointer';
-      option1.style.transition = 'all 0.2s ease';
-      option1.innerHTML = '<span style="color: #ffff00;">1.</span> Information about ' + planetName;
-      option1.dataset.optionId = 'information';
-      option1.dataset.optionIndex = '1';
-
-      // Add hover effects
-      option1.addEventListener('mouseenter', () => {
-        option1.style.background = 'rgba(0, 255, 0, 0.1)';
-        option1.style.border = '1px solid #00ff00';
-      });
-
-      option1.addEventListener('mouseleave', () => {
-        option1.style.background = 'transparent';
-        option1.style.border = '1px solid #00ff00';
-      });
-
-      // Add click handler
-      option1.addEventListener('click', () => {
-        if (this.onCommsOptionClick) {
-          this.onCommsOptionClick(1);
-        }
-      });
-
-      this.commsOptions.appendChild(option1);
-
-      const option2 = document.createElement('div');
-      option2.style.marginBottom = '10px';
-      option2.style.padding = '8px';
-      option2.style.border = '1px solid #00ff00';
-      option2.style.cursor = 'pointer';
-      option2.style.transition = 'all 0.2s ease';
-      option2.innerHTML = '<span style="color: #ffff00;">2.</span> Request docking';
-      option2.dataset.optionId = 'docking';
-      option2.dataset.optionIndex = '2';
-
-      // Add hover effects
-      option2.addEventListener('mouseenter', () => {
-        option2.style.background = 'rgba(0, 255, 0, 0.1)';
-        option2.style.border = '1px solid #00ff00';
-      });
-
-      option2.addEventListener('mouseleave', () => {
-        option2.style.background = 'transparent';
-        option2.style.border = '1px solid #00ff00';
-      });
-
-      // Add click handler
-      option2.addEventListener('click', () => {
-        if (this.onCommsOptionClick) {
-          this.onCommsOptionClick(2);
-        }
-      });
-
-      this.commsOptions.appendChild(option2);
+      // No options available - show message
+      const noOptionsMessage = document.createElement('div');
+      noOptionsMessage.style.padding = '20px';
+      noOptionsMessage.style.textAlign = 'center';
+      noOptionsMessage.style.color = '#ff0000';
+      noOptionsMessage.textContent = 'No communication options available.';
+      this.commsOptions.appendChild(noOptionsMessage);
     }
 
     this.commsModal.style.display = 'block';

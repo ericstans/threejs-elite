@@ -31,12 +31,12 @@ class Game {
   // Expose spaceship to engine for starfield & UI parallax logic
   this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
-    this.ui = new UI();
-  // Expose UI to engine for per-frame parallax callback
-  this.gameEngine.ui = this.ui;
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
+    this.ui = new UI(this.conversationSystem);
+  // Expose UI to engine for per-frame parallax callback
+  this.gameEngine.ui = this.ui;
     // Provide dockable query hook for conversation system
     this.conversationSystem._isPlanetDockable = (planetName) => {
       const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
@@ -51,6 +51,26 @@ class Game {
       if (st && st.planet && st.planet.getName && st.planet.getName() === planetName) return st;
       return null;
     };
+    
+    // Station detection and docking hooks
+    this.conversationSystem.setStationDetectionHook((targetName) => {
+      // Check if it's a known station
+      return targetName === 'Oceanus Station' || 
+             (this.environmentSystem?.oceanusStation && 
+              this.environmentSystem.oceanusStation.getName && 
+              this.environmentSystem.oceanusStation.getName() === targetName);
+    });
+    
+    this.conversationSystem.setStationDockableHook((stationName) => {
+      // Check if station is dockable
+      if (stationName === 'Oceanus Station' || 
+          (this.environmentSystem?.oceanusStation && 
+           this.environmentSystem.oceanusStation.getName && 
+           this.environmentSystem.oceanusStation.getName() === stationName)) {
+        return this.environmentSystem?.oceanusStation?.dockable !== false;
+      }
+      return true; // default to dockable
+    });
     this.asteroids = [];
     // Sector persistence
     this.sectorManager = new SectorManager({
@@ -257,6 +277,11 @@ class Game {
         this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0, 0, 0);
         // Add group to scene and to spaceship
         this.spaceship.enableThirdPerson(object);
+        
+        // Pass the model to EngineParticles for material control
+        if (this.engineParticles) {
+          this.engineParticles.setSpaceshipModel(object);
+        }
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
         // Hide cockpit-only mesh when third person active
         this.spaceship.mesh.visible = false;
