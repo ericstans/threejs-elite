@@ -3,6 +3,8 @@ import * as THREE from 'three';
 export class NavTargetUI {
   constructor(container) {
     this.container = container;
+  // Low-res preview scale (internal resolution factor). 1 = full res. <1 = pixelated look.
+  this._lowResScale = 0.4; // try 40% internal resolution
     this.createNavTargetPanel();
     this.createNavTargetIndicator();
   this.createOffscreenArrow();
@@ -184,6 +186,9 @@ export class NavTargetUI {
     this.previewRenderer.domElement.style.width = '100%';
     this.previewRenderer.domElement.style.height = '100%';
     this.previewRenderer.domElement.style.opacity = '0.18';
+  // Force pixelated upscale for retro / low-res effect
+  this.previewRenderer.domElement.style.imageRendering = 'pixelated';
+  this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
     this.previewWrapper.appendChild(this.previewRenderer.domElement);
     // Light (subtle)
     const light = new THREE.AmbientLight(0xffffff, 0.6);
@@ -191,6 +196,62 @@ export class NavTargetUI {
     const dir = new THREE.DirectionalLight(0xffffff, 0.4);
     dir.position.set(3,4,5);
     this.previewScene.add(dir);
+    // Add dither overlay (option 4) for retro sensor screen look
+    this._ditherEnabled = true;
+    this._addDitherOverlay();
+  }
+
+  _addDitherOverlay() {
+    // Avoid duplicates
+    if (this._ditherLayer) return;
+    const layer = document.createElement('div');
+    layer.style.position = 'absolute';
+    layer.style.left = '0';
+    layer.style.top = '0';
+    layer.style.width = '100%';
+    layer.style.height = '100%';
+    layer.style.pointerEvents = 'none';
+    layer.style.zIndex = '1'; // still under text (panel children get zIndex 1 but positioned relative outside wrapper)
+    // Generate a tiny 4x4 Bayer-like pattern to simulate ordered dithering
+    const cvs = document.createElement('canvas');
+    cvs.width = 4; cvs.height = 4;
+    const ctx = cvs.getContext('2d');
+    // Two intensity levels (slightly tinted) arranged in a simple ordered matrix
+    const a = [
+      0, 128, 32, 160,
+      192, 64, 224, 96,
+      48, 176, 16, 144,
+      240, 112, 208, 80
+    ];
+    const img = ctx.createImageData(4,4);
+    for (let i=0;i<a.length;i++) {
+      const v = a[i];
+      // Fixed cockpit screen base color #141414 (20,20,20) with only alpha variation
+      const g = 0x14; // 20
+      img.data[i*4+0] = g;
+      img.data[i*4+1] = g;
+      img.data[i*4+2] = g;
+      img.data[i*4+3] = 18 + (v/16); // keep subtle ordered alpha variance
+    }
+    ctx.putImageData(img,0,0);
+    const url = cvs.toDataURL();
+    layer.style.backgroundImage = `url(${url})`;
+    layer.style.backgroundRepeat = 'repeat';
+    layer.style.mixBlendMode = 'screen'; // brighten lines slightly
+    layer.style.opacity = '0.45';
+    this.previewWrapper.appendChild(layer);
+    this._ditherLayer = layer;
+    this._syncDitherVisibility();
+  }
+
+  _syncDitherVisibility() {
+    if (!this._ditherLayer) return;
+    this._ditherLayer.style.display = this._ditherEnabled ? 'block' : 'none';
+  }
+
+  setDitherEnabled(flag) {
+    this._ditherEnabled = !!flag;
+    this._syncDitherVisibility();
   }
 
   _clearPreview() {
@@ -284,7 +345,8 @@ export class NavTargetUI {
       const w = this.navTargetPanel.clientWidth;
       const h = this.navTargetPanel.clientHeight;
       const size = Math.min(w, h);
-      this.previewRenderer.setSize(size, size, false);
+  const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
+  this.previewRenderer.setSize(size * scale, size * scale, false);
       this.previewCamera.aspect = 1;
       this.previewCamera.updateProjectionMatrix();
       this.previewRenderer.render(this.previewScene, this.previewCamera);

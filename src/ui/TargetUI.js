@@ -17,6 +17,7 @@ export class TargetUI {
   }
   constructor(container) {
     this.container = container;
+  this._lowResScale = 0.7; // match nav target low-res factor
     this.createTargetPanel();
     this.createTargetIndicator();
     this.createOffscreenArrow();
@@ -190,9 +191,64 @@ export class TargetUI {
     this.previewRenderer.domElement.style.width = '100%';
     this.previewRenderer.domElement.style.height = '100%';
     this.previewRenderer.domElement.style.opacity = '0.22';
+  this.previewRenderer.domElement.style.imageRendering = 'pixelated';
+  this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
     this.previewWrapper.appendChild(this.previewRenderer.domElement);
     const amb = new THREE.AmbientLight(0xffffff, 0.5);
     this.previewScene.add(amb);
+    // Add dither overlay (option 4)
+    this._ditherEnabled = true;
+    this._addDitherOverlay();
+  }
+
+  _addDitherOverlay() {
+    if (this._ditherLayer) return;
+    const layer = document.createElement('div');
+    layer.style.position = 'absolute';
+    layer.style.left = '0';
+    layer.style.top = '0';
+    layer.style.width = '100%';
+    layer.style.height = '100%';
+    layer.style.pointerEvents = 'none';
+    layer.style.zIndex = '1';
+    // Build 4x4 noise/dither pattern (slightly red-tinted for combat panel)
+    const cvs = document.createElement('canvas');
+    cvs.width = 4; cvs.height = 4;
+    const ctx = cvs.getContext('2d');
+    const a = [
+      0, 128, 32, 160,
+      192, 64, 224, 96,
+      48, 176, 16, 144,
+      240, 112, 208, 80
+    ];
+    const img = ctx.createImageData(4,4);
+    for (let i=0;i<a.length;i++) {
+      const v = a[i];
+      const g = 0x14; // #141414 base color
+      img.data[i*4+0] = g;
+      img.data[i*4+1] = g;
+      img.data[i*4+2] = g;
+      img.data[i*4+3] = 20 + (v/14); // retain ordered alpha modulation
+    }
+    ctx.putImageData(img,0,0);
+    const url = cvs.toDataURL();
+    layer.style.backgroundImage = `url(${url})`;
+    layer.style.backgroundRepeat = 'repeat';
+    layer.style.mixBlendMode = 'screen';
+    layer.style.opacity = '0.5';
+    this.previewWrapper.appendChild(layer);
+    this._ditherLayer = layer;
+    this._syncDitherVisibility();
+  }
+
+  _syncDitherVisibility() {
+    if (!this._ditherLayer) return;
+    this._ditherLayer.style.display = this._ditherEnabled ? 'block' : 'none';
+  }
+
+  setDitherEnabled(flag) {
+    this._ditherEnabled = !!flag;
+    this._syncDitherVisibility();
   }
 
   _clearPreview() {
@@ -293,7 +349,8 @@ export class TargetUI {
       const w = this.targetPanel.clientWidth;
       const h = this.targetPanel.clientHeight;
       const size = Math.min(w, h);
-      this.previewRenderer.setSize(size, size, false);
+  const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
+  this.previewRenderer.setSize(size * scale, size * scale, false);
       this.previewCamera.aspect = 1;
       this.previewCamera.updateProjectionMatrix();
       this.previewRenderer.render(this.previewScene, this.previewCamera);
