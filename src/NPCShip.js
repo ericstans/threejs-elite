@@ -2,6 +2,8 @@ import * as THREE from 'three';
 // Import FBXLoader from three/examples/jsm
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
+const DEBUG = false;
+
 export class NPCShip {
   constructor(position = new THREE.Vector3(0, 0, 0)) {
     this.mesh = new THREE.Group();
@@ -81,11 +83,11 @@ export class NPCShip {
         const worldBox = new THREE.Box3().setFromObject(this.mesh);
         const worldSize = new THREE.Vector3();
         worldBox.getSize(worldSize);
-        console.log('[NPCShip] Final bounding box size:', worldSize, 'at', this.mesh.position);
+        if (DEBUG) console.log('[NPCShip] Final bounding box size:', worldSize, 'at', this.mesh.position);
         // Log camera info if available
         if (this.scene && this.scene.userData && this.scene.userData.camera) {
           const cam = this.scene.userData.camera;
-          console.log('[NPCShip] Camera position:', cam.position, 'direction:', cam.getWorldDirection(new THREE.Vector3()));
+          if (DEBUG) console.log('[NPCShip] Camera position:', cam.position, 'direction:', cam.getWorldDirection(new THREE.Vector3()));
         }
       }, 100);
     },

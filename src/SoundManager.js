@@ -1,3 +1,5 @@
+const DEBUG = false;
+
 export class SoundManager {
   constructor() {
     this.audioContext = null;
@@ -218,7 +220,7 @@ export class SoundManager {
     this._engine.started = true;
     
     // Debug: Log layer creation
-    console.log(`Engine initialized with ${layers.length} layers`);
+    if (DEBUG) console.log(`Engine initialized with ${layers.length} layers`);
   }
 
   // Simple real-time engine rumble update
@@ -253,7 +255,7 @@ export class SoundManager {
       
       // Debug: Log layer volumes (remove this after testing)
       if (throttle > 0.5) {
-        console.log(`Layer ${i}: throttle=${throttle.toFixed(2)}, targetVolume=${targetVolume.toFixed(2)}, layerVolume=${layerVolume.toFixed(2)}`);
+        if (DEBUG) console.log(`Layer ${i}: throttle=${throttle.toFixed(2)}, targetVolume=${targetVolume.toFixed(2)}, layerVolume=${layerVolume.toFixed(2)}`);
       }
       
       // Update gain (volume) - smooth transition
