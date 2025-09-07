@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'PeaberryMono';
+    src: url('/fonts/peaberry/PeaberryMono.eot');
+    src: url('/fonts/peaberry/PeaberryMono.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/peaberry/PeaberryMono.woff2') format('woff2'),
+        url('/fonts/peaberry/PeaberryMono.woff') format('woff'),
+        url('/fonts/peaberry/PeaberryMono.ttf') format('truetype'),
+        url('/fonts/peaberry/PeaberryMono.svg#PeaberryMono') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}

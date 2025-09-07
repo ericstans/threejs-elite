@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import './assets/fonts/peaberry.css';
 import { GameEngine } from './GameEngine.js';
 import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
@@ -1181,6 +1182,13 @@ class Game {
 
 // Start the game
 const game = new Game();
+
+// Font loading verification
+document.fonts.ready.then(() => {
+  if (document.fonts.check('16px PeaberryMono')) {
+    console.log('PeaberryMono font loaded successfully');
+  }
+});
 
 // Test cargo UI (can be removed later)
 setTimeout(() => {

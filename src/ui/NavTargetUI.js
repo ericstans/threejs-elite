@@ -21,25 +21,34 @@ export class NavTargetUI {
     //this.navTargetPanel.style.border = '1px solid #00ff00';
     this.navTargetPanel.style.fontSize = '16px';
     this.navTargetPanel.style.lineHeight = '1.4';
+    this.navTargetPanel.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.style.display = 'none'; // Initially hidden
+    
+    // Force font application with !important
+    this.navTargetPanel.style.setProperty('font-family', 'PeaberryMono, monospace', 'important');
     this.container.appendChild(this.navTargetPanel);
 
     this.navTargetTitle = document.createElement('div');
     this.navTargetTitle.textContent = 'NAV TARGET';
     this.navTargetTitle.style.marginBottom = '5px';
     this.navTargetTitle.style.fontWeight = 'bold';
+    this.navTargetTitle.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetTitle);
 
     this.navTargetId = document.createElement('div');
+    this.navTargetId.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetId);
 
     this.navTargetName = document.createElement('div');
+    this.navTargetName.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetName);
 
     this.navTargetMass = document.createElement('div');
+    this.navTargetMass.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetMass);
 
     this.navTargetDistance = document.createElement('div');
+    this.navTargetDistance.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetDistance);
 
     // Nav target commable indicator
@@ -48,6 +57,7 @@ export class NavTargetUI {
     this.navCommableIndicator.style.left = '80%';
     this.navCommableIndicator.style.top = '10px';
     this.navCommableIndicator.style.fontSize = '16px';
+    this.navCommableIndicator.style.fontFamily = 'PeaberryMono, monospace';
     this.navCommableIndicator.style.display = 'none';
     this.navTargetPanel.appendChild(this.navCommableIndicator);
 

@@ -34,7 +34,11 @@ export class TargetUI {
     //this.targetPanel.style.border = '1px solid #00ff00';
     this.targetPanel.style.fontSize = '16px';
     this.targetPanel.style.lineHeight = '1.4';
+    this.targetPanel.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.style.display = 'none'; // Initially hidden
+    
+    // Force font application with !important
+    this.targetPanel.style.setProperty('font-family', 'PeaberryMono, monospace', 'important');
     
     this.container.appendChild(this.targetPanel);
 
@@ -42,18 +46,24 @@ export class TargetUI {
     this.targetTitle.textContent = 'TARGET';
     this.targetTitle.style.marginBottom = '5px';
     this.targetTitle.style.fontWeight = 'bold';
+    this.targetTitle.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetTitle);
+    
 
     this.targetId = document.createElement('div');
+    this.targetId.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetId);
 
     this.targetMass = document.createElement('div');
+    this.targetMass.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetMass);
 
     this.targetDistance = document.createElement('div');
+    this.targetDistance.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetDistance);
 
     this.targetHealth = document.createElement('div');
+    this.targetHealth.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetHealth);
 
     // Weapons information panel
@@ -78,6 +88,7 @@ export class TargetUI {
     // Weapon name
     this.weaponName = document.createElement('div');
     this.weaponName.style.fontWeight = 'bold';
+    this.weaponName.style.fontFamily = 'PeaberryMono, monospace';
     this.weaponStats.appendChild(this.weaponName);
 
     // Ammo count
@@ -85,6 +96,7 @@ export class TargetUI {
     this.weaponAmmo.style.display = 'flex';
     this.weaponAmmo.style.alignItems = 'center';
     this.weaponAmmo.style.gap = '4px';
+    this.weaponAmmo.style.fontFamily = 'PeaberryMono, monospace';
     this.weaponStats.appendChild(this.weaponAmmo);
 
     // Range
@@ -92,6 +104,7 @@ export class TargetUI {
     this.weaponRange.style.display = 'flex';
     this.weaponRange.style.alignItems = 'center';
     this.weaponRange.style.gap = '4px';
+    this.weaponRange.style.fontFamily = 'PeaberryMono, monospace';
     this.weaponStats.appendChild(this.weaponRange);
 
     // Target commable indicator
@@ -100,6 +113,7 @@ export class TargetUI {
     this.targetCommableIndicator.style.left = '80%';
     this.targetCommableIndicator.style.top = '10px';
     this.targetCommableIndicator.style.fontSize = '16px';
+    this.targetCommableIndicator.style.fontFamily = 'PeaberryMono, monospace';
     this.targetCommableIndicator.style.display = 'none';
     this.targetPanel.appendChild(this.targetCommableIndicator);
 
