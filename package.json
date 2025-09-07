@@ -4,7 +4,9 @@
     "start": "npx vite",
     "dev": "npx vite",
     "build": "npx vite build",
-    "preview": "npx vite preview"
+    "preview": "npx vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
@@ -13,6 +15,7 @@
     "three": "^0.179.1"
   },
   "devDependencies": {
+    "eslint": "^9.35.0",
     "vite": "^7.1.4"
   }
 }
