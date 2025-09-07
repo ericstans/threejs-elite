@@ -56,6 +56,44 @@ export class TargetUI {
     this.targetHealth = document.createElement('div');
     this.targetPanel.appendChild(this.targetHealth);
 
+    // Weapons information panel
+    this.weaponsPanel = document.createElement('div');
+    this.weaponsPanel.style.position = 'absolute';
+    this.weaponsPanel.style.bottom = '8px';
+    this.weaponsPanel.style.left = '15px';
+    this.weaponsPanel.style.right = '15px';
+    this.weaponsPanel.style.paddingTop = '8px';
+    //this.weaponsPanel.style.borderTop = '1px solid #00aa55';
+    this.weaponsPanel.style.fontSize = '14px';
+    this.targetPanel.appendChild(this.weaponsPanel);
+
+    // Weapon stats row (name, ammo, range all in one row)
+    this.weaponStats = document.createElement('div');
+    this.weaponStats.style.display = 'flex';
+    this.weaponStats.style.justifyContent = 'space-between';
+    this.weaponStats.style.alignItems = 'center';
+    this.weaponStats.style.fontSize = '12px';
+    this.weaponsPanel.appendChild(this.weaponStats);
+
+    // Weapon name
+    this.weaponName = document.createElement('div');
+    this.weaponName.style.fontWeight = 'bold';
+    this.weaponStats.appendChild(this.weaponName);
+
+    // Ammo count
+    this.weaponAmmo = document.createElement('div');
+    this.weaponAmmo.style.display = 'flex';
+    this.weaponAmmo.style.alignItems = 'center';
+    this.weaponAmmo.style.gap = '4px';
+    this.weaponStats.appendChild(this.weaponAmmo);
+
+    // Range
+    this.weaponRange = document.createElement('div');
+    this.weaponRange.style.display = 'flex';
+    this.weaponRange.style.alignItems = 'center';
+    this.weaponRange.style.gap = '4px';
+    this.weaponStats.appendChild(this.weaponRange);
+
     // Target commable indicator
     this.targetCommableIndicator = document.createElement('div');
     this.targetCommableIndicator.style.position = 'absolute';
@@ -105,10 +143,13 @@ export class TargetUI {
     this.targetDistance.textContent = `Distance: ${targetInfo.distance.toFixed(1)}`;
     this.targetHealth.textContent = `Health: ${targetInfo.health}/${targetInfo.maxHealth}`;
     
+    // Update weapons information
+    this.updateWeaponsInfo();
+    
     // Show/hide commable indicator
     if (targetInfo.isCommable) {
       this.targetCommableIndicator.style.display = 'block';
-      this.targetCommableIndicator.innerHTML = '<i class="fas fa-rss" style="color: #00ff00;margin-right:0.5rem;"></i>V';
+      this.targetCommableIndicator.innerHTML = '<i class="fas fa-satellite-dish" style="color: #00ff00;margin-right:0.5rem;"></i>V';
     } else {
       this.targetCommableIndicator.style.display = 'none';
     }
@@ -116,6 +157,23 @@ export class TargetUI {
     // Update target indicator position
   this.updateTargetIndicator(targetPosition, camera);
   if (targetInfo.__ref) this._updatePreview(targetInfo.__ref);
+  }
+
+  updateWeaponsInfo() {
+    // Set weapon name (LASER for now)
+    this.weaponName.textContent = 'LASER';
+    
+    // Set ammo count (infinity for laser)
+    this.weaponAmmo.innerHTML = '<i class="fas fa-infinity" style="color: #00ff00;"></i>';
+    
+    // Set weapon range (500u for laser)
+    this.weaponRange.innerHTML = '<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>500u';
+  }
+
+  // Method to test weapons panel display
+  testWeaponsPanel() {
+    this.weaponsPanel.style.display = 'block';
+    this.updateWeaponsInfo();
   }
 
   updateTargetIndicator(targetPosition, camera) {
