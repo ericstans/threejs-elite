@@ -198,8 +198,8 @@ export class TargetUI {
     // Set ammo count (infinity for laser)
     this.weaponAmmo.innerHTML = '<i class="fas fa-infinity" style="color: #00ff00;"></i>';
     
-    // Set weapon range (500u for laser)
-    this.weaponRange.innerHTML = '<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>500u';
+    // Set weapon range (300u for laser)
+    this.weaponRange.innerHTML = '<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>300u';
   }
 
   // Method to test weapons panel display
