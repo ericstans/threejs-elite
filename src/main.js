@@ -1180,4 +1180,11 @@ class Game {
 }
 
 // Start the game
-new Game();
+const game = new Game();
+
+// Test cargo UI (can be removed later)
+setTimeout(() => {
+  if (game.ui && game.ui.testCargoUI) {
+    game.ui.testCargoUI();
+  }
+}, 2000); // Wait 2 seconds for UI to fully load

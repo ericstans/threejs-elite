@@ -4,6 +4,7 @@ import { ControlsUI } from './ui/ControlsUI.js';
 import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
 import { OptionsUI } from './ui/OptionsUI.js';
+import { CargoUI } from './ui/CargoUI.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 
@@ -137,6 +138,7 @@ export class UI {
     this.targetUI = new TargetUI(this.uiContainer);
     this.navTargetUI = new NavTargetUI(this.uiContainer);
     this.optionsUI = new OptionsUI();
+    this.cargoUI = new CargoUI(this.uiContainer);
 
     // Setup escape key handlers for modals
     this.setupModalEventListeners();
@@ -880,6 +882,20 @@ export class UI {
     // Remove modal event listeners
     if (this.modalEscapeKeyHandler) {
       document.removeEventListener('keydown', this.modalEscapeKeyHandler);
+    }
+  }
+
+  // Test method to demonstrate cargo functionality
+  testCargoUI() {
+    if (this.cargoUI) {
+      // Add some sample cargo
+      this.cargoUI.addCargo(0, '📦', 'Food Supplies');
+      this.cargoUI.addCargo(1, '⚡', 'Energy Cells');
+      this.cargoUI.addCargo(2, '🔧', 'Spare Parts');
+      this.cargoUI.addCargo(5, '💎', 'Rare Minerals');
+      this.cargoUI.addCargo(6, '🧪', 'Research Data');
+      this.cargoUI.addCargo(10, '⛽', 'Fuel');
+      this.cargoUI.addCargo(14, '🎯', 'Weapon Components');
     }
   }
 }
