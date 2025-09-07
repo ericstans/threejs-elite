@@ -7,8 +7,8 @@ export class Resource {
     this.id = `resource_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.isAlive = () => true; // Resources don't get destroyed by lasers
     this.isCommable = false;
-    this.isNavTargetable = true;
-    this.isCombatTargetable = false; // Resources can't be targeted for combat
+    this.isNavTargetable = false; // Resources are not nav targetable
+    this.isCombatTargetable = true; // Resources can be targeted for combat
     
     // Resource properties
     this.mass = 0.1; // Lightweight

@@ -51,8 +51,8 @@ export class CargoUI {
       slot.style.display = 'flex';
       slot.style.alignItems = 'center';
       slot.style.justifyContent = 'center';
-      slot.style.fontSize = '16px';
-      slot.style.minHeight = '26px';
+      slot.style.fontSize = '24px';
+      slot.style.minHeight = '32px';
       slot.style.position = 'relative';
       slot.style.cursor = 'pointer';
       slot.style.transition = 'all 0.2s ease';
@@ -89,6 +89,31 @@ export class CargoUI {
       slot.style.background = 'rgba(0, 255, 0, 0.1)';
       slot.style.borderColor = '#00ff00';
     }
+  }
+
+  // Method to add cargo with specific color
+  addCargoWithColor(slotIndex, cargoIcon, cargoName = '', color = '#00ff00') {
+    if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
+      const slot = this.cargoGrid[slotIndex];
+      slot.textContent = cargoIcon;
+      slot.style.color = color;
+      slot.title = cargoName; // Tooltip
+      
+      // Add a small indicator for occupied slots with resource color
+      const colorRgb = this.hexToRgb(color);
+      slot.style.background = `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.1)`;
+      slot.style.borderColor = color;
+    }
+  }
+
+  // Helper method to convert hex color to RGB
+  hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 255, b: 0 };
   }
 
   // Method to remove cargo from a slot

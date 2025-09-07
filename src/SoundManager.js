@@ -117,6 +117,29 @@ export class SoundManager {
     oscillator.stop(this.audioContext.currentTime + 0.15);
   }
 
+  generateResourceCollectedSound() {
+    if (!this.audioContext) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    // Resource collection sound: pleasant ascending tone
+    oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(800, this.audioContext.currentTime + 0.1);
+    oscillator.frequency.exponentialRampToValueAtTime(1000, this.audioContext.currentTime + 0.2);
+    
+    // Volume envelope - gentle collection sound
+    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(this.masterVolume * 0.15, this.audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.25);
+    
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + 0.25);
+  }
+
   // Play sound methods
   playLaserSound() {
     this.generateLaserSound();
@@ -132,6 +155,10 @@ export class SoundManager {
 
   playTargetSelectedSound() {
     this.generateTargetSelectedSound();
+  }
+
+  playResourceCollectedSound() {
+    this.generateResourceCollectedSound();
   }
 
   // Volume control

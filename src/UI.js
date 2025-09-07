@@ -891,17 +891,4 @@ export class UI {
     }
   }
 
-  // Test method to demonstrate cargo functionality
-  testCargoUI() {
-    if (this.cargoUI) {
-      // Add some sample cargo
-      this.cargoUI.addCargo(0, '📦', 'Food Supplies');
-      this.cargoUI.addCargo(1, '⚡', 'Energy Cells');
-      this.cargoUI.addCargo(2, '🔧', 'Spare Parts');
-      this.cargoUI.addCargo(5, '💎', 'Rare Minerals');
-      this.cargoUI.addCargo(6, '🧪', 'Research Data');
-      this.cargoUI.addCargo(10, '⛽', 'Fuel');
-      this.cargoUI.addCargo(14, '🎯', 'Weapon Components');
-    }
-  }
 }

@@ -14,6 +14,7 @@ import { EnvironmentSystem } from './systems/EnvironmentSystem.js';
 import { SoundManager } from './SoundManager.js';
 import { MusicManager } from './MusicManager.js';
 import { SectorManager } from './systems/SectorManager.js';
+import { CargoSystem } from './systems/CargoSystem.js';
 import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
 import { getSectorDefinition } from './systems/serialization/sectorDefinitions.js';
 import { hashSeed } from './util/seedUtils.js';
@@ -395,6 +396,17 @@ class Game {
     });
     // Aridus sector uses predefined planets; procedural sectors will regenerate on switch
     this.environmentSystem.init();
+    
+    // Cargo system initialization
+    this.cargoSystem = new CargoSystem({
+      getSpaceship: () => this.spaceship,
+      getResources: () => this.gameEngine.getResources(),
+      gameEngine: this.gameEngine,
+      cargoUI: this.ui.cargoUI,
+      soundManager: this.soundManager,
+      targetingSystem: this.targetingSystem
+    });
+    
     const defaultSector = this.availableSectors[0];
     this.sectorManager.currentSectorId = defaultSector.id;
     const def = getSectorDefinition(defaultSector.id);
@@ -691,6 +703,9 @@ class Game {
 
     // Combat system update (lasers, explosions, collisions)
     this.combatSystem.update(deltaTime);
+
+    // Cargo system update (resource collection and magnetism)
+    this.cargoSystem.update(deltaTime);
 
     // Persist asteroid field diff every frame (cheap to store small object)
     if (this.environmentSystem) {
@@ -1199,9 +1214,3 @@ document.fonts.ready.then(() => {
   }
 });
 
-// Test cargo UI (can be removed later)
-setTimeout(() => {
-  if (game.ui && game.ui.testCargoUI) {
-    game.ui.testCargoUI();
-  }
-}, 2000); // Wait 2 seconds for UI to fully load
