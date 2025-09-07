@@ -18,7 +18,8 @@ export class TargetingSystem {
     getAsteroids,
     getNPCShip,
     getPlanets,
-    getStation
+    getStation,
+    getResources
   }) {
     this.camera = camera;
     this.ui = ui;
@@ -28,6 +29,7 @@ export class TargetingSystem {
     this.getNPCShip = getNPCShip;
     this.getPlanets = getPlanets;
     this.getStation = getStation;
+    this.getResources = getResources;
 
     this.currentTarget = null;      // combat target (asteroid / npc ship)
     this.currentNavTarget = null;   // nav target (planet / station)
@@ -46,6 +48,10 @@ export class TargetingSystem {
     const crosshairCenter = new THREE.Vector2(0, 0);
 
     const targetables = [...(this.getAsteroids?.() || [])];
+    // Add resources to combat targeting
+    if (this.getResources) {
+      targetables.push(...(this.getResources() || []));
+    }
     const npc = this.getNPCShip?.();
     if (npc && npc.loaded && npc.mesh) {
       let meshCenter = null;

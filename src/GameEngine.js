@@ -227,6 +227,10 @@ export class GameEngine {
     });
   }
 
+  getResources() {
+    return this.entities.filter(entity => entity.getType && entity.getType() === 'resource');
+  }
+
   render() {
     this.renderer.render(this.scene, this.camera);
   }

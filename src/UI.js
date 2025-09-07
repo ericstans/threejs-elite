@@ -528,7 +528,13 @@ export class UI {
         this.radarBlipLayer.appendChild(blip);
         this._radarBlips.set(key, blip);
       }
-      const baseColor = t.isNavTargetable ? '#ffff00' : '#ff0000';
+      // Determine color based on entity type
+      let baseColor;
+      if (t.getType && t.getType() === 'resource') {
+        baseColor = '#808080'; // Grey for resources
+      } else {
+        baseColor = t.isNavTargetable ? '#ffff00' : '#ff0000';
+      }
       const highlighted = !!t._radarHighlight;
       if (highlighted) {
         blip.style.width = '8px';

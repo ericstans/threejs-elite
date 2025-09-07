@@ -118,7 +118,8 @@ class Game {
       getAsteroids: () => this.asteroids,
       getNPCShip: () => this.npcShip,
       getPlanets: () => this.planets,
-      getStation: () => this.oceanusStation
+      getStation: () => this.oceanusStation,
+      getResources: () => this.gameEngine.getResources()
     });
 
     this.navigationSystem = new NavigationSystem({
@@ -725,14 +726,22 @@ class Game {
   }
   if (this.npcShip && this.npcShip.isAlive && this.npcShip.isAlive()) targets.push(this.npcShip);
   if (this.asteroids) targets.push(...this.asteroids);
+  if (this.gameEngine) targets.push(...this.gameEngine.getResources());
       // Flag nav-targetable vs combat-targetable (approx)
       const curCombat = this.targetingSystem.getCurrentCombatTarget?.();
       const curNav = this.targetingSystem.getCurrentNavTarget?.();
       const curCombatId = curCombat?.getId ? curCombat.getId() : null;
       const curNavId = curNav?.getId ? curNav.getId() : null;
       for (const t of targets) {
-        // NPC ship lacks getName; keep red unless we want a distinct color later
-        t.isNavTargetable = !!t.getName; // planets & station remain yellow
+        // Set targeting properties based on entity type
+        if (t.getType && t.getType() === 'resource') {
+          // Resources are combat-targetable but not nav-targetable
+          t.isNavTargetable = false;
+          t.isCombatTargetable = true;
+        } else {
+          // NPC ship lacks getName; keep red unless we want a distinct color later
+          t.isNavTargetable = !!t.getName; // planets & station remain yellow
+        }
         const tId = t.getId ? t.getId() : null;
         const combatMatch = (t === curCombat) || (tId && curCombatId && tId === curCombatId);
         const navMatch = (t === curNav) || (tId && curNavId && tId === curNavId);
