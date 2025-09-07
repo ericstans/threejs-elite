@@ -35,10 +35,6 @@ export class NavTargetUI {
     this.navTargetTitle.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetTitle);
 
-    this.navTargetId = document.createElement('div');
-    this.navTargetId.style.fontFamily = 'PeaberryMono, monospace';
-    this.navTargetPanel.appendChild(this.navTargetId);
-
     this.navTargetName = document.createElement('div');
     this.navTargetName.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetName);
@@ -111,8 +107,7 @@ export class NavTargetUI {
 
   updateNavTargetInfo(navTargetInfo, targetPosition, camera) {
     this.navTargetPanel.style.display = 'block';
-    this.navTargetId.textContent = `ID: ${navTargetInfo.id}`;
-    this.navTargetName.textContent = `Name: ${navTargetInfo.name}`;
+    this.navTargetName.textContent = navTargetInfo.name;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
     this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
     

@@ -50,9 +50,9 @@ export class TargetUI {
     this.targetPanel.appendChild(this.targetTitle);
     
 
-    this.targetId = document.createElement('div');
-    this.targetId.style.fontFamily = 'PeaberryMono, monospace';
-    this.targetPanel.appendChild(this.targetId);
+    this.targetName = document.createElement('div');
+    this.targetName.style.fontFamily = 'PeaberryMono, monospace';
+    this.targetPanel.appendChild(this.targetName);
 
     this.targetMass = document.createElement('div');
     this.targetMass.style.fontFamily = 'PeaberryMono, monospace';
@@ -152,7 +152,25 @@ export class TargetUI {
 
   updateTargetInfo(targetInfo, targetPosition, camera) {
     this.targetPanel.style.display = 'block';
-    this.targetId.textContent = `ID: ${targetInfo.id}`;
+    
+    // Set name based on target type
+    let displayName;
+    if (targetInfo.__ref && targetInfo.__ref.getType) {
+      const type = targetInfo.__ref.getType();
+      if (type === 'resource') {
+        displayName = targetInfo.__ref.elementType.name;
+      } else if (type === 'asteroid') {
+        displayName = 'Asteroid';
+      } else if (type === 'npcship') {
+        displayName = 'NPC Ship';
+      } else {
+        displayName = targetInfo.name || targetInfo.id;
+      }
+    } else {
+      displayName = targetInfo.name || targetInfo.id;
+    }
+    this.targetName.textContent = displayName;
+    
     this.targetMass.textContent = `Mass: ${targetInfo.mass.toFixed(1)}`;
     this.targetDistance.textContent = `Distance: ${targetInfo.distance.toFixed(1)}`;
     this.targetHealth.textContent = `Health: ${targetInfo.health}/${targetInfo.maxHealth}`;
