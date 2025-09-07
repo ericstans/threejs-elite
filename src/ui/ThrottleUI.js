@@ -80,6 +80,6 @@ export class ThrottleUI {
     // Update speed bar (yellow, behind throttle) - shows actual speed
     this.speedFill.style.height = `${actualPct}%`;
     // Update speed display above throttle container (units/min)
-    this.speedDisplay.textContent = `${(currentSpeed * 60).toFixed(1)}/min`;
+    this.speedDisplay.textContent = `${(currentSpeed * 60).toFixed(1)}upm`;
   }
 }
