@@ -989,6 +989,7 @@ class Game {
       const initialOptions = this.conversationSystem.getInitialOptions ? this.conversationSystem.getInitialOptions(targetName, playerFlags) : [{ id: 'end', text: 'End Transmission' }];
       this.ui.showCommsModal(targetName, greeting, initialOptions);
       this.currentConversationNode = 'initial';
+      this.commsModalType = 'combat'; // Track that this is a combat target comms modal
     }
   }
 
@@ -1008,12 +1009,14 @@ class Game {
       const initialOptions = this.conversationSystem.getInitialOptions(planetName, playerFlags);
       this.ui.showCommsModal(planetName, greeting, initialOptions);
       this.currentConversationNode = 'initial';
+      this.commsModalType = 'nav'; // Track that this is a nav target comms modal
     }
   }
 
   closeComms() {
     this.ui.hideCommsModal();
     this.currentConversationNode = null;
+    this.commsModalType = null;
 
     // Clear comm target in docking range flag
     this.spaceship.setFlag('commTargetInDockingRange', null);
@@ -1118,11 +1121,26 @@ class Game {
   }
 
   selectCommsOption(optionNumber) {
-    if (!this.ui.isCommsModalVisible() || !this.currentNavTarget) {
+    if (!this.ui.isCommsModalVisible()) {
       return;
     }
 
-    const planetName = this.currentNavTarget.getName();
+    // Determine if we're talking to a nav target or combat target based on modal type
+    let currentTarget;
+    if (this.commsModalType === 'combat') {
+      currentTarget = this.currentTarget;
+    } else if (this.commsModalType === 'nav') {
+      currentTarget = this.currentNavTarget;
+    } else {
+      // Fallback to old logic if modal type is not set
+      currentTarget = this.currentNavTarget || this.currentTarget;
+    }
+    
+    if (!currentTarget) {
+      return;
+    }
+
+    const planetName = currentTarget.getName();
     const options = [];
     let nodeId = this.currentConversationNode;
 
@@ -1144,18 +1162,20 @@ class Game {
           }
         }
         if (optionId === 'confirm_dock') {
-          // Determine if docking target is a planet (no station landing vector API)
+          // Only allow docking with nav targets
           const target = this.currentNavTarget;
-          if (target && !target.getLandingVectorStartWorld) {
-            // Planet docking context
-            this.spaceship.flags.dockContext = 'planet';
-            this.spaceship.flags.docketPlanetId = target.id || (target.getId && target.getId()) || null;
-            this.spaceship.flags.dockedStationId = null;
-          } else if (target && target.getLandingVectorStartWorld) {
-            // Station docking context begins authorization stage
-            this.spaceship.flags.dockContext = 'station';
-            this.spaceship.flags.docketPlanetId = null;
-            this.spaceship.flags.dockedStationId = target.id || (target.getId && target.getId()) || null;
+          if (target) {
+            if (!target.getLandingVectorStartWorld) {
+              // Planet docking context
+              this.spaceship.flags.dockContext = 'planet';
+              this.spaceship.flags.docketPlanetId = target.id || (target.getId && target.getId()) || null;
+              this.spaceship.flags.dockedStationId = null;
+            } else if (target.getLandingVectorStartWorld) {
+              // Station docking context begins authorization stage
+              this.spaceship.flags.dockContext = 'station';
+              this.spaceship.flags.docketPlanetId = null;
+              this.spaceship.flags.dockedStationId = target.id || (target.getId && target.getId()) || null;
+            }
           }
         }
         if (optionId === 'confirm_takeoff') {

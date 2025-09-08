@@ -5,9 +5,11 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 const DEBUG = false;
 
 export class NPCShip {
-  constructor(position = new THREE.Vector3(0, 0, 0)) {
+  constructor(position = new THREE.Vector3(0, 0, 0), name = 'Derelict Cruiser', conversation = null) {
     this.mesh = new THREE.Group();
     this.position = position.clone();
+    this.name = name;
+    this.conversation = conversation;
     this.loaded = false;
     this.health = 10;
     this.maxHealth = 10;
@@ -41,9 +43,32 @@ export class NPCShip {
   // Provide stable id for targeting / radar systems
   getId() { return 'npcship'; }
 
+  // Navigation targeting methods (similar to Planet)
+  getName() {
+    return this.name;
+  }
+
+  getMass() {
+    return this.size * this.size * this.size * 100; // Approximate mass based on size
+  }
+
+  setNavTargeted(targeted) {
+    this.isNavTargeted = targeted;
+  }
+
+  isNavTarget() {
+    return this.isNavTargeted || false;
+  }
+
+  isCommable() {
+    return this.conversation !== null;
+  }
+
   serializeState() {
     return {
       position: { x: this.position.x, y: this.position.y, z: this.position.z },
+      name: this.name,
+      conversation: this.conversation,
       health: this.health,
       maxHealth: this.maxHealth,
       destroyed: this.destroyed,

@@ -87,11 +87,11 @@ export class TargetingSystem {
             isAlive: () => npc.isAlive(),
             setTargeted: (v) => { npc.mesh.userData.targeted = v; },
             getId: () => `npcship-${i}`,
-            getName: () => 'Derelict Cruiser',
-            getMass: () => 1000,
+            getName: () => npc.getName(),
+            getMass: () => npc.getMass(),
             getHealth: () => npc.getHealth(),
             getMaxHealth: () => npc.getMaxHealth(),
-            isCommable: true,
+            isCommable: () => npc.isCommable(),
             getType: () => 'npcship',
             previewSource: npc.mesh // supply full mesh hierarchy for preview underlay
           });
@@ -317,11 +317,11 @@ export class TargetingSystem {
             isAlive: () => npc.isAlive(),
             setTargeted: (v) => { npc.mesh.userData.targeted = v; },
             getId: () => `npcship-${i}`,
-            getName: () => 'Derelict Cruiser',
-            getMass: () => 1000,
+            getName: () => npc.getName(),
+            getMass: () => npc.getMass(),
             getHealth: () => npc.getHealth(),
             getMaxHealth: () => npc.getMaxHealth(),
-            isCommable: true,
+            isCommable: () => npc.isCommable(),
             getType: () => 'npcship',
             previewSource: npc.mesh
           });

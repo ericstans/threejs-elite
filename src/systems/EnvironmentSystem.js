@@ -137,7 +137,7 @@ export class EnvironmentSystem {
     
     for (const npcDef of npcShipDefinitions) {
       const position = new THREE.Vector3(npcDef.position.x, npcDef.position.y, npcDef.position.z);
-      const npcShip = new NPCShip(position);
+      const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
       
       // Set patrol waypoints if provided
       if (npcDef.patrolWaypoints && npcDef.patrolWaypoints.length > 0) {

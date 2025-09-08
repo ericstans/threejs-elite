@@ -1,4 +1,5 @@
-import { genericProceduralConversation } from './conversations/genericProcedural.js';
+import { genericProceduralConversation } from './conversations/planets/genericProcedural.js';
+import { genericProceduralShipConversation } from './conversations/ships/genericProceduralShip.js';
 
 export class ConversationSystem {
   constructor() {
@@ -30,21 +31,45 @@ export class ConversationSystem {
         }
       }
     }
+
+    // Load NPC ship conversations
+    if (sectorDefinition.npcShips) {
+      for (const ship of sectorDefinition.npcShips) {
+        if (ship.conversation) {
+          this.conversations[ship.name] = ship.conversation;
+        }
+      }
+    }
   }
 
   getGreeting(planetName) {
     const planet = this.conversations[planetName];
-    if (planet) return planet.greeting;
-    // Fallback to generic procedural template
+    if (planet) {
+      return planet.greeting;
+    }
+    
+    // Check if this might be an NPC ship by looking for common ship names
+    // or by checking if we have a ship conversation available
+    if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
+      return genericProceduralShipConversation.greeting;
+    }
+    
+    // Fallback to generic procedural planet template
     return genericProceduralConversation.greeting;
   }
 
   getConversationNode(planetName, nodeId, playerFlags = {}) {
     let planet = this.conversations[planetName];
     if (!planet) {
-      // Attach generic on-demand so subsequent lookups see it
-      this.conversations[planetName] = genericProceduralConversation;
-      planet = genericProceduralConversation;
+      // Check if this is an NPC ship and use ship conversation
+      if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
+        this.conversations[planetName] = genericProceduralShipConversation;
+        planet = genericProceduralShipConversation;
+      } else {
+        // Attach generic on-demand so subsequent lookups see it
+        this.conversations[planetName] = genericProceduralConversation;
+        planet = genericProceduralConversation;
+      }
     }
     if (!planet.conversationTree) return null;
 
@@ -52,6 +77,52 @@ export class ConversationSystem {
     if (!node) {
       return null;
     }
+
+    // Check if this is a ship conversation and handle differently
+    if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
+      // For ship conversations, create ship attributes
+      const shipAttributes = { name: planetName };
+      const context = {
+        playerFlags,
+        ship: shipAttributes
+      };
+
+      if (node.options) {
+        // Handle ship conversation options
+        let rawOptions = node.options;
+        if (typeof rawOptions === 'function') {
+          try {
+            rawOptions = rawOptions(playerFlags, shipAttributes) || [];
+          } catch (e) {
+            console.warn('ConversationSystem: ship option function threw', e);
+            rawOptions = [];
+          }
+        }
+        if (!Array.isArray(rawOptions)) {
+          console.warn('ConversationSystem: ship node.options is not an array after evaluation', nodeId, rawOptions);
+          rawOptions = [];
+        }
+        const processedOptions = rawOptions
+          .map(option => {
+            if (typeof option === 'function') {
+              try { return option(playerFlags, shipAttributes); } catch (e) { console.warn('ConversationSystem: ship inline option fn error', e); return null; }
+            }
+            return option;
+          })
+          .filter(option => option !== null && option !== undefined);
+
+        return {
+          ...node,
+          response: typeof node.response === 'function' ? this._safeEvalShipResponse(node.response, context) : node.response,
+          options: processedOptions
+        };
+      }
+      return {
+        ...node,
+        response: typeof node.response === 'function' ? this._safeEvalShipResponse(node.response, context) : node.response
+      };
+    }
+
     // Resolve planet entity (if hook provided) to expose attributes
     const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
     const stationEntity = this._getStationForPlanet ? this._getStationForPlanet(planetName) : null;
@@ -117,10 +188,30 @@ export class ConversationSystem {
     }
   }
 
+  _safeEvalShipResponse(fn, context) {
+    try {
+      return fn(context.playerFlags, context.ship);
+    } catch (e) {
+      if (DEBUG) console.warn('ConversationSystem: ship response function error', e);
+      return '...signal distortion...';
+    }
+  }
+
   getInitialOptions(targetName, playerFlags = {}) {
     // Check if it's a station first
     if (this._isStation?.(targetName)) {
       return this.getInitialStationOptions(targetName, playerFlags);
+    }
+
+    // Check if it's an NPC ship
+    if (targetName === 'Derelict Cruiser' || this._isNPCShip?.(targetName)) {
+      const ship = this.conversations[targetName] || genericProceduralShipConversation;
+      if (ship && ship.conversationTree && ship.conversationTree.initial) {
+        const node = ship.conversationTree.initial;
+        const options = typeof node.options === 'function' ? node.options(playerFlags, { name: targetName }) : node.options;
+        return options || [];
+      }
+      return [];
     }
 
     // Otherwise treat as planet

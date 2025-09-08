@@ -22,7 +22,11 @@ export function registerDefaultSerializers(sectorManager) {
     save(obj) { return { ...obj.serializeState() }; },
     load(state) {
       const pos = state.position;
-      const npc = new NPCShip(new THREE.Vector3(pos.x, pos.y, pos.z));
+      const npc = new NPCShip(
+        new THREE.Vector3(pos.x, pos.y, pos.z),
+        state.name || 'Derelict Cruiser',
+        state.conversation || null
+      );
       npc.health = state.health;
       npc.maxHealth = state.maxHealth;
       npc.destroyed = state.destroyed;
