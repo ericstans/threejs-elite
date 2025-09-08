@@ -20,7 +20,7 @@ export class SoundManager {
       // Create audio context
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
-      console.warn('Web Audio API not supported:', error);
+      if (DEBUG) console.warn('Web Audio API not supported:', error);
     }
   }
 
@@ -237,7 +237,7 @@ export class SoundManager {
       try {
         source.start(0, phaseOffset % buffer.duration);
       } catch (error) {
-        console.warn(`Failed to start engine layer ${i}:`, error);
+        if (DEBUG) console.warn(`Failed to start engine layer ${i}:`, error);
       }
 
       layers.push({ source, gain, filter, phaseOffset });

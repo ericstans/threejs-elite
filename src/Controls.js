@@ -92,7 +92,7 @@ export class Controls {
       // Start music on first X press
       // (Retained for debug logging but auto-start now handled above)
       if (DEBUG && this.game && !this.game.musicStarted) {
-        console.log('Controls: X key pressed; music will start via auto-start logic');
+        if (DEBUG) console.log('Controls: X key pressed; music will start via auto-start logic');
       }
     }
     if (this.keys['KeyZ']) {
@@ -281,9 +281,9 @@ export class Controls {
           this.game.soundManager.updateEngineRumble(throttle, false);
         }
       } catch (error) {
-        console.error('startMusic: Failed to start music system:', error);
-        console.error('startMusic: Error details:', error.message);
-        console.error('startMusic: Error stack:', error.stack);
+        if (DEBUG) console.error('startMusic: Failed to start music system:', error);
+        if (DEBUG) console.error('startMusic: Error details:', error.message);
+        if (DEBUG) console.error('startMusic: Error stack:', error.stack);
       }
     } else {
       if (DEBUG) console.log('startMusic: Music already started or game not available');

@@ -170,7 +170,7 @@ export class EngineParticles {
     cameraCheckbox.style.marginRight = '8px';
     cameraCheckbox.onchange = (e) => {
       this.disableCameraRecenter = e.target.checked;
-      console.log('Camera re-centering disabled:', this.disableCameraRecenter);
+      if (DEBUG) console.log('Camera re-centering disabled:', this.disableCameraRecenter);
     };
     cameraCheckboxDiv.appendChild(cameraCheckbox);
 
@@ -226,7 +226,7 @@ export class EngineParticles {
     materialSelect.value = 'global';
     materialSelect.onchange = (e) => {
       this.materialApproach = e.target.value;
-      console.log('Material approach changed to:', this.materialApproach);
+      if (DEBUG) console.log('Material approach changed to:', this.materialApproach);
       this.applyMaterialApproach();
     };
     materialSelectDiv.appendChild(materialSelect);

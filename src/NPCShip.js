@@ -93,7 +93,7 @@ export class NPCShip {
       },
       undefined,
       (error) => {
-        console.error('NPCShip: Failed to load FBX model', error);
+        if (DEBUG) console.error('NPCShip: Failed to load FBX model', error);
       }
     );
   }

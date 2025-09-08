@@ -295,7 +295,7 @@ class Game {
       },
       undefined,
       (err) => {
-        console.error('Failed to load player third-person model', err);
+        if (DEBUG) console.error('Failed to load player third-person model', err);
       }
     );
   }
@@ -1063,7 +1063,7 @@ class Game {
       // Lock ship
       this.spaceship.lockToStation(station);
       this.ui.updateDockingStatus('LANDING VECTOR ACQUIRED');
-      console.log('Landing vector lock achieved.');
+      if (DEBUG) console.log('Landing vector lock achieved.');
     }
   }
 
@@ -1112,7 +1112,7 @@ class Game {
             const flags = JSON.parse(selectedOption.dataset.flags);
             this.processFlags(flags);
           } catch (e) {
-            console.warn('Invalid flags data:', selectedOption.dataset.flags);
+            if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
           }
         }
         if (optionId === 'confirm_dock') {
@@ -1167,7 +1167,7 @@ class Game {
           const flags = JSON.parse(selectedOption.dataset.flags);
           this.processFlags(flags);
         } catch (e) {
-          console.warn('Invalid flags data:', selectedOption.dataset.flags);
+          if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
         }
       }
 
@@ -1210,7 +1210,7 @@ const game = new Game();
 // Font loading verification
 document.fonts.ready.then(() => {
   if (document.fonts.check('16px PeaberryMono')) {
-    console.log('PeaberryMono font loaded successfully');
+    if (DEBUG) console.log('PeaberryMono font loaded successfully');
   }
 });
 

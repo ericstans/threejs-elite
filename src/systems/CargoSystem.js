@@ -63,7 +63,7 @@ export class CargoSystem {
   collectResource(resource, resourceIndex) {
     // Check if cargo bay is full
     if (this.cargo.length >= this.maxCargoSlots) {
-      console.log('Cargo bay is full!');
+      if (DEBUG) console.log('Cargo bay is full!');
       return;
     }
 
@@ -96,7 +96,7 @@ export class CargoSystem {
       this.soundManager.playResourceCollectedSound();
     }
 
-    console.log(`Collected ${cargoItem.name} resource!`);
+    if (DEBUG) console.log(`Collected ${cargoItem.name} resource!`);
   }
 
   updateCargoUI() {

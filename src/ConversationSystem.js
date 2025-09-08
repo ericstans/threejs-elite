@@ -79,18 +79,18 @@ export class ConversationSystem {
         try {
           rawOptions = rawOptions(playerFlags, planetAttributes, stationAttributes) || [];
         } catch (e) {
-          console.warn('ConversationSystem: option function threw', e);
+          if (DEBUG) console.warn('ConversationSystem: option function threw', e);
           rawOptions = [];
         }
       }
       if (!Array.isArray(rawOptions)) {
-        console.warn('ConversationSystem: node.options is not an array after evaluation', nodeId, rawOptions);
+        if (DEBUG) console.warn('ConversationSystem: node.options is not an array after evaluation', nodeId, rawOptions);
         rawOptions = [];
       }
       const processedOptions = rawOptions
         .map(option => {
           if (typeof option === 'function') {
-            try { return option(playerFlags, planetAttributes, stationAttributes); } catch (e) { console.warn('ConversationSystem: inline option fn error', e); return null; }
+            try { return option(playerFlags, planetAttributes, stationAttributes); } catch (e) { if (DEBUG) console.warn('ConversationSystem: inline option fn error', e); return null; }
           }
           return option;
         })
@@ -112,7 +112,7 @@ export class ConversationSystem {
     try {
       return fn(context.playerFlags, context.planetAttributes, context.planet, context.stationAttributes, context.station);
     } catch (e) {
-      console.warn('ConversationSystem: response function error', e);
+      if (DEBUG) console.warn('ConversationSystem: response function error', e);
       return '...signal distortion...';
     }
   }

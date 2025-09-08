@@ -286,7 +286,7 @@ export class MusicManager {
     try {
       this._reverbConvolver.buffer = this._createImpulseResponse(this._audioCtx, 2.5, 2.0);
     } catch (e) {
-      console.warn('MusicManager: failed to create impulse response', e);
+      if (DEBUG) console.warn('MusicManager: failed to create impulse response', e);
     }
     this._applyReverbMix();
     // Wire up
@@ -305,7 +305,7 @@ export class MusicManager {
     if (this._masterGain) {
       this._masterGain.gain.value = this.volume;
     } else {
-      console.warn('MusicManager: _masterGain not initialized, cannot set volume');
+      if (DEBUG) console.warn('MusicManager: _masterGain not initialized, cannot set volume');
     }
   }
   getVolume() { return this.volume; }
@@ -320,7 +320,7 @@ export class MusicManager {
       this.isPlaying = true;
       this._playRandomAmbientMidi();
     } else {
-      console.warn('MusicManager: Only ambient MIDI playback implemented in new soundfont version. Requested:', name);
+      if (DEBUG) console.warn('MusicManager: Only ambient MIDI playback implemented in new soundfont version. Requested:', name);
     }
   }
 
@@ -488,13 +488,13 @@ export class MusicManager {
                 if (!head.ok) throw new Error('Instrument file missing locally: ' + url + ' status:' + head.status);
               }
             } catch (preErr) {
-              console.warn('MusicManager: instrument file missing, fallback chain', name, preErr);
+              if (DEBUG) console.warn('MusicManager: instrument file missing, fallback chain', name, preErr);
               inst = null; // force fallback execution
             }
             await waitOnReady(inst);
             this._attachInstrumentToEffects(inst);
           } catch (primaryErr) {
-            console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
+            if (DEBUG) console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
             const fallbackNames = ['string_ensemble_1', 'acoustic_grand_piano'];
             for (const fb of fallbackNames) {
               try {
@@ -538,7 +538,7 @@ export class MusicManager {
           this._instrumentsCache.set('percussion', drumInst);
           this._attachInstrumentToEffects(drumInst);
         } catch (e) {
-          console.warn('MusicManager: percussion kit not found; falling back');
+          if (DEBUG) console.warn('MusicManager: percussion kit not found; falling back');
           const synthDrumName = programToInstrument(118);
           if (!this._instrumentsCache.has(synthDrumName)) {
             try {
@@ -588,7 +588,7 @@ export class MusicManager {
               }
             }
           } catch (err) {
-            console.warn('MusicManager: note schedule failed', err);
+            if (DEBUG) console.warn('MusicManager: note schedule failed', err);
           }
         });
       });
@@ -608,7 +608,7 @@ export class MusicManager {
         timeoutIds
       };
     } catch (err) {
-      console.error('MusicManager: Failed to play ambient MIDI via soundfont-player', err);
+      if (DEBUG) console.error('MusicManager: Failed to play ambient MIDI via soundfont-player', err);
       // Try another file after short delay
       setTimeout(() => {
         if (this.isPlaying && this.currentTrack === 'ambient') this._playRandomAmbientMidi();

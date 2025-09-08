@@ -203,8 +203,8 @@ export class Spaceship {
   update(deltaTime) {
     // Debug: Check if ship gets detached unexpectedly
     if (this.flags.isDocked && this.flags.stationDocked && this.mesh.parent === null) {
-      console.log('WARNING: Ship detached from station unexpectedly!');
-      console.trace();
+      if (DEBUG) console.log('WARNING: Ship detached from station unexpectedly!');
+      if (DEBUG) console.trace();
     }
 
     // Handle docking
@@ -255,19 +255,19 @@ export class Spaceship {
             const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
             const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
             const parent = this.mesh.parent;
-            console.log('Spaceship Station docking - before parenting. Parent:', parent?.name || 'none');
-            console.log('Station object:', station);
-            console.log('Station mesh:', station.mesh);
-            console.log('Station mesh type:', typeof station.mesh);
-            console.log('Station mesh add method:', typeof station.mesh?.add);
+            if (DEBUG) console.log('Spaceship Station docking - before parenting. Parent:', parent?.name || 'none');
+            if (DEBUG) console.log('Station object:', station);
+            if (DEBUG) console.log('Station mesh:', station.mesh);
+            if (DEBUG) console.log('Station mesh type:', typeof station.mesh);
+            if (DEBUG) console.log('Station mesh add method:', typeof station.mesh?.add);
             if (parent) parent.remove(this.mesh);
-            console.log('About to call station.mesh.add(this.mesh)');
+            if (DEBUG) console.log('About to call station.mesh.add(this.mesh)');
             station.mesh.add(this.mesh);
-            console.log('After calling station.mesh.add(this.mesh)');
+            if (DEBUG) console.log('After calling station.mesh.add(this.mesh)');
             this.mesh.position.copy(station.mesh.worldToLocal(worldPos));
             this.mesh.quaternion.copy(station.mesh.quaternion.clone().invert().multiply(worldQuat));
-            console.log('Spaceship Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
-            console.log('Ship local position after Spaceship parenting:', this.mesh.position);
+            if (DEBUG) console.log('Spaceship Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
+            if (DEBUG) console.log('Ship local position after Spaceship parenting:', this.mesh.position);
 
             // Ensure station docking context flags
             this.flags.dockContext = 'station';
@@ -334,9 +334,9 @@ export class Spaceship {
           .add(currentStationForward.clone().multiplyScalar(forwardDistance));
 
         if (ease < 0.1) { // Log only first few frames
-          console.log('Station takeoff update - ease:', ease, 'forwardDistance:', forwardDistance);
-          console.log('Station current pos:', currentStationPos);
-          console.log('Ship world pos:', worldPos);
+          if (DEBUG) console.log('Station takeoff update - ease:', ease, 'forwardDistance:', forwardDistance);
+          if (DEBUG) console.log('Station current pos:', currentStationPos);
+          if (DEBUG) console.log('Ship world pos:', worldPos);
         }
 
         this.position.copy(worldPos);
@@ -490,13 +490,13 @@ export class Spaceship {
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
           const parent = this.mesh.parent;
-          console.log('Station docking - before parenting. Parent:', parent?.name || 'none');
+          if (DEBUG) console.log('Station docking - before parenting. Parent:', parent?.name || 'none');
           if (parent) parent.remove(this.mesh);
           station.mesh.add(this.mesh);
           this.mesh.position.copy(station.mesh.worldToLocal(worldPos));
           this.mesh.quaternion.copy(station.mesh.quaternion.clone().invert().multiply(worldQuat));
-          console.log('Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
-          console.log('Ship local position after parenting:', this.mesh.position);
+          if (DEBUG) console.log('Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
+          if (DEBUG) console.log('Ship local position after parenting:', this.mesh.position);
 
           this.flags.dockingAuthorized = false;
           this.flags.landingVectorLocked = false;
@@ -805,7 +805,7 @@ export class Spaceship {
       this.flags.isDocked = true;
       this.dockingProgress = 1;
 
-      console.log('Docking completed!');
+      if (DEBUG) console.log('Docking completed!');
     }
   }
 
@@ -844,8 +844,8 @@ export class Spaceship {
   startStationTakeoff(station, scene) {
     if (!this.flags.isDocked || !this.flags.stationDocked) return;
 
-    console.log('Station takeoff starting...');
-    console.log('Ship world position:', this.position);
+    if (DEBUG) console.log('Station takeoff starting...');
+    if (DEBUG) console.log('Ship world position:', this.position);
 
     // Store parent for later reattachment if needed
     this.takeoffSceneParent = station.mesh.parent || scene;
@@ -869,8 +869,8 @@ export class Spaceship {
 
     this.takeoffTargetPos.copy(targetWorldPos);
 
-    console.log('Takeoff world start:', this.takeoffStartPos);
-    console.log('Takeoff world target:', this.takeoffTargetPos);
+    if (DEBUG) console.log('Takeoff world start:', this.takeoffStartPos);
+    if (DEBUG) console.log('Takeoff world target:', this.takeoffTargetPos);
 
     // Store current orientation as base (keep straight, no pitch)
     this.quaternion.copy(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
@@ -884,7 +884,7 @@ export class Spaceship {
     this.angularVelocity.set(0, 0, 0);
     this.setThrottle(0);
 
-    console.log('Takeoff initialized. Active:', this.takeoffActive);
+    if (DEBUG) console.log('Takeoff initialized. Active:', this.takeoffActive);
 
     // Ship remains in world space during takeoff (like docking system)
   }
