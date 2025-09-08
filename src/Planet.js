@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 
 export class Planet {
-  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = 'Planet', greeting = 'Thank you for contacting us.') {
+  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = 'Planet', greeting = 'Thank you for contacting us.', services = ['refuel+repair']) {
     this.radius = radius;
     this.position = position;
     this.color = color;
     this.name = name;
     this.greeting = greeting;
+    this.services = services; // Available services at this planet
     this.rotationSpeed = 0.1;
     this.currentRotation = 0;
 

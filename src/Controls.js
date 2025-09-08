@@ -67,7 +67,16 @@ export class Controls {
       this.spaceship.pitch(-sensitivity * deltaTime);
     }
     if (this.keys['KeyS']) {
-      this.spaceship.pitch(sensitivity * deltaTime);
+      // Check if docked - if so, open services instead of pitching
+      if (this.spaceship.flags.isDocked) {
+        if (this.onServices) {
+          this.onServices();
+        }
+        // Clear the key to prevent repeated calls
+        this.keys['KeyS'] = false;
+      } else {
+        this.spaceship.pitch(sensitivity * deltaTime);
+      }
     }
     if (this.keys['KeyA']) {
       this.spaceship.yaw(sensitivity * deltaTime);
@@ -179,10 +188,13 @@ export class Controls {
       this.keys['KeyM'] = false;
     }
 
-    // ESC to close comms modal
+    // ESC to close modals
     if (this.keys['Escape']) {
       if (this.onCloseComms) {
         this.onCloseComms();
+      }
+      if (this.onCloseServices) {
+        this.onCloseServices();
       }
       // Clear the key to prevent repeated calls
       this.keys['Escape'] = false;
@@ -247,6 +259,14 @@ export class Controls {
 
   setOnCommsOption(callback) {
     this.onCommsOption = callback;
+  }
+
+  setOnServices(callback) {
+    this.onServices = callback;
+  }
+
+  setOnCloseServices(callback) {
+    this.onCloseServices = callback;
   }
 
   async startMusic() {

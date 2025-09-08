@@ -9,6 +9,7 @@ export class SpaceStation {
     this.size = options.size || planet.radius * 0.4; // must be < 0.5 planet diameter; using 0.4 * radius ~ 0.8 diameter fraction
     this.orbitSpeed = options.orbitSpeed || 0.05; // radians per second
     this.angle = Math.random() * Math.PI * 2;
+    this.services = options.services || ['refuel+repair']; // Available services at this station
 
     this.id = Math.random().toString(36).substr(2, 9);
     this.mass = this.size * this.size * this.size * 500; // arbitrary large mass vs player

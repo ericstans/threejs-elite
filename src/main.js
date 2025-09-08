@@ -428,7 +428,7 @@ class Game {
       this.environmentSystem.clearPlanetsAndStations();
       const loadedPlanets = [];
       for (const p of def.planets) {
-        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
+        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting, p.services);
         planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
         this.environmentSystem.planets.push(planet);
         this.gameEngine.addEntity(planet);
@@ -474,7 +474,7 @@ class Game {
         for (const s of def.stations) {
           const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
           if (host) {
-            const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
+            const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed, services: s.services });
             this.environmentSystem.oceanusStation = station; // keep compatibility reference
             this.gameEngine.addEntity(station);
             this.gameEngine.scene.add(station.mesh);
@@ -554,6 +554,16 @@ class Game {
     // Handle closing communications
     this.controls.setOnCloseComms(() => {
       this.closeComms();
+    });
+
+    // Handle services menu (S key)
+    this.controls.setOnServices(() => {
+      this.openServices();
+    });
+
+    // Handle closing services
+    this.controls.setOnCloseServices(() => {
+      this.closeServices();
     });
 
     // Map toggle
@@ -853,76 +863,83 @@ class Game {
     this.sectorManager.currentSectorId = sectorId;
     const fieldState = this.sectorManager.getAsteroidFieldState(sectorId);
     const sMeta = this.availableSectors.find(s => s.id === sectorId);
-    // Hybrid logic: sector-1 = handcrafted only, sector-2 = handcrafted + procedural extras, others = fully procedural
+    // Generic sector loading: handcrafted definitions take precedence over procedural generation
     const def = getSectorDefinition(sectorId);
-    if (def && sectorId === 'sector-1') {
+    if (def) {
       // Load conversations from sector definition
       this.conversationSystem.loadConversationsFromSector(def);
       this.environmentSystem.procedural = false;
       this.environmentSystem.clearPlanetsAndStations();
+      
+      // Load handcrafted planets
       const loadedPlanets = [];
       for (const p of def.planets) {
-        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
+        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting, p.services);
         planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
         this.environmentSystem.planets.push(planet);
         this.gameEngine.addEntity(planet);
         this.gameEngine.scene.add(planet.mesh);
         loadedPlanets.push(planet);
-      }
-      if (def.stations) {
-        for (const s of def.stations) {
-          const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
-          if (host) {
-            const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed });
-            this.environmentSystem.oceanusStation = station;
-            this.gameEngine.addEntity(station);
-            this.gameEngine.scene.add(station.mesh);
-          }
+        // Attach moon if definition requests one
+        if (p.hasMoon) {
+          const moonRadius = planet.radius * 0.18;
+          const dist = planet.radius * 3.6;
+          const geo = new THREE.SphereGeometry(moonRadius, 8, 6);
+          const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+          const moon = new THREE.Mesh(geo, mat);
+          moon.position.set(dist, 0, 0);
+          planet.moon = moon;
+          planet.mesh.add(moon);
         }
       }
-    } else if (def && sectorId === 'sector-2') {
-      // Hybrid: load base planets then add procedural extras
-      this.environmentSystem.procedural = false; // We'll manually add procedural extras; avoid full procedural reset
-      this.environmentSystem.clearPlanetsAndStations();
-      const loadedPlanets = [];
-      for (const p of def.planets) {
-        const planet = new Planet(p.radius, new THREE.Vector3(p.position.x, p.position.y, p.position.z), p.color, p.name, p.greeting);
-        planet.rotationSpeed = p.rotationSpeed ?? planet.rotationSpeed;
-        this.environmentSystem.planets.push(planet);
-        this.gameEngine.addEntity(planet);
-        this.gameEngine.scene.add(planet.mesh);
-        loadedPlanets.push(planet);
+      
+      // Load handcrafted stations
+      for (const s of def.stations) {
+        const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
+        if (host) {
+          const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed, services: s.services });
+          this.environmentSystem.oceanusStation = station;
+          this.gameEngine.addEntity(station);
+          this.gameEngine.scene.add(station.mesh);
+        }
       }
-      // Add procedural extras using hierarchical seeds (stable irrespective of generation order elsewhere)
-      const extrasCfg = def.hybridProceduralExtras || { proceduralPlanetCount: 3, seedOffset: 0x9e };
-      const baseSeed = (sMeta ? sMeta.seed : (Date.now() & 0xffff));
-      const hybridSeed = baseSeed ^ (extrasCfg.seedOffset || 0x9e);
-      const archetypes = this.environmentSystem._getPlanetArchetypes ? this.environmentSystem._getPlanetArchetypes() : [];
-      const spread = sMeta ? sMeta.size : 1800;
-      const count = (extrasCfg.proceduralPlanetCount || 3);
-      for (let i = 0; i < count; i++) {
-        if (!archetypes.length) break;
-        const pSeed = hashSeed(hybridSeed, 'hybridExtra', i);
-        const prng = this.environmentSystem._rng ? this.environmentSystem._rng(pSeed) : (()=>Math.random());
-        const a = archetypes[Math.floor(prng() * archetypes.length)];
-        const radius = 40 + prng() * 55;
-        const pos = new THREE.Vector3((prng() - 0.5) * spread, (prng() - 0.5) * spread * 0.5, -600 - prng() * spread);
-        const planet = new Planet(radius, pos, a.color, a.name, a.greeting);
-        planet.rotationSpeed = 0.02 + prng() * 0.12;
-        planet.dockable = prng() < 0.55;
-        this.environmentSystem.planets.push(planet);
-        this.gameEngine.addEntity(planet);
-        this.gameEngine.scene.add(planet.mesh);
-        if (prng() < 0.18 && this.environmentSystem._addPlanetRings) this.environmentSystem._addPlanetRings(planet, prng);
-        if (prng() < 0.22 && this.environmentSystem._addMoon) this.environmentSystem._addMoon(planet, prng);
+      
+      // Load handcrafted NPC ships
+      this.environmentSystem.createNPCShipsFromDefinition(def.npcShips);
+      this.npcShips = this.environmentSystem.npcShips;
+      
+      // Add procedural extras if specified
+      if (def.hybridProceduralExtras) {
+        const extrasCfg = def.hybridProceduralExtras;
+        const baseSeed = (sMeta ? sMeta.seed : (Date.now() & 0xffff));
+        const hybridSeed = baseSeed ^ (extrasCfg.seedOffset || 0x9e);
+        const archetypes = this.environmentSystem._getPlanetArchetypes ? this.environmentSystem._getPlanetArchetypes() : [];
+        const spread = sMeta ? sMeta.size : 1800;
+        const count = (extrasCfg.proceduralPlanetCount || 0);
+        for (let i = 0; i < count; i++) {
+          if (!archetypes.length) break;
+          const pSeed = hashSeed(hybridSeed, 'hybridExtra', i);
+          const prng = this.environmentSystem._rng ? this.environmentSystem._rng(pSeed) : (()=>Math.random());
+          const a = archetypes[Math.floor(prng() * archetypes.length)];
+          const radius = 40 + prng() * 55;
+          const pos = new THREE.Vector3((prng() - 0.5) * spread, (prng() - 0.5) * spread * 0.5, -600 - prng() * spread);
+          const planet = new Planet(radius, pos, a.color, a.name, a.greeting);
+          planet.rotationSpeed = 0.02 + prng() * 0.12;
+          planet.dockable = prng() < 0.55;
+          this.environmentSystem.planets.push(planet);
+          this.gameEngine.addEntity(planet);
+          this.gameEngine.scene.add(planet.mesh);
+          if (prng() < 0.18 && this.environmentSystem._addPlanetRings) this.environmentSystem._addPlanetRings(planet, prng);
+          if (prng() < 0.22 && this.environmentSystem._addMoon) this.environmentSystem._addMoon(planet, prng);
+        }
+        // Add procedural stardust
+        const wideRand = this.environmentSystem._rng(hashSeed(hybridSeed, 'wide'));
+        const clusterRand = this.environmentSystem._rng(hashSeed(hybridSeed, 'cluster'));
+        if (this.environmentSystem._createWideStardust) this.environmentSystem._createWideStardust(wideRand);
+        if (this.environmentSystem._createPlanetClusterStardust) this.environmentSystem._createPlanetClusterStardust(clusterRand);
       }
-      // Optional: no stations defined; could add future procedural station logic here
-      const wideRand = this.environmentSystem._rng(hashSeed(hybridSeed, 'wide'));
-      const clusterRand = this.environmentSystem._rng(hashSeed(hybridSeed, 'cluster'));
-      if (this.environmentSystem._createWideStardust) this.environmentSystem._createWideStardust(wideRand);
-      if (this.environmentSystem._createPlanetClusterStardust) this.environmentSystem._createPlanetClusterStardust(clusterRand);
     } else {
-      // Fully procedural for all other sectors
+      // Fully procedural for sectors without definitions
       this.environmentSystem.procedural = true;
       this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff), sMeta ? sMeta.size : 1800);
     }
@@ -1028,6 +1045,29 @@ class Game {
 
     // Clear comm target in docking range flag
     this.spaceship.setFlag('commTargetInDockingRange', null);
+  }
+
+  openServices() {
+    // Only open services if docked
+    if (!this.spaceship.flags.isDocked) {
+      return;
+    }
+
+    // Get the docked entity (planet or station)
+    let dockedEntity = null;
+    if (this.spaceship.flags.dockContext === 'planet') {
+      dockedEntity = this.environmentSystem.planets.find(p => p.id === this.spaceship.flags.docketPlanetId);
+    } else if (this.spaceship.flags.dockContext === 'station') {
+      dockedEntity = this.environmentSystem.oceanusStation; // For now, assume it's the oceanus station
+    }
+
+    if (dockedEntity && dockedEntity.services) {
+      this.ui.showServices(dockedEntity.services, dockedEntity.getName());
+    }
+  }
+
+  closeServices() {
+    this.ui.hideServices();
   }
 
   // Global flag management methods
