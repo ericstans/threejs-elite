@@ -49,16 +49,15 @@ export class ConversationSystem {
       return planet.greeting;
     }
     
-    // Check if this might be an NPC ship by looking for common ship names
-    // or by checking if we have a ship conversation available
-    if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
-      return genericProceduralShipConversation.greeting;
-    }
-    
     // For procedural planets, try to get the actual planet's greeting
     const planetEntity = this._getPlanetEntity?.(planetName);
     if (planetEntity && planetEntity.getGreeting) {
       return planetEntity.getGreeting();
+    }
+    
+    // Check if this is an NPC ship (with or without defined conversation)
+    if (planetEntity && planetEntity.getType && planetEntity.getType() === 'npcship') {
+      return genericProceduralShipConversation.greeting;
     }
     
     // Fallback to generic procedural planet template
@@ -68,8 +67,10 @@ export class ConversationSystem {
   getConversationNode(planetName, nodeId, playerFlags = {}) {
     let planet = this.conversations[planetName];
     if (!planet) {
-      // Check if this is an NPC ship and use ship conversation
-      if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
+      // Check if this is an NPC ship by entity type
+      const entity = this._getPlanetEntity?.(planetName);
+      if (entity && entity.getType && entity.getType() === 'npcship') {
+        // This is an NPC ship without a defined conversation, use ship conversation
         this.conversations[planetName] = genericProceduralShipConversation;
         planet = genericProceduralShipConversation;
       } else {
@@ -86,7 +87,10 @@ export class ConversationSystem {
     }
 
     // Check if this is a ship conversation and handle differently
-    if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
+    const isShipConversation = (planet && planet === genericProceduralShipConversation) ||
+                              (this._getPlanetEntity?.(planetName)?.getType?.() === 'npcship');
+    
+    if (isShipConversation) {
       // For ship conversations, create ship attributes
       const shipAttributes = { name: planetName };
       const context = {
@@ -210,8 +214,12 @@ export class ConversationSystem {
       return this.getInitialStationOptions(targetName, playerFlags);
     }
 
-    // Check if it's an NPC ship
-    if (targetName === 'Derelict Cruiser' || this._isNPCShip?.(targetName)) {
+    // Check if it's an NPC ship by entity type
+    const entity = this._getPlanetEntity?.(targetName);
+    const isNPCShip = (entity && entity.getType && entity.getType() === 'npcship') ||
+                     (this.conversations[targetName] === genericProceduralShipConversation);
+    
+    if (isNPCShip) {
       const ship = this.conversations[targetName] || genericProceduralShipConversation;
       if (ship && ship.conversationTree && ship.conversationTree.initial) {
         const node = ship.conversationTree.initial;
@@ -226,11 +234,18 @@ export class ConversationSystem {
     // Dockable detection: we rely on external planet entity lookup via optional hook
     const dockable = this._isPlanetDockable?.(targetName) !== false; // default true if unknown
     
-    // If no specific conversation, use generic procedural conversation
+    // If no specific conversation, check if it's an NPC ship
     if (!planet || !planet.conversationTree) {
-      planet = genericProceduralConversation;
-      // Cache it for future lookups
-      this.conversations[targetName] = planet;
+      const entity = this._getPlanetEntity?.(targetName);
+      if (entity && entity.getType && entity.getType() === 'npcship') {
+        // This is an NPC ship without a defined conversation, use ship conversation
+        planet = genericProceduralShipConversation;
+        this.conversations[targetName] = planet;
+      } else {
+        // Use generic procedural conversation for planets/stations
+        planet = genericProceduralConversation;
+        this.conversations[targetName] = planet;
+      }
     }
 
     // Base options with inline conditional logic

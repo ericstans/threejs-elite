@@ -207,7 +207,7 @@ export class CombatSystem {
 
     const wasDestroyed = npcShip.takeDamage(1);
 
-    if (!wasDestroyed && this.getCurrentTarget?.() && this.getCurrentTarget().getId && this.getCurrentTarget().getId() === 'npcship') {
+    if (!wasDestroyed && this.getCurrentTarget?.() && this.getCurrentTarget().getId && this.getCurrentTarget().getId().startsWith('npcship')) {
       this.onRequestTargetInfoUpdate?.();
     }
 
@@ -217,7 +217,7 @@ export class CombatSystem {
       this.gameEngine.addEntity(explosion);
       this.gameEngine.createSpatialExplosion(hitPosition);
       const current = this.getCurrentTarget?.();
-      if (current && current.getId && current.getId() === 'npcship') {
+      if (current && current.getId && current.getId().startsWith('npcship')) {
         this.onNPCShipDestroyed?.();
       }
     } else {

@@ -40,7 +40,7 @@ export const sectorDefinitions = {
           { x: -50 - 100, y: 50, z: -650 },   // Move back
           { x: -50 + 60, y: 50, z: -650 }     // Return to start
         ],
-        //conversation: genericProceduralShipConversation
+        conversation: genericProceduralShipConversation
       }
     ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 },
