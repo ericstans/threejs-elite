@@ -1,8 +1,8 @@
 export const oceanusConversation = {
-  greeting: "Thank you for contacting Oceanus.",
+  greeting: 'Thank you for contacting Oceanus.',
   conversationTree: {
     information: {
-      response: "Oceanus is a water world with extensive research facilities studying aquatic life forms and oceanographic phenomena.",
+      response: 'Oceanus is a water world with extensive research facilities studying aquatic life forms and oceanographic phenomena.',
       options: [
         { id: 'research', text: 'Tell me about the research.' },
         { id: 'planet', text: 'Tell me about the planet.' },
@@ -10,13 +10,13 @@ export const oceanusConversation = {
       ]
     },
     docking: {
-      response: "Surface access is restricted to authorized personnel only. Docking is available at our orbital research station; you may contact them directly.",
+      response: 'Surface access is restricted to authorized personnel only. Docking is available at our orbital research station; you may contact them directly.',
       options: [
         { id: 'end', text: 'I understand. (End conversation)' }
       ]
     },
     docking_too_far: {
-      response: "Surface access is restricted to authorized personnel only. Docking is available at our orbital research station; you may contact them directly.",
+      response: 'Surface access is restricted to authorized personnel only. Docking is available at our orbital research station; you may contact them directly.',
       options: [
         { id: 'end', text: 'I understand. (End conversation)' }
       ]
@@ -31,7 +31,7 @@ export const oceanusConversation = {
       ]
     },
     planet: {
-      response: "Oceanus is 95% covered by water, with only small island chains breaking the surface. The planet has a unique magnetic field that creates spectacular aurora displays visible from orbit.",
+      response: 'Oceanus is 95% covered by water, with only small island chains breaking the surface. The planet has a unique magnetic field that creates spectacular aurora displays visible from orbit.',
       options: [
         { id: 'planet_islands', text: 'Tell me about the islands.' },
         { id: 'planet_aurora', text: 'What about the aurora displays?' },
@@ -54,7 +54,7 @@ export const oceanusConversation = {
       ]
     },
     planet_islands: {
-      response: "The islands are volcanic in origin and support unique ecosystems adapted to the constant storms. They serve as research outposts and emergency landing sites for our operations.",
+      response: 'The islands are volcanic in origin and support unique ecosystems adapted to the constant storms. They serve as research outposts and emergency landing sites for our operations.',
       options: [
         { id: 'back_planet', text: 'Back to planet information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
@@ -77,7 +77,7 @@ export const oceanusConversation = {
       ]
     },
     back_planet: {
-      response: "Oceanus is 95% covered by water, with only small island chains breaking the surface. The planet has a unique magnetic field that creates spectacular aurora displays visible from orbit.",
+      response: 'Oceanus is 95% covered by water, with only small island chains breaking the surface. The planet has a unique magnetic field that creates spectacular aurora displays visible from orbit.',
       options: [
         { id: 'planet_islands', text: 'Tell me about the islands.' },
         { id: 'planet_aurora', text: 'What about the aurora displays?' },
@@ -86,7 +86,7 @@ export const oceanusConversation = {
       ]
     },
     back_docking: {
-      response: "Docking is available at our orbital research station. Please note that surface access is restricted to authorized personnel only.",
+      response: 'Docking is available at our orbital research station. Please note that surface access is restricted to authorized personnel only.',
       options: [
         { id: 'docking_restrictions', text: 'What are the restrictions?' },
         { id: 'docking_services', text: 'What services are available?' },

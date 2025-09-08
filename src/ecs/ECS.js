@@ -47,22 +47,22 @@ export class ECSRegistry {
     const stores = names.map(n => this.components.get(n));
     if (stores.some(s => !s)) return [];
     // Pick smallest store to iterate
-    stores.sort((a,b)=>a.size-b.size);
+    stores.sort((a,b)=>a.size - b.size);
     const smallest = stores[0];
     const result = [];
     for (const id of smallest.keys()) {
       let ok = true;
-      for (let i=1;i<stores.length;i++) {
-        if (!stores[i].has(id)) { ok=false; break; }
+      for (let i = 1;i < stores.length;i++) {
+        if (!stores[i].has(id)) { ok = false; break; }
       }
       if (ok) result.push(id);
     }
     return result;
   }
 
-  registerSystem(system, order=0) {
+  registerSystem(system, order = 0) {
     this.systems.push({ system, order });
-    this.systems.sort((a,b)=>a.order-b.order);
+    this.systems.sort((a,b)=>a.order - b.order);
   }
 
   update(dt) {

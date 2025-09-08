@@ -17,7 +17,7 @@ export class TargetUI {
   }
   constructor(container) {
     this.container = container;
-  this._lowResScale = 0.7; // match nav target low-res factor
+    this._lowResScale = 0.7; // match nav target low-res factor
     this.createTargetPanel();
     this.createTargetIndicator();
     this.createOffscreenArrow();
@@ -36,10 +36,10 @@ export class TargetUI {
     this.targetPanel.style.lineHeight = '1.4';
     this.targetPanel.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.style.display = 'none'; // Initially hidden
-    
+
     // Force font application with !important
     this.targetPanel.style.setProperty('font-family', 'PeaberryMono, monospace', 'important');
-    
+
     this.container.appendChild(this.targetPanel);
 
     this.targetTitle = document.createElement('div');
@@ -48,7 +48,7 @@ export class TargetUI {
     this.targetTitle.style.fontWeight = 'bold';
     this.targetTitle.style.fontFamily = 'PeaberryMono, monospace';
     this.targetPanel.appendChild(this.targetTitle);
-    
+
 
     this.targetName = document.createElement('div');
     this.targetName.style.fontFamily = 'PeaberryMono, monospace';
@@ -152,7 +152,7 @@ export class TargetUI {
 
   updateTargetInfo(targetInfo, targetPosition, camera) {
     this.targetPanel.style.display = 'block';
-    
+
     // Set name based on target type
     let displayName;
     if (targetInfo.__ref && targetInfo.__ref.getType) {
@@ -170,14 +170,14 @@ export class TargetUI {
       displayName = targetInfo.name || targetInfo.id;
     }
     this.targetName.textContent = displayName;
-    
+
     this.targetMass.textContent = `Mass: ${targetInfo.mass.toFixed(1)}`;
     this.targetDistance.textContent = `Distance: ${targetInfo.distance.toFixed(1)}`;
     this.targetHealth.textContent = `Health: ${targetInfo.health}/${targetInfo.maxHealth}`;
-    
+
     // Update weapons information
     this.updateWeaponsInfo();
-    
+
     // Show/hide commable indicator
     if (targetInfo.isCommable) {
       this.targetCommableIndicator.style.display = 'block';
@@ -185,19 +185,19 @@ export class TargetUI {
     } else {
       this.targetCommableIndicator.style.display = 'none';
     }
-    
+
     // Update target indicator position
-  this.updateTargetIndicator(targetPosition, camera);
-  if (targetInfo.__ref) this._updatePreview(targetInfo.__ref);
+    this.updateTargetIndicator(targetPosition, camera);
+    if (targetInfo.__ref) this._updatePreview(targetInfo.__ref);
   }
 
   updateWeaponsInfo() {
     // Set weapon name (LASER for now)
     this.weaponName.textContent = 'LASER';
-    
+
     // Set ammo count (infinity for laser)
     this.weaponAmmo.innerHTML = '<i class="fas fa-infinity" style="color: #00ff00;"></i>';
-    
+
     // Set weapon range (300u for laser)
     this.weaponRange.innerHTML = '<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>300u';
   }
@@ -281,8 +281,8 @@ export class TargetUI {
     this.previewRenderer.domElement.style.width = '100%';
     this.previewRenderer.domElement.style.height = '100%';
     this.previewRenderer.domElement.style.opacity = '0.22';
-  this.previewRenderer.domElement.style.imageRendering = 'pixelated';
-  this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
+    this.previewRenderer.domElement.style.imageRendering = 'pixelated';
+    this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
     this.previewWrapper.appendChild(this.previewRenderer.domElement);
     const amb = new THREE.AmbientLight(0xffffff, 0.5);
     this.previewScene.add(amb);
@@ -312,13 +312,13 @@ export class TargetUI {
       240, 112, 208, 80
     ];
     const img = ctx.createImageData(4,4);
-    for (let i=0;i<a.length;i++) {
+    for (let i = 0;i < a.length;i++) {
       const v = a[i];
       const g = 0x14; // #141414 base color
-      img.data[i*4+0] = g;
-      img.data[i*4+1] = g;
-      img.data[i*4+2] = g;
-      img.data[i*4+3] = 20 + (v/14); // retain ordered alpha modulation
+      img.data[i * 4 + 0] = g;
+      img.data[i * 4 + 1] = g;
+      img.data[i * 4 + 2] = g;
+      img.data[i * 4 + 3] = 20 + (v / 14); // retain ordered alpha modulation
     }
     ctx.putImageData(img,0,0);
     const url = cvs.toDataURL();
@@ -372,7 +372,7 @@ export class TargetUI {
             lines.quaternion.copy(child.getWorldQuaternion(new THREE.Quaternion()));
             lines.scale.copy(child.getWorldScale(new THREE.Vector3()));
             group.add(lines);
-          } catch(_) {}
+          } catch (_) {}
         }
       });
       // Recenter & uniformly scale to desired preview size
@@ -380,7 +380,7 @@ export class TargetUI {
         const box = new THREE.Box3().setFromObject(group);
         if (!box.isEmpty()) {
           const center = new THREE.Vector3();
-            const size = new THREE.Vector3();
+          const size = new THREE.Vector3();
           box.getCenter(center);
           box.getSize(size);
           const longest = Math.max(size.x, size.y, size.z) || 1;
@@ -439,8 +439,8 @@ export class TargetUI {
       const w = this.targetPanel.clientWidth;
       const h = this.targetPanel.clientHeight;
       const size = Math.min(w, h);
-  const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
-  this.previewRenderer.setSize(size * scale, size * scale, false);
+      const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
+      this.previewRenderer.setSize(size * scale, size * scale, false);
       this.previewCamera.aspect = 1;
       this.previewCamera.updateProjectionMatrix();
       this.previewRenderer.render(this.previewScene, this.previewCamera);

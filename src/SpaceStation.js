@@ -16,12 +16,12 @@ export class SpaceStation {
     this.isCommable = true;
 
     this.mesh = this.createStationMesh();
-  // Landing vector animation state
-  this.landingVectorGroup = this.createLandingVector();
-  if (this.landingVectorGroup) this.mesh.add(this.landingVectorGroup);
-  // Hidden until player receives docking authorization
-  if (this.landingVectorGroup) this.landingVectorGroup.visible = false;
-  this.landingVectorOffset = 0; // animation phase
+    // Landing vector animation state
+    this.landingVectorGroup = this.createLandingVector();
+    if (this.landingVectorGroup) this.mesh.add(this.landingVectorGroup);
+    // Hidden until player receives docking authorization
+    if (this.landingVectorGroup) this.landingVectorGroup.visible = false;
+    this.landingVectorOffset = 0; // animation phase
     this.updatePosition();
   }
 
@@ -41,40 +41,40 @@ export class SpaceStation {
 
   createStationMesh() {
     const group = new THREE.Group();
-  // Core cylinder side walls (open ended so we can add a custom top cap with a real slot hole)
-  const coreRadius = this.size * 0.3;
-  const sideGeom = new THREE.CylinderGeometry(coreRadius, coreRadius, this.size, 32, 1, true);
-  const coreMat = new THREE.MeshLambertMaterial({ color: 0x888888, flatShading: true, side: THREE.DoubleSide });
-  const sideMesh = new THREE.Mesh(sideGeom, coreMat);
-  group.add(sideMesh);
+    // Core cylinder side walls (open ended so we can add a custom top cap with a real slot hole)
+    const coreRadius = this.size * 0.3;
+    const sideGeom = new THREE.CylinderGeometry(coreRadius, coreRadius, this.size, 32, 1, true);
+    const coreMat = new THREE.MeshLambertMaterial({ color: 0x888888, flatShading: true, side: THREE.DoubleSide });
+    const sideMesh = new THREE.Mesh(sideGeom, coreMat);
+    group.add(sideMesh);
 
-  // Bottom cap (solid)
-  const bottomGeom = new THREE.CircleGeometry(coreRadius, 32);
-  const bottomMesh = new THREE.Mesh(bottomGeom, coreMat);
-  bottomMesh.rotation.x = -Math.PI / 2; // Lay flat (facing up)
-  bottomMesh.position.y = -this.size / 2;
-  group.add(bottomMesh);
+    // Bottom cap (solid)
+    const bottomGeom = new THREE.CircleGeometry(coreRadius, 32);
+    const bottomMesh = new THREE.Mesh(bottomGeom, coreMat);
+    bottomMesh.rotation.x = -Math.PI / 2; // Lay flat (facing up)
+    bottomMesh.position.y = -this.size / 2;
+    group.add(bottomMesh);
 
-  // Top cap with rectangular slot hole: build a Shape with a hole path
-  const topShape = new THREE.Shape();
-  topShape.absarc(0, 0, coreRadius, 0, Math.PI * 2, false);
-  // Slot dimensions constrained to stay fully inside circle
-  const slotLength = coreRadius * 1.5; // shorter than diameter (<= 2 * coreRadius)
-  const slotWidth = coreRadius * 0.5;
-  const halfL = slotLength / 2;
-  const halfW = slotWidth / 2;
-  const slotPath = new THREE.Path();
-  slotPath.moveTo(-halfL, -halfW);
-  slotPath.lineTo( halfL, -halfW);
-  slotPath.lineTo( halfL,  halfW);
-  slotPath.lineTo(-halfL,  halfW);
-  slotPath.lineTo(-halfL, -halfW);
-  topShape.holes.push(slotPath);
-  const topGeom = new THREE.ShapeGeometry(topShape, 32);
-  const topMesh = new THREE.Mesh(topGeom, coreMat);
-  topMesh.rotation.x = -Math.PI / 2; // Orient horizontally
-  topMesh.position.y = this.size / 2; // Place at top
-  group.add(topMesh);
+    // Top cap with rectangular slot hole: build a Shape with a hole path
+    const topShape = new THREE.Shape();
+    topShape.absarc(0, 0, coreRadius, 0, Math.PI * 2, false);
+    // Slot dimensions constrained to stay fully inside circle
+    const slotLength = coreRadius * 1.5; // shorter than diameter (<= 2 * coreRadius)
+    const slotWidth = coreRadius * 0.5;
+    const halfL = slotLength / 2;
+    const halfW = slotWidth / 2;
+    const slotPath = new THREE.Path();
+    slotPath.moveTo(-halfL, -halfW);
+    slotPath.lineTo( halfL, -halfW);
+    slotPath.lineTo( halfL,  halfW);
+    slotPath.lineTo(-halfL,  halfW);
+    slotPath.lineTo(-halfL, -halfW);
+    topShape.holes.push(slotPath);
+    const topGeom = new THREE.ShapeGeometry(topShape, 32);
+    const topMesh = new THREE.Mesh(topGeom, coreMat);
+    topMesh.rotation.x = -Math.PI / 2; // Orient horizontally
+    topMesh.position.y = this.size / 2; // Place at top
+    group.add(topMesh);
 
     // Add some radial arms
     const armGeom = new THREE.BoxGeometry(this.size * 0.6, this.size * 0.05, this.size * 0.05);
@@ -100,15 +100,15 @@ export class SpaceStation {
     // The dots animate moving TOWARD the slot to guide approach.
     const group = new THREE.Group();
     const dotColor = 0xff2020;
-  const dir = new THREE.Vector3(0, 1, 0); // Upward direction along cylinder axis
+    const dir = new THREE.Vector3(0, 1, 0); // Upward direction along cylinder axis
     this.landingVectorDirection = dir.clone().normalize();
     const slotTopY = this.size / 2; // slot center Y
     const start = new THREE.Vector3(0, slotTopY + 0.01, 0); // slight lift above surface
     const length = this.size * 2.2; // how far the guidance extends
     this.landingVectorLength = length;
-  const dots = 8; // fewer dots -> much larger spacing
-  this.landingVectorDotSpacing = length / dots;
-  this.landingVectorSpeed = length * 0.05; // much slower travel speed
+    const dots = 8; // fewer dots -> much larger spacing
+    this.landingVectorDotSpacing = length / dots;
+    this.landingVectorSpeed = length * 0.05; // much slower travel speed
 
     const dotRadius = this.size * 0.04; // bold size relative to station
     const geom = new THREE.SphereGeometry(dotRadius, 10, 10);
@@ -154,7 +154,7 @@ export class SpaceStation {
     this.angle += this.orbitSpeed * deltaTime;
     this.updatePosition();
     // Animate landing vector dotted movement
-  if (this.landingVectorDots && this.landingVectorGroup && this.landingVectorGroup.visible) {
+    if (this.landingVectorDots && this.landingVectorGroup && this.landingVectorGroup.visible) {
       this.landingVectorOffset = (this.landingVectorOffset + this.landingVectorSpeed * deltaTime) % this.landingVectorLength;
       const start = new THREE.Vector3(0, this.size / 2 + 0.01, 0);
       this.positionLandingVectorDots(start);

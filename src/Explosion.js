@@ -7,7 +7,7 @@ export class Explosion {
     this.duration = duration;
     this.age = 0;
     this.maxAge = duration;
-    
+
     this.mesh = this.createExplosionMesh();
     this.mesh.position.copy(this.position);
   }
@@ -15,7 +15,7 @@ export class Explosion {
   createExplosionMesh() {
     // Create explosion geometry - a sphere that will expand
     const geometry = new THREE.SphereGeometry(this.size, 8, 6);
-    
+
     // Create explosion material with emissive glow
     const material = new THREE.MeshLambertMaterial({
       color: 0xff6600, // Orange explosion
@@ -24,23 +24,23 @@ export class Explosion {
       transparent: true,
       opacity: 0.8
     });
-    
+
     const explosion = new THREE.Mesh(geometry, material);
     return explosion;
   }
 
   update(deltaTime) {
     this.age += deltaTime;
-    
+
     // Calculate expansion and fade
     const progress = this.age / this.maxAge;
     const scale = 1 + progress * 3; // Expand to 4x original size
     const opacity = 1 - progress; // Fade out
-    
+
     // Update mesh
     this.mesh.scale.setScalar(scale);
     this.mesh.material.opacity = opacity * 0.8;
-    
+
     // Check if explosion should be destroyed
     return this.age >= this.maxAge;
   }

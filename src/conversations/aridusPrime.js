@@ -1,8 +1,8 @@
 export const aridusPrimeConversation = {
-  greeting: "Thank you for contacting Aridus Prime.",
+  greeting: 'Thank you for contacting Aridus Prime.',
   conversationTree: {
     information: {
-      response: "Aridus Prime is a small outpost established in GY166, and the base of operations for mining operations in the Aridus system.",
+      response: 'Aridus Prime is a small outpost established in GY166, and the base of operations for mining operations in the Aridus system.',
       options: (playerFlags) => [
         { id: 'mining', text: 'Tell me more about mining.' },
         { id: 'planet', text: 'Tell me more about Aridus Prime.' },
@@ -21,7 +21,7 @@ export const aridusPrimeConversation = {
       ]
     },
     planet: {
-      response: "Aridus Prime was originally a research station studying the unique geological formations of this system. Over time, it evolved into a mining outpost due to the rich mineral deposits discovered in nearby asteroids.",
+      response: 'Aridus Prime was originally a research station studying the unique geological formations of this system. Over time, it evolved into a mining outpost due to the rich mineral deposits discovered in nearby asteroids.',
       options: [
         { id: 'planet_history', text: 'What was the original research about?' },
         { id: 'planet_population', text: 'How many people live here?' },
@@ -39,7 +39,7 @@ export const aridusPrimeConversation = {
       ]
     },
     docking: {
-      response: "You are authorized to dock. Please provide your ship registration and cargo manifest.",
+      response: 'You are authorized to dock. Please provide your ship registration and cargo manifest.',
       options: [
         { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
         { id: 'docking_services', text: 'What services are available on the planet?' },
@@ -47,7 +47,7 @@ export const aridusPrimeConversation = {
       ]
     },
     docking_too_far: {
-      response: "You are too far away to dock. Please approach within 200 units of the station before requesting docking clearance.",
+      response: 'You are too far away to dock. Please approach within 200 units of the station before requesting docking clearance.',
       options: [
         { id: 'docking_services', text: 'What services are available on the planet?' },
         { id: 'end', text: 'Understood. (End conversation)' }
@@ -61,21 +61,21 @@ export const aridusPrimeConversation = {
       ]
     },
     mining_tech: {
-      response: "We use advanced plasma cutting technology and automated drones for extraction. Our systems can process up to 500 tons of ore per day.",
+      response: 'We use advanced plasma cutting technology and automated drones for extraction. Our systems can process up to 500 tons of ore per day.',
       options: [
         { id: 'back_mining', text: 'Back to mining information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
       ]
     },
     mining_profit: {
-      response: "The operation is quite profitable, with annual revenues exceeding 2.5 million credits. The rare minerals we extract are in high demand across the galaxy.",
+      response: 'The operation is quite profitable, with annual revenues exceeding 2.5 million credits. The rare minerals we extract are in high demand across the galaxy.',
       options: [
         { id: 'back_mining', text: 'Back to mining information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
       ]
     },
     planet_history: {
-      response: "The original research focused on studying the unique magnetic field anomalies in this system. Scientists discovered that the asteroids contain rare magnetic minerals that are crucial for advanced technology.",
+      response: 'The original research focused on studying the unique magnetic field anomalies in this system. Scientists discovered that the asteroids contain rare magnetic minerals that are crucial for advanced technology.',
       options: [
         { id: 'back_planet', text: 'Back to planet information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
@@ -89,7 +89,7 @@ export const aridusPrimeConversation = {
       ]
     },
     system_planets: {
-      response: "The other two planets are Aridus Secundus, a gas giant with valuable atmospheric gases, and Aridus Tertius, a rocky world with extensive cave systems that we use for storage.",
+      response: 'The other two planets are Aridus Secundus, a gas giant with valuable atmospheric gases, and Aridus Tertius, a rocky world with extensive cave systems that we use for storage.',
       options: [
         { id: 'back_system', text: 'Back to system information.' },
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
@@ -103,15 +103,15 @@ export const aridusPrimeConversation = {
       ]
     },
     docking_services: {
-      response: "We offer fuel refueling, basic repairs, cargo storage, and crew accommodations. Our facilities can handle ships up to 200 meters in length.",
+      response: 'We offer fuel refueling, basic repairs, cargo storage, and crew accommodations. Our facilities can handle ships up to 200 meters in length.',
       options: (playerFlags) => [
-        playerFlags.commTargetInDockingRange ? { id: 'docking', text: 'Back to docking information.' } : 
-        !playerFlags.commTargetInDockingRange ? { id: 'docking_too_far', text: 'Back to docking information.' } : null,
+        playerFlags.commTargetInDockingRange ? { id: 'docking', text: 'Back to docking information.' } :
+          !playerFlags.commTargetInDockingRange ? { id: 'docking_too_far', text: 'Back to docking information.' } : null,
         { id: 'end', text: 'Interesting, thanks. (End conversation)' }
       ]
     },
     request_takeoff: {
-      response: "Takeoff authorization granted. Launching now.",
+      response: 'Takeoff authorization granted. Launching now.',
       options: [
         { id: 'confirm_takeoff', text: 'Acknowledged.' }
       ]
@@ -126,7 +126,7 @@ export const aridusPrimeConversation = {
       ]
     },
     back_planet: {
-      response: "Aridus Prime was originally a research station studying the unique geological formations of this system. Over time, it evolved into a mining outpost due to the rich mineral deposits discovered in nearby asteroids.",
+      response: 'Aridus Prime was originally a research station studying the unique geological formations of this system. Over time, it evolved into a mining outpost due to the rich mineral deposits discovered in nearby asteroids.',
       options: [
         { id: 'planet_history', text: 'What was the original research about?' },
         { id: 'planet_population', text: 'How many people live here?' },

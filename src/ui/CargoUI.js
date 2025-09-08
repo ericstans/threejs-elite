@@ -56,13 +56,13 @@ export class CargoUI {
       slot.style.position = 'relative';
       slot.style.cursor = 'pointer';
       slot.style.transition = 'all 0.2s ease';
-      
+
       // Add hover effects
       slot.addEventListener('mouseenter', () => {
         slot.style.background = 'rgba(0, 170, 85, 0.2)';
         slot.style.borderColor = '#00ff55';
       });
-      
+
       slot.addEventListener('mouseleave', () => {
         slot.style.background = 'rgba(0, 170, 85, 0.1)';
         slot.style.borderColor = '#00aa55';
@@ -71,7 +71,7 @@ export class CargoUI {
       // Empty slot indicator
       slot.textContent = '·';
       slot.style.color = '#006644';
-      
+
       this.cargoGrid.push(slot);
       this.gridContainer.appendChild(slot);
     }
@@ -84,7 +84,7 @@ export class CargoUI {
       slot.textContent = cargoIcon;
       slot.style.color = '#00ff00';
       slot.title = cargoName; // Tooltip
-      
+
       // Add a small indicator for occupied slots
       slot.style.background = 'rgba(0, 255, 0, 0.1)';
       slot.style.borderColor = '#00ff00';
@@ -98,7 +98,7 @@ export class CargoUI {
       slot.textContent = cargoIcon;
       slot.style.color = color;
       slot.title = cargoName; // Tooltip
-      
+
       // Add a small indicator for occupied slots with resource color
       const colorRgb = this.hexToRgb(color);
       slot.style.background = `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.1)`;
@@ -147,7 +147,7 @@ export class CargoUI {
 
   // Method to check if a slot is empty
   isSlotEmpty(slotIndex) {
-    return slotIndex >= 0 && slotIndex < this.cargoGrid.length && 
+    return slotIndex >= 0 && slotIndex < this.cargoGrid.length &&
            this.cargoGrid[slotIndex].textContent === '·';
   }
 }

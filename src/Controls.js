@@ -6,7 +6,7 @@ export class Controls {
     this.game = game;
     this.keys = {};
     this.setupEventListeners();
-    
+
     // Laser cooldown system
     this.laserCooldown = 0.6; // 600ms cooldown
     this.lastLaserTime = 0;
@@ -34,15 +34,15 @@ export class Controls {
 
   update(deltaTime) {
     const sensitivity = 1.0;
-    
+
     // Handle escape key for options menu (only if no other modals are open)
     if (this.keys['Escape']) {
       if (!this._escapeKeyHeld) {
         this._escapeKeyHeld = true;
         if (this.game && this.game.ui) {
           // Only handle options if no other modals are open
-          if (!this.game.ui.isCommsModalVisible() && 
-              !this.game.ui.isMapModalVisible() && 
+          if (!this.game.ui.isCommsModalVisible() &&
+              !this.game.ui.isMapModalVisible() &&
               !this.game.ui.isOptionsVisible()) {
             // No modals are open - open options and pause game
             this.game.ui.showOptions();
@@ -53,7 +53,7 @@ export class Controls {
     } else {
       this._escapeKeyHeld = false;
     }
-    
+
     // Minimal auto-start music: first detected key press triggers ambient if not already started
     if (this.game && !this.game.musicStarted) {
       // If any key currently held (excluding modifier keys if desired later) start music
@@ -61,7 +61,7 @@ export class Controls {
         this.startMusic();
       }
     }
-    
+
     // WASD movement
     if (this.keys['KeyW']) {
       this.spaceship.pitch(-sensitivity * deltaTime);
@@ -75,7 +75,7 @@ export class Controls {
     if (this.keys['KeyD']) {
       this.spaceship.yaw(-sensitivity * deltaTime);
     }
-    
+
     // Q and E for roll
     if (this.keys['KeyQ']) {
       this.spaceship.roll(sensitivity * deltaTime);
@@ -83,12 +83,12 @@ export class Controls {
     if (this.keys['KeyE']) {
       this.spaceship.roll(-sensitivity * deltaTime);
     }
-    
+
     // Throttle controls (faster rate than ship acceleration)
     if (this.keys['KeyX']) {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle + 1.0 * deltaTime);
-      
+
       // Start music on first X press
       // (Retained for debug logging but auto-start now handled above)
       if (DEBUG && this.game && !this.game.musicStarted) {
@@ -99,7 +99,7 @@ export class Controls {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle - 1.0 * deltaTime);
     }
-    
+
     // Shooting with cooldown
     if (this.keys['Space']) {
       const currentTime = performance.now() / 1000; // Convert to seconds
@@ -110,7 +110,7 @@ export class Controls {
         }
       }
     }
-    
+
     // Targeting: hold T to clear, tap T to select
     if (this.keys['KeyT']) {
       if (!this._tKeyHeld) {
@@ -133,7 +133,7 @@ export class Controls {
       }
       this._tKeyHeld = null;
     }
-    
+
     // Navigation targeting: tap Y to nav target, hold Y to clear nav target
     if (this.keys['KeyY']) {
       if (!this._yKeyHeld) {
@@ -156,7 +156,7 @@ export class Controls {
       }
       this._yKeyHeld = null;
     }
-    
+
     // Communications (V for target, C for nav target)
     if (this.keys['KeyV']) {
       if (this.onComms) {
@@ -178,7 +178,7 @@ export class Controls {
       }
       this.keys['KeyM'] = false;
     }
-    
+
     // ESC to close comms modal
     if (this.keys['Escape']) {
       if (this.onCloseComms) {
@@ -255,12 +255,12 @@ export class Controls {
     if (this.game && !this.game.musicStarted) {
       if (DEBUG) console.log('startMusic: Starting music system');
       this.game.musicStarted = true;
-      
+
       try {
         // Ensure audio context is resumed (user gesture just occurred triggering this call)
         if (this.game.soundManager?.audioContext && this.game.soundManager.audioContext.state === 'suspended') {
           if (DEBUG) console.log('startMusic: Resuming audio context');
-          try { await this.game.soundManager.audioContext.resume(); } catch(_) {}
+          try { await this.game.soundManager.audioContext.resume(); } catch (_) {}
         }
         // Initialize music manager
         if (DEBUG) console.log('startMusic: Initializing music manager');

@@ -3,7 +3,7 @@ export class OptionsUI {
     this.isVisible = false;
     this.game = null; // Will be set by the game instance
     this.onClose = null; // Callback for when options are closed
-    
+
     this.createUI();
     this.setupEventListeners();
   }
@@ -115,17 +115,17 @@ export class OptionsUI {
     slider.style.borderRadius = '3px';
     slider.style.webkitAppearance = 'none';
     slider.style.appearance = 'none';
-    
+
     // Custom slider styling
     slider.style.background = `linear-gradient(to right, #00ff00 0%, #00ff00 ${defaultValue * 100}%, #333 ${defaultValue * 100}%, #333 100%)`;
-    
+
     slider.addEventListener('input', (e) => {
       const value = parseFloat(e.target.value);
       valueDisplay.textContent = Math.round(value * 100) + '%';
-      
+
       // Update slider background
       slider.style.background = `linear-gradient(to right, #00ff00 0%, #00ff00 ${value * 100}%, #333 ${value * 100}%, #333 100%)`;
-      
+
       // Call the onChange callback
       onChange(value);
     });
@@ -162,13 +162,13 @@ export class OptionsUI {
     this.closeButton.style.cursor = 'pointer';
     this.closeButton.style.borderRadius = '4px';
     this.closeButton.style.transition = 'all 0.2s ease';
-    
+
     // Hover effects
     this.closeButton.addEventListener('mouseenter', () => {
       this.closeButton.style.background = '#00ff00';
       this.closeButton.style.color = '#000000';
     });
-    
+
     this.closeButton.addEventListener('mouseleave', () => {
       this.closeButton.style.background = 'transparent';
       this.closeButton.style.color = '#00ff00';
@@ -194,19 +194,19 @@ export class OptionsUI {
         }
       }
     };
-    
+
     document.addEventListener('keydown', this.escapeKeyHandler);
   }
 
   setGame(game) {
     this.game = game;
-    
+
     // Initialize sliders with current values
     if (this.game.musicManager) {
       this.musicVolume.value = this.game.musicManager.getVolume();
       this.updateSliderDisplay(this.musicVolume);
     }
-    
+
     if (this.game.soundManager) {
       this.soundVolume.value = this.game.soundManager.getVolume();
       this.updateSliderDisplay(this.soundVolume);
@@ -223,13 +223,13 @@ export class OptionsUI {
   show() {
     this.isVisible = true;
     this.optionsModal.style.display = 'block';
-    
+
     // Update sliders with current values
     if (this.game && this.game.musicManager) {
       this.musicVolume.value = this.game.musicManager.getVolume();
       this.updateSliderDisplay(this.musicVolume);
     }
-    
+
     if (this.game && this.game.soundManager) {
       this.soundVolume.value = this.game.soundManager.getVolume();
       this.updateSliderDisplay(this.soundVolume);
@@ -254,7 +254,7 @@ export class OptionsUI {
     if (this.escapeKeyHandler) {
       document.removeEventListener('keydown', this.escapeKeyHandler);
     }
-    
+
     // Remove modal from DOM
     if (this.optionsModal && this.optionsModal.parentNode) {
       this.optionsModal.parentNode.removeChild(this.optionsModal);

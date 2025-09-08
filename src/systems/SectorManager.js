@@ -27,8 +27,8 @@ export class SectorManager {
       if (state) serialized.push(state);
     }
     const sector = this._ensureSector(this.currentSectorId);
-  sector.dynamic = sector.dynamic || {};
-  sector.dynamic.entities = serialized;
+    sector.dynamic = sector.dynamic || {};
+    sector.dynamic.entities = serialized;
   }
 
   // Load sector by id (creates if missing); returns instantiated entities

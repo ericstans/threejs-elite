@@ -30,15 +30,15 @@ class Game {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
     this.engineParticles = new EngineParticles(this.gameEngine.scene, this.spaceship);
-  // Expose spaceship to engine for starfield & UI parallax logic
-  this.gameEngine.spaceship = this.spaceship;
+    // Expose spaceship to engine for starfield & UI parallax logic
+    this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.conversationSystem = new ConversationSystem();
     this.ui = new UI(this.conversationSystem);
-  // Expose UI to engine for per-frame parallax callback
-  this.gameEngine.ui = this.ui;
+    // Expose UI to engine for per-frame parallax callback
+    this.gameEngine.ui = this.ui;
     // Provide dockable query hook for conversation system
     this.conversationSystem._isPlanetDockable = (planetName) => {
       const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
@@ -53,21 +53,21 @@ class Game {
       if (st && st.planet && st.planet.getName && st.planet.getName() === planetName) return st;
       return null;
     };
-    
+
     // Station detection and docking hooks
     this.conversationSystem.setStationDetectionHook((targetName) => {
       // Check if it's a known station
-      return targetName === 'Oceanus Station' || 
-             (this.environmentSystem?.oceanusStation && 
-              this.environmentSystem.oceanusStation.getName && 
+      return targetName === 'Oceanus Station' ||
+             (this.environmentSystem?.oceanusStation &&
+              this.environmentSystem.oceanusStation.getName &&
               this.environmentSystem.oceanusStation.getName() === targetName);
     });
-    
+
     this.conversationSystem.setStationDockableHook((stationName) => {
       // Check if station is dockable
-      if (stationName === 'Oceanus Station' || 
-          (this.environmentSystem?.oceanusStation && 
-           this.environmentSystem.oceanusStation.getName && 
+      if (stationName === 'Oceanus Station' ||
+          (this.environmentSystem?.oceanusStation &&
+           this.environmentSystem.oceanusStation.getName &&
            this.environmentSystem.oceanusStation.getName() === stationName)) {
         return this.environmentSystem?.oceanusStation?.dockable !== false;
       }
@@ -173,16 +173,16 @@ class Game {
     // Global flags
     this.globalFlags = {
       gameStarted: false,
-      firstDocking: false,
+      firstDocking: false
       // Add more global flags as needed
     };
 
     this.setupGame();
     this.setupControls();
-    
+
     // Initialize OptionsUI with game reference
     this.ui.setGame(this);
-    
+
     this.start();
 
     // Third-person orbit parameters
@@ -280,7 +280,7 @@ class Game {
         this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0, 0, 0);
         // Add group to scene and to spaceship
         this.spaceship.enableThirdPerson(object);
-        
+
         // Pass the model to EngineParticles for material control
         if (this.engineParticles) {
           this.engineParticles.setSpaceshipModel(object);
@@ -387,8 +387,8 @@ class Game {
     this.environmentSystem = new EnvironmentSystem({
       gameEngine: this.gameEngine,
       planetFactory: () => {
-        const p1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, "Aridus Prime", "Thank you for contacting Aridus Prime.");
-        const p2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, "Oceanus", "Thank you for contacting Oceanus.");
+        const p1 = new Planet(80, new THREE.Vector3(200, 0, -500), 0x8B4513, 'Aridus Prime', 'Thank you for contacting Aridus Prime.');
+        const p2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, 'Oceanus', 'Thank you for contacting Oceanus.');
         return [p1, p2];
       },
       npcShipFactory: () => this.npcShip,
@@ -396,7 +396,7 @@ class Game {
     });
     // Aridus sector uses predefined planets; procedural sectors will regenerate on switch
     this.environmentSystem.init();
-    
+
     // Cargo system initialization
     this.cargoSystem = new CargoSystem({
       getSpaceship: () => this.spaceship,
@@ -406,7 +406,7 @@ class Game {
       soundManager: this.soundManager,
       targetingSystem: this.targetingSystem
     });
-    
+
     const defaultSector = this.availableSectors[0];
     this.sectorManager.currentSectorId = defaultSector.id;
     const def = getSectorDefinition(defaultSector.id);
@@ -656,13 +656,13 @@ class Game {
 
     // Update spaceship (includes docking logic)
     this.spaceship.update(deltaTime);
-    
+
     // Update engine particles
     if (this.engineParticles) {
       const throttle = this.spaceship.getThrottle();
       this.engineParticles.update(deltaTime, throttle);
     }
-    
+
     // Update any extra updatables (like rotating stardust field)
     if (this._extraUpdatables) {
       for (const obj of this._extraUpdatables) {
@@ -730,18 +730,18 @@ class Game {
     if (this.ui.updateRadar) {
       const playerPos = this.spaceship.getPosition();
       const playerQuat = this.spaceship.mesh.quaternion.clone();
-  const targets = [];
-  if (this.environmentSystem?.planets) targets.push(...this.environmentSystem.planets);
-  if (this.environmentSystem?.oceanusStation) targets.push(this.environmentSystem.oceanusStation);
-  // Include moons (nav-targetable, non-commable)
-  if (this.environmentSystem?.planets) {
-    for (const p of this.environmentSystem.planets) {
-      if (p.moon) targets.push(p.moon);
-    }
-  }
-  if (this.npcShip && this.npcShip.isAlive && this.npcShip.isAlive()) targets.push(this.npcShip);
-  if (this.asteroids) targets.push(...this.asteroids);
-  if (this.gameEngine) targets.push(...this.gameEngine.getResources());
+      const targets = [];
+      if (this.environmentSystem?.planets) targets.push(...this.environmentSystem.planets);
+      if (this.environmentSystem?.oceanusStation) targets.push(this.environmentSystem.oceanusStation);
+      // Include moons (nav-targetable, non-commable)
+      if (this.environmentSystem?.planets) {
+        for (const p of this.environmentSystem.planets) {
+          if (p.moon) targets.push(p.moon);
+        }
+      }
+      if (this.npcShip && this.npcShip.isAlive && this.npcShip.isAlive()) targets.push(this.npcShip);
+      if (this.asteroids) targets.push(...this.asteroids);
+      if (this.gameEngine) targets.push(...this.gameEngine.getResources());
       // Flag nav-targetable vs combat-targetable (approx)
       const curCombat = this.targetingSystem.getCurrentCombatTarget?.();
       const curNav = this.targetingSystem.getCurrentNavTarget?.();
@@ -875,7 +875,7 @@ class Game {
           }
         }
       }
-  } else if (def && sectorId === 'sector-2') {
+    } else if (def && sectorId === 'sector-2') {
       // Hybrid: load base planets then add procedural extras
       this.environmentSystem.procedural = false; // We'll manually add procedural extras; avoid full procedural reset
       this.environmentSystem.clearPlanetsAndStations();
@@ -1095,7 +1095,7 @@ class Game {
     }
 
     const planetName = this.currentNavTarget.getName();
-    let options = [];
+    const options = [];
     let nodeId = this.currentConversationNode;
 
     // Get current options from the modal
@@ -1152,11 +1152,11 @@ class Game {
         this.spaceship.setFlag('dockingAuthorized', true);
         this.ui.showDockingStatus();
         this.ui.updateDockingStatus('LANDING AUTHORIZED \n PROCEED TO LANDING VECTOR');
-  // Station docking context (authorization before physical dock)
-  this.spaceship.flags.dockContext = 'station';
-  this.spaceship.flags.docketPlanetId = null;
-  const station = this.currentNavTarget;
-  this.spaceship.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
+        // Station docking context (authorization before physical dock)
+        this.spaceship.flags.dockContext = 'station';
+        this.spaceship.flags.docketPlanetId = null;
+        const station = this.currentNavTarget;
+        this.spaceship.flags.dockedStationId = station.id || (station.getId && station.getId()) || null;
         this.closeComms();
         return;
       }

@@ -9,12 +9,12 @@ export class Resource {
     this.isCommable = false;
     this.isNavTargetable = false; // Resources are not nav targetable
     this.isCombatTargetable = true; // Resources can be targeted for combat
-    
+
     // Resource properties
     this.mass = 0.1; // Lightweight
     this.health = 1;
     this.maxHealth = 1;
-    
+
     this.createMesh();
     this.setupPhysics();
   }
@@ -43,18 +43,18 @@ export class Resource {
   static getRandomElementType() {
     const types = Resource.getResourceTypes();
     const allElements = [...types.common, ...types.rare];
-    
+
     // Weighted random selection based on rarity
     const random = Math.random();
     let cumulative = 0;
-    
+
     for (const element of allElements) {
       cumulative += element.rarity;
       if (random <= cumulative) {
         return element;
       }
     }
-    
+
     // Fallback to most common element
     return types.common[0];
   }
@@ -62,18 +62,18 @@ export class Resource {
   createMesh() {
     // Create small cylinder for resource
     const geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8);
-    const material = new THREE.MeshStandardMaterial({ 
+    const material = new THREE.MeshStandardMaterial({
       color: this.elementType.color,
       metalness: 0.7,
       roughness: 0.3,
       emissive: new THREE.Color(this.elementType.color).multiplyScalar(0.1)
     });
-    
+
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.copy(this.position);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
-    
+
     // Add slight rotation for visual interest
     this.mesh.rotation.x = Math.random() * Math.PI;
     this.mesh.rotation.z = Math.random() * Math.PI;
@@ -89,11 +89,11 @@ export class Resource {
 
   update() {
     if (!this.mesh) return;
-    
+
     // Gentle floating motion
     const time = Date.now() * 0.001;
     this.mesh.position.y = this.position.y + Math.sin(time * this.floatSpeed + this.timeOffset) * this.floatAmplitude;
-    
+
     // Slow rotation
     this.mesh.rotation.y += this.rotationSpeed;
     this.mesh.rotation.x += this.rotationSpeed * 0.5;

@@ -13,7 +13,7 @@ export const sectorDefinitions = {
       { type: 'planet', name: 'Helia Minor', radius: 45, color: 0xdaa520, greeting: 'Helia Minor control online.', position: { x: 480, y: 60, z: -900 }, rotationSpeed: 0.09, hasMoon: true }
     ],
     stations: [
-      { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05, /*conversation: oceanusConversation */ }
+      { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05 /*conversation: oceanusConversation */ }
     ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 }
   },

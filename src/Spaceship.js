@@ -3,11 +3,11 @@ import * as THREE from 'three';
 export class Spaceship {
   constructor() {
     this.mesh = this.createSpaceshipMesh();
-  // Third-person model holder (FBX)
-  this.thirdPersonGroup = new THREE.Group();
-  this.thirdPersonLoaded = false;
-  this.thirdPersonMode = false;
-  this.thirdPersonVisualOffset = null; // local-space offset to align model with logical ship position
+    // Third-person model holder (FBX)
+    this.thirdPersonGroup = new THREE.Group();
+    this.thirdPersonLoaded = false;
+    this.thirdPersonMode = false;
+    this.thirdPersonVisualOffset = null; // local-space offset to align model with logical ship position
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
@@ -39,9 +39,9 @@ export class Spaceship {
       rotationLockAcquired: false, // finished rotating to horizontal slot-facing orientation
       hasVisitedAridusPrime: false,
       hasVisitedOceanus: false,
-  dockContext: null,           // 'planet' | 'station'
-  docketPlanetId: null,        // planet id when docked to planet (spelling per request)
-  dockedStationId: null,       // station id when docked to station
+      dockContext: null,           // 'planet' | 'station'
+      docketPlanetId: null,        // planet id when docked to planet (spelling per request)
+      dockedStationId: null       // station id when docked to station
       // Add more flags as needed
     };
 
@@ -88,10 +88,10 @@ export class Spaceship {
     // Update mesh position
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
-     if (this.thirdPersonMode) {
-       this.thirdPersonGroup.position.copy(this.position);
-       this.thirdPersonGroup.rotation.copy(this.rotation);
-     }
+    if (this.thirdPersonMode) {
+      this.thirdPersonGroup.position.copy(this.position);
+      this.thirdPersonGroup.rotation.copy(this.rotation);
+    }
     this.thirdPersonGroup.position.copy(this.position);
     this.thirdPersonGroup.rotation.copy(this.rotation);
   }
@@ -116,7 +116,7 @@ export class Spaceship {
   syncThirdPerson() {
     if (this.thirdPersonMode) {
       // Base position is logical ship position (cockpit viewpoint)
-      let basePos = this.position.clone();
+      const basePos = this.position.clone();
       if (this.thirdPersonVisualOffset) {
         // Rotate offset by ship orientation so it stays attached properly
         const rotated = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
@@ -151,10 +151,10 @@ export class Spaceship {
     this.rotation.setFromQuaternion(this.quaternion);
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
-     if (this.thirdPersonMode) {
-       this.thirdPersonGroup.position.copy(this.position);
-       this.thirdPersonGroup.quaternion.copy(this.quaternion);
-     }
+    if (this.thirdPersonMode) {
+      this.thirdPersonGroup.position.copy(this.position);
+      this.thirdPersonGroup.quaternion.copy(this.quaternion);
+    }
   }
 
   createSpaceshipMesh() {
@@ -206,7 +206,7 @@ export class Spaceship {
       console.log('WARNING: Ship detached from station unexpectedly!');
       console.trace();
     }
-    
+
     // Handle docking
     this.updateDocking(deltaTime);
 
@@ -238,7 +238,7 @@ export class Spaceship {
       this.mesh.position.copy(this.position);
       this.mesh.quaternion.copy(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+      this.syncThirdPerson();
       if (tTurn >= 1) {
         // Complete docking now if not already
         if (!this.flags.isDocked) {
@@ -250,7 +250,7 @@ export class Spaceship {
             this.dockedLocalOffset = new THREE.Vector3(0, 0, 0);
             const stationQuatInv = station.mesh.quaternion.clone().invert();
             this.dockedRelativeQuat = stationQuatInv.multiply(this.quaternion.clone());
-            
+
             // Parent ship to station for proper takeoff animation
             const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
             const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
@@ -268,7 +268,7 @@ export class Spaceship {
             this.mesh.quaternion.copy(station.mesh.quaternion.clone().invert().multiply(worldQuat));
             console.log('Spaceship Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
             console.log('Ship local position after Spaceship parenting:', this.mesh.position);
-            
+
             // Ensure station docking context flags
             this.flags.dockContext = 'station';
             this.flags.docketPlanetId = null;
@@ -290,14 +290,14 @@ export class Spaceship {
       this.takeoffTimer += deltaTime;
       const t = Math.min(1, this.takeoffTimer / this.takeoffDuration);
       const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      
+
       // Suppress any residual angular velocity during guided ascent
       this.angularVelocity.set(0, 0, 0);
-      
+
       // Check if this is a planet takeoff (has local coordinates)
       const isPlanetTakeoff = this.takeoffPlanet && this.takeoffPlanet.getType && this.takeoffPlanet.getType() === 'planet';
       const isStationTakeoff = this.takeoffPlanet && !isPlanetTakeoff; // Station takeoff
-      
+
       if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
         // Planet takeoff: use local coordinates
         const localPos = this.takeoffLocalStart.clone().lerp(this.takeoffLocalTarget, ease);
@@ -310,35 +310,35 @@ export class Spaceship {
         const pitchAngle = THREE.MathUtils.degToRad(10) * ease;
         const pitchQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchAngle);
         this.mesh.quaternion.copy(this.takeoffBaseQuat.clone().multiply(pitchQ));
-        
+
         // Update world position/quaternion caches
         this.position.copy(this.mesh.getWorldPosition(new THREE.Vector3()));
         this.quaternion.copy(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
       } else if (isStationTakeoff) {
         // Station takeoff: move forward relative to station's current position
         const station = this.takeoffPlanet;
-        
+
         // Get current station position and rotation (accounting for orbital movement)
         const currentStationPos = station.mesh.getWorldPosition(new THREE.Vector3());
         const currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion());
-        
+
         // Calculate current forward direction from station's current rotation
         // For takeoff, we want to move AWAY from the station (positive landing vector direction)
         // For docking, we move TOWARD the station (negative landing vector direction)
         const landingDir = station.getLandingVectorDirectionWorld();
         const currentStationForward = landingDir.clone(); // Don't negate for takeoff
-        
+
         // Move forward from station's current position by the eased distance
         const forwardDistance = station.size * 0.8 * ease; // Distance increases with ease
         const worldPos = currentStationPos.clone()
           .add(currentStationForward.clone().multiplyScalar(forwardDistance));
-        
+
         if (ease < 0.1) { // Log only first few frames
           console.log('Station takeoff update - ease:', ease, 'forwardDistance:', forwardDistance);
           console.log('Station current pos:', currentStationPos);
           console.log('Ship world pos:', worldPos);
         }
-        
+
         this.position.copy(worldPos);
         this.quaternion.copy(this.takeoffBaseQuat);
         this.mesh.position.copy(worldPos);
@@ -352,7 +352,7 @@ export class Spaceship {
       }
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+      this.syncThirdPerson();
       if (t >= 1) {
         // Detach if still parented (only for planet takeoff - station takeoff is already in world space)
         if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
@@ -366,16 +366,16 @@ export class Spaceship {
           this.position.copy(worldPos);
           this.quaternion.copy(worldQuat);
         }
-        
+
         // Set initial velocity and throttle
         const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
         this.velocity.copy(forward.multiplyScalar(this.maxSpeed * 0.3));
         this.setThrottle(0.6);
-        
+
         // Complete takeoff
         this.takeoffActive = false;
         this.takeoffPlanet = null;
-        
+
         // Clear docking flags
         this.flags.isDocked = false;
         this.dockingProgress = 0;
@@ -485,7 +485,7 @@ export class Spaceship {
           this.dockedLocalOffset = new THREE.Vector3(0, 0, 0);
           const stationQuatInv = station.mesh.quaternion.clone().invert();
           this.dockedRelativeQuat = stationQuatInv.multiply(this.quaternion.clone());
-          
+
           // Parent ship to station for proper takeoff animation
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
@@ -497,7 +497,7 @@ export class Spaceship {
           this.mesh.quaternion.copy(station.mesh.quaternion.clone().invert().multiply(worldQuat));
           console.log('Station docking - after parenting. New parent:', this.mesh.parent?.name || 'none');
           console.log('Ship local position after parenting:', this.mesh.position);
-          
+
           this.flags.dockingAuthorized = false;
           this.flags.landingVectorLocked = false;
           this.flags.landingAlignmentLocked = false;
@@ -549,7 +549,7 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+      this.syncThirdPerson();
       return; // Skip normal movement while locked
     }
 
@@ -564,7 +564,7 @@ export class Spaceship {
       this.mesh.position.copy(this.position);
       this.mesh.quaternion.copy(this.quaternion);
       this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+      this.syncThirdPerson();
       return;
     }
 
@@ -603,7 +603,7 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
       this.mesh.position.copy(this.position);
       this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+      this.syncThirdPerson();
       return;
     }
 
@@ -651,7 +651,7 @@ export class Spaceship {
     // Update mesh
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
-  this.syncThirdPerson();
+    this.syncThirdPerson();
 
     // --- Clamp: prevent unintentional backward drift when throttle >= 0 ---
     if (this.throttle >= 0) {
@@ -843,39 +843,39 @@ export class Spaceship {
 
   startStationTakeoff(station, scene) {
     if (!this.flags.isDocked || !this.flags.stationDocked) return;
-    
+
     console.log('Station takeoff starting...');
     console.log('Ship world position:', this.position);
-    
+
     // Store parent for later reattachment if needed
     this.takeoffSceneParent = station.mesh.parent || scene;
-    
+
     // Get current world position (ship is in world space, not parented to station)
     const currentWorldPos = this.position.clone();
-    
+
     // Calculate takeoff path in world space: move straight forward through the mail slot
     // For takeoff, we want to move AWAY from the station (positive landing vector direction)
     // For docking, we move TOWARD the station (negative landing vector direction)
     const landingDir = station.getLandingVectorDirectionWorld();
     const stationForward = landingDir.clone(); // Don't negate for takeoff
-    
+
     // Start position: current world docked position
     this.takeoffStartPos.copy(currentWorldPos);
-    
+
     // Target position: straight forward through the mail slot, clear of the station
     const forwardDistance = station.size * 0.8; // Move forward through the slot and clear
     const targetWorldPos = currentWorldPos.clone()
       .add(stationForward.clone().multiplyScalar(forwardDistance));
-    
+
     this.takeoffTargetPos.copy(targetWorldPos);
-    
+
     console.log('Takeoff world start:', this.takeoffStartPos);
     console.log('Takeoff world target:', this.takeoffTargetPos);
-    
+
     // Store current orientation as base (keep straight, no pitch)
     this.quaternion.copy(this.mesh.getWorldQuaternion(new THREE.Quaternion()));
     this.takeoffBaseQuat.copy(this.quaternion);
-    
+
     // Initialize takeoff sequence
     this.takeoffTimer = 0;
     this.takeoffActive = true;
@@ -883,9 +883,9 @@ export class Spaceship {
     this.velocity.set(0, 0, 0);
     this.angularVelocity.set(0, 0, 0);
     this.setThrottle(0);
-    
+
     console.log('Takeoff initialized. Active:', this.takeoffActive);
-    
+
     // Ship remains in world space during takeoff (like docking system)
   }
 

@@ -34,7 +34,7 @@ async function collectInstruments(midiDir){
   let midiMod;
   try {
     // Prefer require for simpler CJS interop if available
-    // eslint-disable-next-line global-require, import/no-dynamic-require
+    // eslint-disable-next-line import/no-dynamic-require
     midiMod = require('@tonejs/midi');
   } catch {
     midiMod = await import('@tonejs/midi');
@@ -86,7 +86,7 @@ function download(name){
     const dest = path.join(OUT_DIR, `${name}-ogg.js`);
     if (fs.existsSync(dest)) return resolve();
     https.get(url, res => {
-      if (res.statusCode !== 200) return reject(new Error('HTTP '+res.statusCode+' '+url));
+      if (res.statusCode !== 200) return reject(new Error('HTTP ' + res.statusCode + ' ' + url));
       const file = fs.createWriteStream(dest);
       res.pipe(file);
       file.on('finish', () => file.close(resolve));

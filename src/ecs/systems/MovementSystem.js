@@ -17,7 +17,7 @@ export class MovementSystem {
       const speed = axis.length();
       if (speed > 1e-6) {
         axis.normalize();
-        const dq = new THREE.Quaternion().setFromAxisAngle(axis, speed*dt);
+        const dq = new THREE.Quaternion().setFromAxisAngle(axis, speed * dt);
         o.quaternion.multiply(dq);
         o.euler.setFromQuaternion(o.quaternion);
       }

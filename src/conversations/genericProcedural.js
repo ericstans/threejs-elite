@@ -11,7 +11,7 @@ export const genericProceduralConversation = {
     },
     // Docking request path (planet-based docking)
     docking: {
-      response: "You are authorized to dock. Please provide your ship registration and cargo manifest.",
+      response: 'You are authorized to dock. Please provide your ship registration and cargo manifest.',
       options: [
         { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
         { id: 'end', text: 'Actually, never mind. (End conversation)' }
@@ -64,12 +64,12 @@ export const genericProceduralConversation = {
       ].filter(o => o)
     },
     resources: {
-      response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${(planet.radius||0).toFixed(0)} sample profiles.`,
+      response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${(planet.radius || 0).toFixed(0)} sample profiles.`,
       options: [
         { id: 'back_information', text: 'Back to information' },
         { id: 'end', text: 'Goodbye. (End conversation)' }
       ]
-    },
+    }
     // traffic: {
     //   response: 'No significant traffic conflicts detected. Maintain standard separation protocols.',
     //   options: [

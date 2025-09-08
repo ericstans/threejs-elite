@@ -3,11 +3,11 @@ import * as THREE from 'three';
 export class NavTargetUI {
   constructor(container) {
     this.container = container;
-  // Low-res preview scale (internal resolution factor). 1 = full res. <1 = pixelated look.
-  this._lowResScale = 0.4; // try 40% internal resolution
+    // Low-res preview scale (internal resolution factor). 1 = full res. <1 = pixelated look.
+    this._lowResScale = 0.4; // try 40% internal resolution
     this.createNavTargetPanel();
     this.createNavTargetIndicator();
-  this.createOffscreenArrow();
+    this.createOffscreenArrow();
   }
 
   createNavTargetPanel() {
@@ -23,7 +23,7 @@ export class NavTargetUI {
     this.navTargetPanel.style.lineHeight = '1.4';
     this.navTargetPanel.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.style.display = 'none'; // Initially hidden
-    
+
     // Force font application with !important
     this.navTargetPanel.style.setProperty('font-family', 'PeaberryMono, monospace', 'important');
     this.container.appendChild(this.navTargetPanel);
@@ -110,7 +110,7 @@ export class NavTargetUI {
     this.navTargetName.textContent = navTargetInfo.name;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
     this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
-    
+
     // Show/hide commable indicator
     if (navTargetInfo.isCommable) {
       this.navCommableIndicator.style.display = 'block';
@@ -118,7 +118,7 @@ export class NavTargetUI {
     } else {
       this.navCommableIndicator.style.display = 'none';
     }
-    
+
     // Update nav target indicator position
     this.updateNavTargetIndicator(targetPosition, camera);
     // Update preview wireframe (pass through extra original target reference if supplied)
@@ -130,7 +130,7 @@ export class NavTargetUI {
   updateNavTargetIndicator(targetPosition, camera) {
     if (!targetPosition || !camera) {
       this.navTargetIndicator.style.display = 'none';
-  if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
+      if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
       return;
     }
 
@@ -178,7 +178,7 @@ export class NavTargetUI {
     this.navTargetPanel.style.display = 'none';
     this.navTargetIndicator.style.display = 'none';
     this.navCommableIndicator.style.display = 'none';
-  if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
+    if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
     this._clearPreview();
   }
 
@@ -191,9 +191,9 @@ export class NavTargetUI {
     this.previewRenderer.domElement.style.width = '100%';
     this.previewRenderer.domElement.style.height = '100%';
     this.previewRenderer.domElement.style.opacity = '0.18';
-  // Force pixelated upscale for retro / low-res effect
-  this.previewRenderer.domElement.style.imageRendering = 'pixelated';
-  this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
+    // Force pixelated upscale for retro / low-res effect
+    this.previewRenderer.domElement.style.imageRendering = 'pixelated';
+    this.previewRenderer.domElement.style.imageRendering = 'crisp-edges';
     this.previewWrapper.appendChild(this.previewRenderer.domElement);
     // Light (subtle)
     const light = new THREE.AmbientLight(0xffffff, 0.6);
@@ -229,14 +229,14 @@ export class NavTargetUI {
       240, 112, 208, 80
     ];
     const img = ctx.createImageData(4,4);
-    for (let i=0;i<a.length;i++) {
+    for (let i = 0;i < a.length;i++) {
       const v = a[i];
       // Fixed cockpit screen base color #141414 (20,20,20) with only alpha variation
       const g = 0x14; // 20
-      img.data[i*4+0] = g;
-      img.data[i*4+1] = g;
-      img.data[i*4+2] = g;
-      img.data[i*4+3] = 18 + (v/16); // keep subtle ordered alpha variance
+      img.data[i * 4 + 0] = g;
+      img.data[i * 4 + 1] = g;
+      img.data[i * 4 + 2] = g;
+      img.data[i * 4 + 3] = 18 + (v / 16); // keep subtle ordered alpha variance
     }
     ctx.putImageData(img,0,0);
     const url = cvs.toDataURL();
@@ -307,11 +307,11 @@ export class NavTargetUI {
         const pts = [];
         for (let s = 0; s <= meridianSegments; s++) {
           const t = Math.PI * s / meridianSegments; // 0..PI
-            const y = Math.cos(t);
-            const r = Math.sin(t);
-            const x = r * Math.cos(phi);
-            const z = r * Math.sin(phi);
-            pts.push(x, y, z);
+          const y = Math.cos(t);
+          const r = Math.sin(t);
+          const x = r * Math.cos(phi);
+          const z = r * Math.sin(phi);
+          pts.push(x, y, z);
         }
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
@@ -350,8 +350,8 @@ export class NavTargetUI {
       const w = this.navTargetPanel.clientWidth;
       const h = this.navTargetPanel.clientHeight;
       const size = Math.min(w, h);
-  const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
-  this.previewRenderer.setSize(size * scale, size * scale, false);
+      const scale = (typeof this._lowResScale === 'number') ? this._lowResScale : 0.4;
+      this.previewRenderer.setSize(size * scale, size * scale, false);
       this.previewCamera.aspect = 1;
       this.previewCamera.updateProjectionMatrix();
       this.previewRenderer.render(this.previewScene, this.previewCamera);

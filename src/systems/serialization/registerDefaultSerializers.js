@@ -38,7 +38,7 @@ export function registerDefaultSerializers(sectorManager) {
       const pos = state.position;
       const planet = new Planet(state.radius, new THREE.Vector3(pos.x, pos.y, pos.z), state.color, state.name, state.greeting);
       planet.rotationSpeed = state.rotationSpeed ?? planet.rotationSpeed;
-  planet.dockable = state.dockable !== undefined ? state.dockable : true;
+      planet.dockable = state.dockable !== undefined ? state.dockable : true;
       return planet;
     }
   });

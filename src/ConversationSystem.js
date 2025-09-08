@@ -3,7 +3,7 @@ import { genericProceduralConversation } from './conversations/genericProcedural
 export class ConversationSystem {
   constructor() {
     this.conversations = {};
-    
+
     // Station detection and docking hooks
     this._isStation = null;
     this._isStationDockable = null;
@@ -12,7 +12,7 @@ export class ConversationSystem {
   // Load conversations from sector definitions
   loadConversationsFromSector(sectorDefinition) {
     if (!sectorDefinition) return;
-    
+
     // Load planet conversations
     if (sectorDefinition.planets) {
       for (const planet of sectorDefinition.planets) {
@@ -21,7 +21,7 @@ export class ConversationSystem {
         }
       }
     }
-    
+
     // Load station conversations
     if (sectorDefinition.stations) {
       for (const station of sectorDefinition.stations) {
@@ -53,8 +53,8 @@ export class ConversationSystem {
       return null;
     }
     // Resolve planet entity (if hook provided) to expose attributes
-  const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
-  const stationEntity = this._getStationForPlanet ? this._getStationForPlanet(planetName) : null;
+    const planetEntity = this._getPlanetEntity ? this._getPlanetEntity(planetName) : null;
+    const stationEntity = this._getStationForPlanet ? this._getStationForPlanet(planetName) : null;
     const planetAttributes = planetEntity ? {
       name: planetEntity.getName ? planetEntity.getName() : planetName,
       radius: planetEntity.radius,
@@ -110,7 +110,7 @@ export class ConversationSystem {
 
   _safeEvalNodeResponse(fn, context) {
     try {
-  return fn(context.playerFlags, context.planetAttributes, context.planet, context.stationAttributes, context.station);
+      return fn(context.playerFlags, context.planetAttributes, context.planet, context.stationAttributes, context.station);
     } catch (e) {
       console.warn('ConversationSystem: response function error', e);
       return '...signal distortion...';
@@ -122,7 +122,7 @@ export class ConversationSystem {
     if (this._isStation?.(targetName)) {
       return this.getInitialStationOptions(targetName, playerFlags);
     }
-    
+
     // Otherwise treat as planet
     const planet = this.conversations[targetName];
     // Dockable detection: we rely on external planet entity lookup via optional hook
@@ -151,7 +151,7 @@ export class ConversationSystem {
     if (station && station.conversationTree) {
       // Use custom station conversation if available
       const dockable = this._isStationDockable?.(stationName) !== false; // default true if unknown
-      
+
       const baseOptions = [
         { id: 'information', text: `Tell me about ${stationName}.` },
         dockable ? (
@@ -166,7 +166,7 @@ export class ConversationSystem {
 
     // Default station options if no custom conversation
     const dockable = this._isStationDockable?.(stationName) !== false; // default true if unknown
-    
+
     const baseOptions = [
       { id: 'information', text: `Tell me about ${stationName}.` },
       { id: 'services', text: 'What services are available?' },
@@ -200,7 +200,7 @@ export class ConversationSystem {
   addConversationBranch(planetName, nodeId, nodeData) {
     if (!this.conversations[planetName]) {
       this.conversations[planetName] = {
-        greeting: "Thank you for contacting us.",
+        greeting: 'Thank you for contacting us.',
         conversationTree: {}
       };
     }

@@ -15,7 +15,7 @@ export function hashSeed(...parts) {
 // Mulberry32 PRNG (same algorithm as EnvironmentSystem._rng for convenience outside that class)
 export function mulberry32(seed) {
   let t = seed >>> 0;
-  return function () {
+  return function() {
     t += 0x6D2B79F5;
     let r = Math.imul(t ^ t >>> 15, 1 | t);
     r ^= r + Math.imul(r ^ r >>> 7, 61 | r);

@@ -50,7 +50,7 @@ export class DockingManager {
     if (!ship) return;
     // Alignment / rotation status
     if (ship.getFlag('landingVectorLocked') && ship.getFlag('landingAlignmentLocked') && this.ui.dockingStatus.textContent !== 'ALIGNMENT LOCK ACQUIRED') {
-        ship.setFlag('firingEnabled', false); // disable firing when alignment lock achieved
+      ship.setFlag('firingEnabled', false); // disable firing when alignment lock achieved
       this.ui.updateDockingStatus('ALIGNMENT LOCK ACQUIRED');
     }
     if (ship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {

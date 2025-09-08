@@ -20,13 +20,13 @@ export class EnvironmentSystem {
     this.asteroids = [];
     this.oceanusStation = null;
     this.derelictStardust = null;
-  // Additional procedural stardust field centered on planet cluster
-  this.planetClusterStardust = null;
-  // Procedural asteroid field state
-  this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
-  this.destroyedAsteroidIds = new Set();
-  this.asteroidFieldCenter = new THREE.Vector3(-50, 50, -650);
-  this.asteroidFieldSize = 1200;
+    // Additional procedural stardust field centered on planet cluster
+    this.planetClusterStardust = null;
+    // Procedural asteroid field state
+    this.asteroidSeed = Date.now() & 0xffff; // simple default; will be overridden by sector load
+    this.destroyedAsteroidIds = new Set();
+    this.asteroidFieldCenter = new THREE.Vector3(-50, 50, -650);
+    this.asteroidFieldSize = 1200;
     this.procedural = procedural; // if true, ignore provided planetFactory and generate
   }
 
@@ -138,9 +138,9 @@ export class EnvironmentSystem {
     ringGeo.rotateX(Math.PI / 2 + (rand() - 0.5) * 0.6);
     const mat = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
     const ring = new THREE.Mesh(ringGeo, mat);
-  // Parent ring to planet so it follows position (prevents orphaned rings on sector reload)
-  ring.position.set(0, 0, 0);
-  planet.mesh.add(ring);
+    // Parent ring to planet so it follows position (prevents orphaned rings on sector reload)
+    ring.position.set(0, 0, 0);
+    planet.mesh.add(ring);
     planet.rings = ring;
   }
 
@@ -161,19 +161,19 @@ export class EnvironmentSystem {
         o.center.z + Math.sin(o.angle) * o.radius
       );
     };
-  // Provide  nav-target interface (moons are nav-targetable but NOT commable)
-  moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
-  moon.userData.navName = `${planet.getName()} Moon`;
-  moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
-  moon.userData.isNavTargeted = false;
-  moon.userData.isCommable = false; // explicitly not commable
-  moon.getId = () => moon.userData.navId;
-  moon.getName = () => moon.userData.navName;
-  moon.getMass = () => moon.userData.navMass;
-  moon.setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
-  moon.isNavTarget = () => moon.userData.isNavTargeted;
-  moon.getPosition = () => moon.position.clone();
-  moon.getType = () => 'moon';
+    // Provide  nav-target interface (moons are nav-targetable but NOT commable)
+    moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
+    moon.userData.navName = `${planet.getName()} Moon`;
+    moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
+    moon.userData.isNavTargeted = false;
+    moon.userData.isCommable = false; // explicitly not commable
+    moon.getId = () => moon.userData.navId;
+    moon.getName = () => moon.userData.navName;
+    moon.getMass = () => moon.userData.navMass;
+    moon.setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
+    moon.isNavTarget = () => moon.userData.isNavTargeted;
+    moon.getPosition = () => moon.position.clone();
+    moon.getType = () => 'moon';
     this.gameEngine.scene.add(moon);
     planet.moon = moon;
   }
@@ -520,9 +520,9 @@ export class EnvironmentSystem {
   getAsteroidFieldState() {
     return {
       seed: this.asteroidSeed,
-  destroyedIds: Array.from(this.destroyedAsteroidIds),
-  center: { x: this.asteroidFieldCenter.x, y: this.asteroidFieldCenter.y, z: this.asteroidFieldCenter.z },
-  size: this.asteroidFieldSize
+      destroyedIds: Array.from(this.destroyedAsteroidIds),
+      center: { x: this.asteroidFieldCenter.x, y: this.asteroidFieldCenter.y, z: this.asteroidFieldCenter.z },
+      size: this.asteroidFieldSize
     };
   }
 

@@ -28,9 +28,9 @@ export class CombatSystem {
     onRequestTargetInfoUpdate,
     getNPCShip,
     getAsteroids,
-  onHitFeedback,
-  onNPCShipDestroyed,
-  environmentSystem // optional, used for marking destroyed asteroids for procedural diff
+    onHitFeedback,
+    onNPCShipDestroyed,
+    environmentSystem // optional, used for marking destroyed asteroids for procedural diff
   }) {
     this.gameEngine = gameEngine;
     this.soundManager = soundManager;
@@ -40,10 +40,10 @@ export class CombatSystem {
     this.onRequestTargetInfoUpdate = onRequestTargetInfoUpdate;
     this.getNPCShip = getNPCShip;
     this.getAsteroids = getAsteroids;
-  this.onHitFeedback = onHitFeedback;
-  this.onNPCShipDestroyed = onNPCShipDestroyed;
-  // Accept either direct instance or function returning instance
-  this.environmentSystem = typeof environmentSystem === 'function' ? { markAsteroidDestroyed: (a)=>environmentSystem()?.markAsteroidDestroyed(a) } : environmentSystem;
+    this.onHitFeedback = onHitFeedback;
+    this.onNPCShipDestroyed = onNPCShipDestroyed;
+    // Accept either direct instance or function returning instance
+    this.environmentSystem = typeof environmentSystem === 'function' ? { markAsteroidDestroyed: (a)=>environmentSystem()?.markAsteroidDestroyed(a) } : environmentSystem;
 
     this.lasers = [];
     this.explosions = [];
@@ -152,10 +152,10 @@ export class CombatSystem {
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       this.gameEngine.createSpatialExplosion(asteroid.getPosition());
-      
+
       // Spawn resources when asteroid is destroyed
       this.spawnResources(asteroid.getPosition());
-      
+
       this.gameEngine.removeEntity(asteroid);
       asteroidsArray.splice(asteroidIndex, 1);
       this.environmentSystem?.markAsteroidDestroyed(asteroid);
@@ -197,14 +197,14 @@ export class CombatSystem {
       this.onRequestTargetInfoUpdate?.();
     }
 
-  if (wasDestroyed) {
+    if (wasDestroyed) {
       const explosion = new Explosion(hitPosition, npcShip.getSize() * 2, 1.0);
       this.explosions.push(explosion);
       this.gameEngine.addEntity(explosion);
       this.gameEngine.createSpatialExplosion(hitPosition);
       const current = this.getCurrentTarget?.();
       if (current && current.getId && current.getId() === 'npcship') {
-    this.onNPCShipDestroyed?.();
+        this.onNPCShipDestroyed?.();
       }
     } else {
       const explosion = new Explosion(hitPosition, 0.3, 0.3);
@@ -217,7 +217,7 @@ export class CombatSystem {
   spawnResources(asteroidPosition) {
     // Spawn 0-4 resources in a small group
     const resourceCount = Math.floor(Math.random() * 5); // 0-4 resources
-    
+
     for (let i = 0; i < resourceCount; i++) {
       // Create a small cluster around the asteroid position
       const offset = new THREE.Vector3(
@@ -225,11 +225,11 @@ export class CombatSystem {
         (Math.random() - 0.5) * 4, // Random Y offset within 4 units
         (Math.random() - 0.5) * 4  // Random Z offset within 4 units
       );
-      
+
       const resourcePosition = asteroidPosition.clone().add(offset);
       const elementType = Resource.getRandomElementType();
       const resource = new Resource(resourcePosition, elementType);
-      
+
       // Add resource to the game engine
       this.gameEngine.addEntity(resource);
     }

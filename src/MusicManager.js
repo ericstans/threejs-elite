@@ -85,8 +85,8 @@ async function getSoundfont(ctx) {
     // Override global nameToUrl resolver for this instance plus constructor (so further calls reuse it)
     _soundfontInstance.nameToUrl = _instrumentUrl;
     if (SoundfontCtor) SoundfontCtor.nameToUrl = _instrumentUrl;
-  // Preload manifest so resolver picks local vs CDN correctly
-  await _loadLocalManifestOnce();
+    // Preload manifest so resolver picks local vs CDN correctly
+    await _loadLocalManifestOnce();
   }
   return _soundfontInstance;
 }
@@ -107,7 +107,7 @@ const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient3stretchy, ambien
 // Utility: clamp
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
-// Mapping of General MIDI program numbers (0-127) -> soundfont instruments names expected by soundfont-player. 
+// Mapping of General MIDI program numbers (0-127) -> soundfont instruments names expected by soundfont-player.
 const GM_PROGRAM_MAP = {
   0: 'acoustic_grand_piano',
   1: 'bright_acoustic_piano',
@@ -262,14 +262,14 @@ export class MusicManager {
     this._ambientQueue = null; // currently playing ambient midi info
     this._scheduledNextTimeout = null;
     this._instrumentsCache = new Map(); // key: instrumentName -> soundfont-player Instrument
-  this._instrumentLoading = new Map(); // in-flight loads
-  // Effects chain
-  this._effectsInput = null;     // entry point for all instruments
-  this._dryGain = null;          // dry branch
-  this._wetGain = null;          // wet (reverb) branch
-  this._reverbConvolver = null;  // convolver node
-  this.reverbMix = 0.3;          // 0..1
-  this._reverbEnabled = true;
+    this._instrumentLoading = new Map(); // in-flight loads
+    // Effects chain
+    this._effectsInput = null;     // entry point for all instruments
+    this._dryGain = null;          // dry branch
+    this._wetGain = null;          // wet (reverb) branch
+    this._reverbConvolver = null;  // convolver node
+    this.reverbMix = 0.3;          // 0..1
+    this._reverbEnabled = true;
   }
 
   async init() {
@@ -463,8 +463,8 @@ export class MusicManager {
         if (typeof inst.onready === 'function') inst.onready(() => res(inst)); else res(inst);
       });
 
-      const loadProgramInstrument = async (programNum) => {
-  const name = sanitizeInstrumentName(programToInstrument(programNum));
+      const loadProgramInstrument = async(programNum) => {
+        const name = sanitizeInstrumentName(programToInstrument(programNum));
         if (this._instrumentsCache.has(name)) {
           instruments[programNum] = this._instrumentsCache.get(name);
           return;
@@ -474,50 +474,50 @@ export class MusicManager {
           instruments[programNum] = this._instrumentsCache.get(name);
           return;
         }
-        const loadPromise = (async () => {
-            let inst;
+        const loadPromise = (async() => {
+          let inst;
+          try {
+            const SF = await getSoundfont(this._audioCtx);
+            inst = SF.instrument(name, { gain: 1 });
+            // Pre-flight URL existence check (HEAD) to reduce onload errors
             try {
-              const SF = await getSoundfont(this._audioCtx);
-              inst = SF.instrument(name, { gain: 1 });
-              // Pre-flight URL existence check (HEAD) to reduce onload errors
+              // Light existence check only if manifest claims local; otherwise rely on CDN
+              if (_localSoundfontNames && _localSoundfontNames.has(name)) {
+                const url = _instrumentUrl(name);
+                const head = await fetch(url, { method: 'HEAD' });
+                if (!head.ok) throw new Error('Instrument file missing locally: ' + url + ' status:' + head.status);
+              }
+            } catch (preErr) {
+              console.warn('MusicManager: instrument file missing, fallback chain', name, preErr);
+              inst = null; // force fallback execution
+            }
+            await waitOnReady(inst);
+            this._attachInstrumentToEffects(inst);
+          } catch (primaryErr) {
+            console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
+            const fallbackNames = ['string_ensemble_1', 'acoustic_grand_piano'];
+            for (const fb of fallbackNames) {
               try {
-                // Light existence check only if manifest claims local; otherwise rely on CDN
-                if (_localSoundfontNames && _localSoundfontNames.has(name)) {
-                  const url = _instrumentUrl(name);
-                  const head = await fetch(url, { method: 'HEAD' });
-                  if (!head.ok) throw new Error('Instrument file missing locally: '+url+' status:'+head.status);
-                }
-              } catch (preErr) {
-                console.warn('MusicManager: instrument file missing, fallback chain', name, preErr);
-                inst = null; // force fallback execution
-              }
-              await waitOnReady(inst);
-        this._attachInstrumentToEffects(inst);
-            } catch (primaryErr) {
-              console.warn('MusicManager: primary instrument load failed, attempting fallback', name, primaryErr);
-              const fallbackNames = ['string_ensemble_1', 'acoustic_grand_piano'];
-              for (const fb of fallbackNames) {
-                try {
-                  const SF2 = await getSoundfont(this._audioCtx);
-                  inst = SF2.instrument(fb, { gain: 1 });
-                  await waitOnReady(inst);
-          this._attachInstrumentToEffects(inst);
-                  break;
-                } catch (_) { /* continue */ }
-              }
-            }
-            if (inst) this._instrumentsCache.set(name, inst);
-            if (!inst) {
-              // final fallback to cached piano
-              inst = this._instrumentsCache.get('acoustic_grand_piano');
-              if (!inst) {
-                const SF3 = await getSoundfont(this._audioCtx);
-                inst = SF3.instrument('acoustic_grand_piano', { gain: 0.8 });
+                const SF2 = await getSoundfont(this._audioCtx);
+                inst = SF2.instrument(fb, { gain: 1 });
                 await waitOnReady(inst);
-                this._instrumentsCache.set('acoustic_grand_piano', inst);
-              }
-        this._attachInstrumentToEffects(inst);
+                this._attachInstrumentToEffects(inst);
+                break;
+              } catch (_) { /* continue */ }
             }
+          }
+          if (inst) this._instrumentsCache.set(name, inst);
+          if (!inst) {
+            // final fallback to cached piano
+            inst = this._instrumentsCache.get('acoustic_grand_piano');
+            if (!inst) {
+              const SF3 = await getSoundfont(this._audioCtx);
+              inst = SF3.instrument('acoustic_grand_piano', { gain: 0.8 });
+              await waitOnReady(inst);
+              this._instrumentsCache.set('acoustic_grand_piano', inst);
+            }
+            this._attachInstrumentToEffects(inst);
+          }
         })().finally(() => this._instrumentLoading.delete(name));
         this._instrumentLoading.set(name, loadPromise);
         await loadPromise;
@@ -525,18 +525,18 @@ export class MusicManager {
       };
 
       for (const p of uniquePrograms) { // sequential to control load order
-        // eslint-disable-next-line no-await-in-loop
+
         await loadProgramInstrument(p);
       }
 
       // For drum channel we load a percussion kit instrument (soundfont may map 'percussion'). Use acoustic_grand_piano fallback if unavailable.
-    if (!this._instrumentsCache.has('percussion')) {
+      if (!this._instrumentsCache.has('percussion')) {
         try {
           const SF = await getSoundfont(this._audioCtx);
-      const drumInst = SF.instrument('synth_drum', { gain: 0.9 });
+          const drumInst = SF.instrument('synth_drum', { gain: 0.9 });
           await waitOnReady(drumInst);
-      this._instrumentsCache.set('percussion', drumInst);
-      this._attachInstrumentToEffects(drumInst);
+          this._instrumentsCache.set('percussion', drumInst);
+          this._attachInstrumentToEffects(drumInst);
         } catch (e) {
           console.warn('MusicManager: percussion kit not found; falling back');
           const synthDrumName = programToInstrument(118);
@@ -546,7 +546,7 @@ export class MusicManager {
               const synthDrumInst = SF2.instrument(synthDrumName, { gain: 0.9 });
               await waitOnReady(synthDrumInst);
               this._instrumentsCache.set(synthDrumName, synthDrumInst);
-        this._attachInstrumentToEffects(synthDrumInst);
+              this._attachInstrumentToEffects(synthDrumInst);
             } catch {}
           }
           this._instrumentsCache.set('percussion', this._instrumentsCache.get(synthDrumName) || this._instrumentsCache.get('acoustic_grand_piano'));
@@ -574,17 +574,17 @@ export class MusicManager {
               // CRITICAL FIX: Disconnect from destination and reconnect to effects chain
               node.disconnect();
               node.connect(this._effectsInput);
-              
+
               scheduledNodes.push(node);
               // Manually cut off note at note-off time (noteStart + noteDuration)
               const stopTime = noteStart + noteDuration;
               // Use Web Audio time for precise scheduling
               if (typeof this._audioCtx !== 'undefined' && this._audioCtx) {
                 // Use setTimeout for scheduling stop, but convert to ms
-                setTimeout(() => { try { node.stop(); } catch(_){} }, (stopTime - this._audioCtx.currentTime) * 1000);
+                setTimeout(() => { try { node.stop(); } catch (_){} }, (stopTime - this._audioCtx.currentTime) * 1000);
               } else {
                 // Fallback: stop after duration
-                setTimeout(() => { try { node.stop(); } catch(_){} }, noteDuration * 1000);
+                setTimeout(() => { try { node.stop(); } catch (_){} }, noteDuration * 1000);
               }
             }
           } catch (err) {
@@ -603,7 +603,7 @@ export class MusicManager {
       this._scheduledNextTimeout = nextId;
       this._currentPlayback = {
         stop: () => {
-          scheduledNodes.forEach(n => { try { n.stop(); } catch(_){} });
+          scheduledNodes.forEach(n => { try { n.stop(); } catch (_){} });
         },
         timeoutIds
       };

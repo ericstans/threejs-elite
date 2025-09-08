@@ -3,7 +3,7 @@ import js from '@eslint/js';
 export default [
   // Base configuration for all JavaScript files
   js.configs.recommended,
-  
+
   // Project-specific configuration
   {
     files: ['**/*.js'],
@@ -35,7 +35,7 @@ export default [
     },
     rules: {
       // Code quality rules
-      'no-unused-vars': ['error', { 
+      'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
@@ -43,7 +43,7 @@ export default [
       'no-console': 'warn',
       'no-debugger': 'error',
       'no-alert': 'error',
-      
+
       // Style and consistency rules
       'indent': ['error', 2],
       'quotes': ['error', 'single', { avoidEscape: true }],
@@ -56,7 +56,7 @@ export default [
       'space-infix-ops': 'error',
       'eol-last': 'error',
       'no-trailing-spaces': 'error',
-      
+
       // Best practices
       'eqeqeq': ['error', 'always'],
       'no-eval': 'error',
@@ -72,16 +72,16 @@ export default [
       'no-useless-return': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
-      
+
       // Three.js specific considerations
       'no-undef': 'off', // Allow undefined globals for Three.js
-      'camelcase': ['error', { 
+      'camelcase': ['error', {
         properties: 'never',
-        ignoreDestructuring: true 
+        ignoreDestructuring: true
       }]
     }
   },
-  
+
   // Configuration for build scripts and Node.js files
   {
     files: ['scripts/**/*.js', 'vite.config.js', 'eslint.config.js'],
@@ -97,7 +97,7 @@ export default [
       }
     }
   },
-  
+
   // Ignore patterns
   {
     ignores: [

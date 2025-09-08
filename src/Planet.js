@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export class Planet {
-  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = "Planet", greeting = "Thank you for contacting us.") {
+  constructor(radius = 1, position = new THREE.Vector3(0, 0, 0), color = 0x8B4513, name = 'Planet', greeting = 'Thank you for contacting us.') {
     this.radius = radius;
     this.position = position;
     this.color = color;
@@ -9,14 +9,14 @@ export class Planet {
     this.greeting = greeting;
     this.rotationSpeed = 0.1;
     this.currentRotation = 0;
-    
+
     // Navigation targeting
     this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
     this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
     this.isNavTargeted = false;
     this.isCommable = true; // All planets are commable
-  this.dockable = true; // default; procedural generation may override
-    
+    this.dockable = true; // default; procedural generation may override
+
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
   }
@@ -31,19 +31,19 @@ export class Planet {
       color: this.color,
       greeting: this.greeting,
       rotationSpeed: this.rotationSpeed,
-  position: { x: this.position.x, y: this.position.y, z: this.position.z },
-  dockable: this.dockable
+      position: { x: this.position.x, y: this.position.y, z: this.position.z },
+      dockable: this.dockable
     };
   }
 
   createPlanetMesh() {
     // Create a low-poly sphere for flat-shaded look
     const geometry = new THREE.SphereGeometry(this.radius, 8, 6);
-    const material = new THREE.MeshLambertMaterial({ 
+    const material = new THREE.MeshLambertMaterial({
       color: this.color,
-      flatShading: true 
+      flatShading: true
     });
-    
+
     const planet = new THREE.Mesh(geometry, material);
     return planet;
   }
