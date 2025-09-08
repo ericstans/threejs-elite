@@ -3,6 +3,15 @@
 import { aridusPrimeConversation } from '../../conversations/aridusPrime.js';
 import { oceanusConversation } from '../../conversations/oceanus.js';
 
+// Available sectors configuration for the sector map
+export const availableSectors = [
+  { id: 'sector-1', name: 'Aridus Sector', center: { x: -50, y: 50, z: -650 }, size: 1200 },
+  { id: 'sector-2', name: 'Zephyrus Spur', center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+  { id: 'sector-3', name: 'random(55aa)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+  { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 },
+  { id: 'sector-5', name: 'random(1234)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 }
+];
+
 export const sectorDefinitions = {
   'sector-1': {
     id: 'sector-1',

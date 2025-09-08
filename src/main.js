@@ -16,7 +16,7 @@ import { MusicManager } from './MusicManager.js';
 import { SectorManager } from './systems/SectorManager.js';
 import { CargoSystem } from './systems/CargoSystem.js';
 import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
-import { getSectorDefinition } from './systems/serialization/sectorDefinitions.js';
+import { getSectorDefinition, availableSectors } from './systems/serialization/sectorDefinitions.js';
 import { hashSeed } from './util/seedUtils.js';
 
 import { NPCShip } from './NPCShip.js';
@@ -82,13 +82,7 @@ class Game {
     registerDefaultSerializers(this.sectorManager);
     this.activeSectorEntities = [];
     // Predefine sectors (seeded procedural asteroid fields)
-    this.availableSectors = [
-      { id: 'sector-1', name: 'Aridus Sector', seed: 0x1a2b, center: { x: -50, y: 50, z: -650 }, size: 1200 },
-      { id: 'sector-2', name: 'random(33dd)', seed: 0x33dd, center: { x: 400, y: 0, z: -1200 }, size: 1400 },
-      { id: 'sector-3', name: 'random(55aa)', seed: 0x55aa, center: { x: -600, y: -100, z: -300 }, size: 1000 },
-      { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 },
-      { id: 'sector-5', name: 'random(1234)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 }
-    ];
+    this.availableSectors = availableSectors;
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
       gameEngine: this.gameEngine,
