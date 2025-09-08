@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Asteroid } from '../Asteroid.js';
 import { SpaceStation } from '../SpaceStation.js';
 import { Planet } from '../Planet.js';
+import { NPCShip } from '../NPCShip.js';
 import { hashSeed } from '../util/seedUtils.js';
 
 /**
@@ -18,6 +19,7 @@ export class EnvironmentSystem {
     this.npcShipFactory = npcShipFactory; // function returning npc ship (already constructed)
     this.planets = [];
     this.asteroids = [];
+    this.npcShips = []; // Array to hold NPC ships
     this.oceanusStation = null;
     this.derelictStardust = null;
     // Additional procedural stardust field centered on planet cluster
@@ -77,6 +79,8 @@ export class EnvironmentSystem {
       this.gameEngine.scene.add(station.mesh);
       if (!this.oceanusStation) this.oceanusStation = station;
     }
+    // No NPC ships in procedural sectors for now
+    this.clearNPCShips();
     const wideRand = this._rng(hashSeed(seed, 'stardustWide'));
     const clusterRand = this._rng(hashSeed(seed, 'stardustCluster'));
     this._createWideStardust(wideRand);
@@ -115,6 +119,47 @@ export class EnvironmentSystem {
       if (this.oceanusStation.mesh && this.oceanusStation.mesh.parent) this.oceanusStation.mesh.parent.remove(this.oceanusStation.mesh);
       this.gameEngine.removeEntity && this.gameEngine.removeEntity(this.oceanusStation);
       this.oceanusStation = null;
+    }
+    // Clear NPC ships
+    this.clearNPCShips();
+  }
+
+  clearNPCShips() {
+    for (const npc of this.npcShips) {
+      if (npc.mesh && npc.mesh.parent) npc.mesh.parent.remove(npc.mesh);
+      this.gameEngine.removeEntity && this.gameEngine.removeEntity(npc);
+    }
+    this.npcShips = [];
+  }
+
+  createNPCShipsFromDefinition(npcShipDefinitions) {
+    this.clearNPCShips();
+    
+    for (const npcDef of npcShipDefinitions) {
+      const position = new THREE.Vector3(npcDef.position.x, npcDef.position.y, npcDef.position.z);
+      const npcShip = new NPCShip(position);
+      
+      // Set patrol waypoints if provided
+      if (npcDef.patrolWaypoints && npcDef.patrolWaypoints.length > 0) {
+        npcShip.setPatrolWaypoints(npcDef.patrolWaypoints);
+        npcShip.startPatrol();
+      }
+      
+      this.npcShips.push(npcShip);
+      
+      // Wait for FBX to load, then add to scene and game engine
+      const addNPC = () => {
+        if (npcShip.loaded && npcShip.mesh.children.length > 0) {
+          this.gameEngine.scene.add(npcShip.mesh);
+          this.gameEngine.addEntity(npcShip);
+        } else {
+          setTimeout(addNPC, 100);
+        }
+      };
+      addNPC();
+      
+      // Create stardust around the NPC ship
+      this.createDerelictStardustField(position);
     }
   }
 

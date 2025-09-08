@@ -25,6 +25,20 @@ export const sectorDefinitions = {
     stations: [
       { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05 /*conversation: oceanusConversation */ }
     ],
+    npcShips: [
+      { 
+        type: 'npcShip', 
+        position: { x: -50 + 60, y: 50, z: -650 },
+        patrolWaypoints: [
+          { x: -50 + 60, y: 50, z: -650 },    // Start position
+          { x: -50 + 200, y: 50, z: -650 },   // Move right
+          { x: -50 + 200, y: 50, z: -450 },   // Move forward
+          { x: -50 - 100, y: 50, z: -450 },   // Move left
+          { x: -50 - 100, y: 50, z: -650 },   // Move back
+          { x: -50 + 60, y: 50, z: -650 }     // Return to start
+        ]
+      }
+    ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 },
     soundtracks: ['ambient']
   },
@@ -39,6 +53,7 @@ export const sectorDefinitions = {
     ],
     // Optionally a station could be added later; leave empty for now
     stations: [],
+    npcShips: [], // No NPC ships in this sector
     asteroidField: { seed: 0x33dd, destroyedIds: [], center: { x: 400, y: 0, z: -1200 }, size: 1400 },
     hybridProceduralExtras: {
       proceduralPlanetCount: 3, // number of additional procedural planets to spawn

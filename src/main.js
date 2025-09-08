@@ -91,7 +91,7 @@ class Game {
       getSpaceship: () => this.spaceship,
       getCurrentTarget: () => this.targetingSystem.getCurrentCombatTarget(),
       onRequestTargetInfoUpdate: () => this.targetingSystem.updateTargetInfo(),
-      getNPCShip: () => this.npcShip,
+      getNPCShips: () => this.npcShips,
       getAsteroids: () => this.asteroids,
       onHitFeedback: () => this.ui.blinkCrosshairRed(),
       onNPCShipHit: () => {
@@ -104,7 +104,7 @@ class Game {
       },
       onNPCShipDestroyed: () => {
         const current = this.targetingSystem.getCurrentCombatTarget();
-        if (current && current.getId && current.getId() === 'npcship') {
+        if (current && current.getId && current.getId().startsWith('npcship-')) {
           // TargetingSystem will clear on next updateTargetInfo call
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
@@ -122,7 +122,7 @@ class Game {
       soundManager: this.soundManager,
       getSpaceship: () => this.spaceship,
       getAsteroids: () => this.asteroids,
-      getNPCShip: () => this.npcShip,
+      getNPCShips: () => this.npcShips,
       getPlanets: () => this.planets,
       getStation: () => this.oceanusStation,
       getResources: () => this.gameEngine.getResources()
@@ -394,7 +394,7 @@ class Game {
         const p2 = new Planet(60, new THREE.Vector3(-300, 100, -800), 0x4169E1, 'Oceanus', 'Thank you for contacting Oceanus.');
         return [p1, p2];
       },
-      npcShipFactory: () => this.npcShip,
+      npcShipFactory: () => this.npcShips[0], // Legacy compatibility - return first NPC ship
       procedural: false
     });
     // Aridus sector uses predefined planets; procedural sectors will regenerate on switch
@@ -473,6 +473,10 @@ class Game {
           }
         }
       }
+      // Load NPC ships from definition
+      if (def.npcShips && def.npcShips.length > 0) {
+        this.environmentSystem.createNPCShipsFromDefinition(def.npcShips);
+      }
       // Asteroid field seed from definition
       this.environmentSystem.configureAsteroidField(def.asteroidField);
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
@@ -498,36 +502,9 @@ class Game {
     this.planets = this.environmentSystem.planets;
     this.oceanusStation = this.environmentSystem.oceanusStation;
     this.asteroids = this.environmentSystem.asteroids;
+    this.npcShips = this.environmentSystem.npcShips;
 
-    // --- Add static NPC ship near the asteroid field ---
-    // Place it 60 units beside the field center
-    const npcShipPos = new THREE.Vector3(-50 + 60, 50, -650);
-    this.npcShip = new NPCShip(npcShipPos);
-    
-    // Example: Set up patrol waypoints for the NPC ship
-    // Uncomment the following lines to enable patrol behavior:
-    const patrolWaypoints = [
-      { x: -50 + 60, y: 50, z: -650 },    // Start position
-      { x: -50 + 200, y: 50, z: -650 },   // Move right
-      { x: -50 + 200, y: 50, z: -450 },   // Move forward
-      { x: -50 - 100, y: 50, z: -450 },   // Move left
-      { x: -50 - 100, y: 50, z: -650 },   // Move back
-      { x: -50 + 60, y: 50, z: -650 }     // Return to start
-    ];
-    this.npcShip.setPatrolWaypoints(patrolWaypoints);
-    this.npcShip.startPatrol();
-    // Wait for FBX to load, then add to scene and game engine
-    const addNPC = () => {
-      if (this.npcShip.loaded && this.npcShip.mesh.children.length > 0) {
-        this.gameEngine.scene.add(this.npcShip.mesh);
-        this.gameEngine.addEntity(this.npcShip); // Add to game engine for updates
-      } else {
-        setTimeout(addNPC, 100);
-      }
-    };
-    addNPC();
-    // Create stardust around derelict vessel
-    this.environmentSystem.createDerelictStardustField(npcShipPos);
+    // NPC ships are now loaded from sector definitions
 
     // Position camera at spaceship center (cockpit view)
     this.gameEngine.camera.position.set(0, 0, 0);
@@ -759,7 +736,7 @@ class Game {
           if (p.moon) targets.push(p.moon);
         }
       }
-      if (this.npcShip && this.npcShip.isAlive && this.npcShip.isAlive()) targets.push(this.npcShip);
+      if (this.npcShips) targets.push(...this.npcShips.filter(npc => npc.isAlive && npc.isAlive()));
       if (this.asteroids) targets.push(...this.asteroids);
       if (this.gameEngine) targets.push(...this.gameEngine.getResources());
       // Flag nav-targetable vs combat-targetable (approx)

@@ -14,7 +14,7 @@ import { Resource } from '../Resource.js';
  *  - getSpaceship(): function returning active spaceship (for position/rotation)
  *  - getCurrentTarget(): function returning current target (auto-aim + damage refresh)
  *  - onRequestTargetInfoUpdate(): function invoked when target info should refresh (after damage)
- *  - getNPCShip(): returns NPC ship instance if present
+ *  - getNPCShips(): returns array of NPC ship instances
  *  - getAsteroids(): returns array of asteroid entities
  *  - onHitFeedback(): optional callback executed on every successful laser hit
  */
@@ -26,7 +26,7 @@ export class CombatSystem {
     getSpaceship,
     getCurrentTarget,
     onRequestTargetInfoUpdate,
-    getNPCShip,
+    getNPCShips,
     getAsteroids,
     onHitFeedback,
     onNPCShipHit,
@@ -39,7 +39,7 @@ export class CombatSystem {
     this.getSpaceship = getSpaceship;
     this.getCurrentTarget = getCurrentTarget;
     this.onRequestTargetInfoUpdate = onRequestTargetInfoUpdate;
-    this.getNPCShip = getNPCShip;
+    this.getNPCShips = getNPCShips;
     this.getAsteroids = getAsteroids;
     this.onHitFeedback = onHitFeedback;
     this.onNPCShipHit = onNPCShipHit;
@@ -130,17 +130,22 @@ export class CombatSystem {
         }
       }
       if (hit) continue;
-      // NPC ship
-      const npc = this.getNPCShip?.();
-      if (npc && npc.loaded && npc.isAlive()) {
-        const npcPos = npc.getWorldPosition();
-        const npcRadius = npc.getSize() + 0.1;
-        const distance = laser.getPosition().distanceTo(npcPos);
-        if (distance < npcRadius) {
-          this.handleLaserNPCShipCollision(laser, npc, i);
-          continue;
+      // NPC ships
+      const npcShips = this.getNPCShips?.() || [];
+      for (let j = 0; j < npcShips.length; j++) {
+        const npc = npcShips[j];
+        if (npc && npc.loaded && npc.isAlive()) {
+          const npcPos = npc.getWorldPosition();
+          const npcRadius = npc.getSize() + 0.1;
+          const distance = laser.getPosition().distanceTo(npcPos);
+          if (distance < npcRadius) {
+            this.handleLaserNPCShipCollision(laser, npc, i);
+            hit = true;
+            break;
+          }
         }
       }
+      if (hit) continue;
     }
   }
 

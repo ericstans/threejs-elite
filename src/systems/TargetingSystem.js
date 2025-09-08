@@ -16,7 +16,7 @@ export class TargetingSystem {
     soundManager,
     getSpaceship,
     getAsteroids,
-    getNPCShip,
+    getNPCShips,
     getPlanets,
     getStation,
     getResources
@@ -26,7 +26,7 @@ export class TargetingSystem {
     this.soundManager = soundManager;
     this.getSpaceship = getSpaceship;
     this.getAsteroids = getAsteroids;
-    this.getNPCShip = getNPCShip;
+    this.getNPCShips = getNPCShips;
     this.getPlanets = getPlanets;
     this.getStation = getStation;
     this.getResources = getResources;
@@ -60,29 +60,42 @@ export class TargetingSystem {
     if (this.getResources) {
       targetables.push(...(this.getResources() || []));
     }
-    const npc = this.getNPCShip?.();
-    if (npc && npc.loaded && npc.mesh) {
-      let meshCenter = null;
-      npc.mesh.traverse(child => {
-        if (!meshCenter && child.isMesh) {
-          meshCenter = new THREE.Vector3();
-          child.getWorldPosition(meshCenter);
-        }
-      });
-      if (meshCenter) {
-        targetables.push({
-          getPosition: () => meshCenter,
-          isAlive: () => npc.isAlive(),
-          setTargeted: (v) => { npc.mesh.userData.targeted = v; },
-          getId: () => 'npcship',
-          getName: () => 'Derelict Cruiser',
-          getMass: () => 1000,
-          getHealth: () => npc.getHealth(),
-          getMaxHealth: () => npc.getMaxHealth(),
-          isCommable: true,
-          getType: () => 'npcship',
-          previewSource: npc.mesh // supply full mesh hierarchy for preview underlay
+    const npcShips = this.getNPCShips?.() || [];
+    for (let i = 0; i < npcShips.length; i++) {
+      const npc = npcShips[i];
+      if (npc && npc.loaded && npc.mesh) {
+        let meshCenter = null;
+        npc.mesh.traverse(child => {
+          if (!meshCenter && child.isMesh) {
+            meshCenter = new THREE.Vector3();
+            child.getWorldPosition(meshCenter);
+          }
         });
+        if (meshCenter) {
+          targetables.push({
+            getPosition: () => {
+              // Recalculate position each time to track moving NPC ship
+              let currentMeshCenter = null;
+              npc.mesh.traverse(child => {
+                if (!currentMeshCenter && child.isMesh) {
+                  currentMeshCenter = new THREE.Vector3();
+                  child.getWorldPosition(currentMeshCenter);
+                }
+              });
+              return currentMeshCenter || meshCenter; // fallback to original if calculation fails
+            },
+            isAlive: () => npc.isAlive(),
+            setTargeted: (v) => { npc.mesh.userData.targeted = v; },
+            getId: () => `npcship-${i}`,
+            getName: () => 'Derelict Cruiser',
+            getMass: () => 1000,
+            getHealth: () => npc.getHealth(),
+            getMaxHealth: () => npc.getMaxHealth(),
+            isCommable: true,
+            getType: () => 'npcship',
+            previewSource: npc.mesh // supply full mesh hierarchy for preview underlay
+          });
+        }
       }
     }
     let closest = null;
@@ -277,29 +290,42 @@ export class TargetingSystem {
     if (this.getResources) {
       targetables.push(...(this.getResources() || []));
     }
-    const npc = this.getNPCShip?.();
-    if (npc && npc.loaded && npc.mesh) {
-      let meshCenter = null;
-      npc.mesh.traverse(child => {
-        if (!meshCenter && child.isMesh) {
-          meshCenter = new THREE.Vector3();
-          child.getWorldPosition(meshCenter);
-        }
-      });
-      if (meshCenter) {
-        targetables.push({
-          getPosition: () => meshCenter,
-          isAlive: () => npc.isAlive(),
-          setTargeted: (v) => { npc.mesh.userData.targeted = v; },
-          getId: () => 'npcship',
-          getName: () => 'Derelict Cruiser',
-          getMass: () => 1000,
-          getHealth: () => npc.getHealth(),
-          getMaxHealth: () => npc.getMaxHealth(),
-          isCommable: true,
-          getType: () => 'npcship',
-          previewSource: npc.mesh
+    const npcShips = this.getNPCShips?.() || [];
+    for (let i = 0; i < npcShips.length; i++) {
+      const npc = npcShips[i];
+      if (npc && npc.loaded && npc.mesh) {
+        let meshCenter = null;
+        npc.mesh.traverse(child => {
+          if (!meshCenter && child.isMesh) {
+            meshCenter = new THREE.Vector3();
+            child.getWorldPosition(meshCenter);
+          }
         });
+        if (meshCenter) {
+          targetables.push({
+            getPosition: () => {
+              // Recalculate position each time to track moving NPC ship
+              let currentMeshCenter = null;
+              npc.mesh.traverse(child => {
+                if (!currentMeshCenter && child.isMesh) {
+                  currentMeshCenter = new THREE.Vector3();
+                  child.getWorldPosition(currentMeshCenter);
+                }
+              });
+              return currentMeshCenter || meshCenter; // fallback to original if calculation fails
+            },
+            isAlive: () => npc.isAlive(),
+            setTargeted: (v) => { npc.mesh.userData.targeted = v; },
+            getId: () => `npcship-${i}`,
+            getName: () => 'Derelict Cruiser',
+            getMass: () => 1000,
+            getHealth: () => npc.getHealth(),
+            getMaxHealth: () => npc.getMaxHealth(),
+            isCommable: true,
+            getType: () => 'npcship',
+            previewSource: npc.mesh
+          });
+        }
       }
     }
     
