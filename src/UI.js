@@ -6,6 +6,7 @@ import { NavTargetUI } from './ui/NavTargetUI.js';
 import { OptionsUI } from './ui/OptionsUI.js';
 import { CargoUI } from './ui/CargoUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
+import { TitleOverlay } from './ui/TitleOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 
@@ -141,6 +142,7 @@ export class UI {
     this.optionsUI = new OptionsUI();
     this.cargoUI = new CargoUI(this.uiContainer);
     this.servicesUI = new ServicesUI(this.uiContainer);
+    this.titleOverlay = new TitleOverlay();
 
     // Setup escape key handlers for modals
     this.setupModalEventListeners();
@@ -484,6 +486,22 @@ export class UI {
 
   isServicesVisible() {
     return this.servicesUI.isServicesVisible();
+  }
+
+  showTitle() {
+    this.titleOverlay.show();
+  }
+
+  hideTitle() {
+    this.titleOverlay.hide();
+  }
+
+  setOnTitleDismiss(callback) {
+    this.titleOverlay.setOnDismiss(callback);
+  }
+
+  isTitleVisible() {
+    return this.titleOverlay && this.titleOverlay.isVisible;
   }
 
   updateRadar(playerPos, playerQuat, targets) {

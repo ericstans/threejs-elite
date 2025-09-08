@@ -1311,6 +1311,28 @@ class Game {
 // Start the game
 const game = new Game();
 
+// Hide UI and cockpit initially until title is dismissed
+game.ui.uiContainer.style.display = 'none';
+game.ui.cockpitWrapper.style.display = 'none';
+
+// Show title overlay at start
+setTimeout(() => {
+  game.ui.showTitle();
+  game.ui.setOnTitleDismiss(() => {
+    console.log('Title dismissed - game ready');
+    // Show UI and cockpit after title is dismissed
+    game.ui.uiContainer.style.display = 'block';
+    game.ui.cockpitWrapper.style.display = 'block';
+    
+    // Recalculate radar size now that cockpit is visible
+    setTimeout(() => {
+      if (game.ui._updateRadarSize) {
+        game.ui._updateRadarSize();
+      }
+    }, 100);
+  });
+}, 1000); // Small delay to ensure everything is loaded
+
 // Font loading verification
 document.fonts.ready.then(() => {
   if (document.fonts.check('16px PeaberryMono')) {

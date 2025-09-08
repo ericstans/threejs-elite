@@ -9,8 +9,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@tonejs/midi": "^2.0.28",
     "@fortawesome/fontawesome-free": "^7.0.1",
+    "@tonejs/midi": "^2.0.28",
     "soundfont-player": "0.7.0",
     "three": "^0.179.1"
   },
