@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const DEBUG = false;
+
 export class CargoSystem {
   constructor({ getSpaceship, getResources, gameEngine, cargoUI, soundManager, targetingSystem }) {
     this.getSpaceship = getSpaceship;
