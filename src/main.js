@@ -292,12 +292,9 @@ class Game {
           this.engineParticles.setSpaceshipModel(object);
         }
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
-        // Hide cockpit-only mesh when third person active
-        this.spaceship.mesh.visible = false;
-        // If already in third-person when model finishes loading, calibrate camera now
-        if (this.spaceship.thirdPersonMode) {
-          this.calibrateThirdPersonCamera();
-        }
+        
+        // Automatically switch to third person when model finishes loading
+        this.toggleThirdPerson();
       },
       undefined,
       (err) => {

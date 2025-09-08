@@ -111,7 +111,7 @@ export class Controls {
       }
     }
 
-    // Targeting: hold T to clear, tap T to select
+    // Targeting: hold T to clear, tap T to cycle combat targets
     if (this.keys['KeyT']) {
       if (!this._tKeyHeld) {
         this._tKeyHeld = { start: performance.now(), cleared: false };
@@ -127,14 +127,14 @@ export class Controls {
         held.cleared = true;
       }
     } else if (this._tKeyHeld) {
-      // On T release: if not held long enough, treat as tap (target)
-      if (!this._tKeyHeld.cleared && this.onTarget) {
-        this.onTarget();
+      // On T release: if not held long enough, treat as tap (cycle combat targets)
+      if (!this._tKeyHeld.cleared && this.game && this.game.targetingSystem) {
+        this.game.targetingSystem.cycleCombatTarget();
       }
       this._tKeyHeld = null;
     }
 
-    // Navigation targeting: tap Y to nav target, hold Y to clear nav target
+    // Navigation targeting: tap Y to cycle nav targets, hold Y to clear nav target
     if (this.keys['KeyY']) {
       if (!this._yKeyHeld) {
         this._yKeyHeld = { start: performance.now(), cleared: false };
@@ -150,9 +150,9 @@ export class Controls {
         held.cleared = true;
       }
     } else if (this._yKeyHeld) {
-      // On Y release: if not held long enough, treat as tap (nav target)
-      if (!this._yKeyHeld.cleared && this.onNavTarget) {
-        this.onNavTarget();
+      // On Y release: if not held long enough, treat as tap (cycle nav targets)
+      if (!this._yKeyHeld.cleared && this.game && this.game.targetingSystem) {
+        this.game.targetingSystem.cycleNavTarget();
       }
       this._yKeyHeld = null;
     }
@@ -205,6 +205,8 @@ export class Controls {
       if (this.game) {
         if (!this.game.thirdPersonInitialized) {
           this.game.initThirdPerson();
+          // After initialization, immediately toggle to third person
+          // The initThirdPerson method will handle the actual toggle when the model loads
         } else {
           this.game.toggleThirdPerson();
         }

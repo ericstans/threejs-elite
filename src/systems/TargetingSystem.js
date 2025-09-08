@@ -33,6 +33,14 @@ export class TargetingSystem {
 
     this.currentTarget = null;      // combat target (asteroid / npc ship)
     this.currentNavTarget = null;   // nav target (planet / station)
+    
+    // Target cycling state
+    this.combatTargetCycle = [];    // ordered list of combat targets by distance from crosshair
+    this.navTargetCycle = [];       // ordered list of nav targets by distance from crosshair
+    this.combatCycleIndex = -1;     // current index in combat cycle (-1 = no cycling)
+    this.navCycleIndex = -1;        // current index in nav cycle (-1 = no cycling)
+    this.lastTargetTime = 0;        // timestamp of last targeting action
+    this.cycleTimeout = 3000;       // 3 seconds timeout to reset cycles
   }
 
   // --- Combat Targeting ---
@@ -196,6 +204,153 @@ export class TargetingSystem {
     } else {
       this.ui.clearNavTargetInfo();
     }
+  }
+
+  // --- Target Cycling ---
+  cycleCombatTarget() {
+    const now = Date.now();
+    
+    // Reset cycle if too much time has passed
+    if (now - this.lastTargetTime > this.cycleTimeout) {
+      this.combatTargetCycle = [];
+      this.combatCycleIndex = -1;
+    }
+    
+    // Build cycle list if empty
+    if (this.combatTargetCycle.length === 0) {
+      this.buildCombatTargetCycle();
+    }
+    
+    if (this.combatTargetCycle.length === 0) return;
+    
+    // Clear current target
+    if (this.currentTarget) {
+      this.currentTarget.setTargeted(false);
+    }
+    
+    // Move to next target in cycle
+    this.combatCycleIndex = (this.combatCycleIndex + 1) % this.combatTargetCycle.length;
+    this.currentTarget = this.combatTargetCycle[this.combatCycleIndex];
+    this.currentTarget.setTargeted(true);
+    this.lastTargetTime = now;
+    this.soundManager.playTargetSelectedSound();
+  }
+  
+  cycleNavTarget() {
+    const now = Date.now();
+    
+    // Reset cycle if too much time has passed
+    if (now - this.lastTargetTime > this.cycleTimeout) {
+      this.navTargetCycle = [];
+      this.navCycleIndex = -1;
+    }
+    
+    // Build cycle list if empty
+    if (this.navTargetCycle.length === 0) {
+      this.buildNavTargetCycle();
+    }
+    
+    if (this.navTargetCycle.length === 0) return;
+    
+    // Clear current nav target
+    if (this.currentNavTarget) {
+      this.currentNavTarget.setNavTargeted(false);
+    }
+    
+    // Move to next target in cycle
+    this.navCycleIndex = (this.navCycleIndex + 1) % this.navTargetCycle.length;
+    this.currentNavTarget = this.navTargetCycle[this.navCycleIndex];
+    this.currentNavTarget.setNavTargeted(true);
+    this.lastTargetTime = now;
+    this.soundManager.playTargetSelectedSound();
+  }
+  
+  buildCombatTargetCycle() {
+    const ship = this.getSpaceship();
+    if (!ship) return;
+    
+    const camera = this.camera;
+    const crosshairCenter = new THREE.Vector2(0, 0);
+    
+    const targetables = [...(this.getAsteroids?.() || [])];
+    // Add resources to combat targeting
+    if (this.getResources) {
+      targetables.push(...(this.getResources() || []));
+    }
+    const npc = this.getNPCShip?.();
+    if (npc && npc.loaded && npc.mesh) {
+      let meshCenter = null;
+      npc.mesh.traverse(child => {
+        if (!meshCenter && child.isMesh) {
+          meshCenter = new THREE.Vector3();
+          child.getWorldPosition(meshCenter);
+        }
+      });
+      if (meshCenter) {
+        targetables.push({
+          getPosition: () => meshCenter,
+          isAlive: () => npc.isAlive(),
+          setTargeted: (v) => { npc.mesh.userData.targeted = v; },
+          getId: () => 'npcship',
+          getName: () => 'Derelict Cruiser',
+          getMass: () => 1000,
+          getHealth: () => npc.getHealth(),
+          getMaxHealth: () => npc.getMaxHealth(),
+          isCommable: true,
+          getType: () => 'npcship',
+          previewSource: npc.mesh
+        });
+      }
+    }
+    
+    // Sort by distance from crosshair
+    const targetsWithDistance = [];
+    for (const obj of targetables) {
+      if (!obj.isAlive()) continue;
+      const pos = obj.getPosition();
+      const screenPos = pos.clone();
+      screenPos.project(camera);
+      if (screenPos.z > 1) continue;
+      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
+      targetsWithDistance.push({ target: obj, distance: screenDistance });
+    }
+    
+    targetsWithDistance.sort((a, b) => a.distance - b.distance);
+    this.combatTargetCycle = targetsWithDistance.map(item => item.target);
+    this.combatCycleIndex = -1; // Will be incremented to 0 on first cycle
+  }
+  
+  buildNavTargetCycle() {
+    const ship = this.getSpaceship();
+    if (!ship) return;
+    
+    const camera = this.camera;
+    const crosshairCenter = new THREE.Vector2(0, 0);
+    
+    const navTargets = [...(this.getPlanets?.() || [])];
+    // Add moons (if any) from planets
+    if (this.getPlanets) {
+      for (const pl of this.getPlanets() || []) {
+        if (pl.moon) navTargets.push(pl.moon);
+      }
+    }
+    const station = this.getStation?.();
+    if (station) navTargets.push(station);
+    
+    // Sort by distance from crosshair
+    const targetsWithDistance = [];
+    for (const target of navTargets) {
+      const pos = target.getPosition();
+      const screenPos = pos.clone();
+      screenPos.project(camera);
+      if (screenPos.z > 1) continue;
+      const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
+      targetsWithDistance.push({ target, distance: screenDistance });
+    }
+    
+    targetsWithDistance.sort((a, b) => a.distance - b.distance);
+    this.navTargetCycle = targetsWithDistance.map(item => item.target);
+    this.navCycleIndex = -1; // Will be incremented to 0 on first cycle
   }
 
   // Convenience for Game orchestrator
