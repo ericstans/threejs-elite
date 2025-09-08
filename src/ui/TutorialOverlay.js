@@ -11,7 +11,7 @@ export class TutorialOverlay {
       {
         id: 'welcome',
         title: 'Welcome to The Mournful Void!',
-        message: 'I\'m here to help you learn the basics of space navigation and combat. Would you like a quick tutorial?',
+        message: 'Congratulations on the purchase of your Flea MkII! Would you like an overview of your ship\'s features?',
         position: 'center',
         showOptions: true,
         options: [
