@@ -56,7 +56,7 @@ export class ConversationSystem {
     }
     
     // Check if this is an NPC ship (with or without defined conversation)
-    if (planetEntity && planetEntity.getType && planetEntity.getType() === 'npcship') {
+    if (planetEntity && planetEntity.getType && planetEntity.getType() === 'npcShip') {
       return genericProceduralShipConversation.greeting;
     }
     
@@ -69,7 +69,7 @@ export class ConversationSystem {
     if (!planet) {
       // Check if this is an NPC ship by entity type
       const entity = this._getPlanetEntity?.(planetName);
-      if (entity && entity.getType && entity.getType() === 'npcship') {
+      if (entity && entity.getType && entity.getType() === 'npcShip') {
         // This is an NPC ship without a defined conversation, use ship conversation
         this.conversations[planetName] = genericProceduralShipConversation;
         planet = genericProceduralShipConversation;
@@ -88,7 +88,7 @@ export class ConversationSystem {
 
     // Check if this is a ship conversation and handle differently
     const isShipConversation = (planet && planet === genericProceduralShipConversation) ||
-                              (this._getPlanetEntity?.(planetName)?.getType?.() === 'npcship');
+                              (this._getPlanetEntity?.(planetName)?.getType?.() === 'npcShip');
     
     if (isShipConversation) {
       // For ship conversations, create ship attributes
@@ -216,9 +216,9 @@ export class ConversationSystem {
 
     // Check if it's an NPC ship by entity type
     const entity = this._getPlanetEntity?.(targetName);
-    const isNPCShip = (entity && entity.getType && entity.getType() === 'npcship') ||
+    const isNPCShip = (entity && entity.getType && entity.getType() === 'npcShip') ||
                      (this.conversations[targetName] === genericProceduralShipConversation);
-    
+    console.log('isNPCShip', isNPCShip);
     if (isNPCShip) {
       const ship = this.conversations[targetName] || genericProceduralShipConversation;
       if (ship && ship.conversationTree && ship.conversationTree.initial) {
@@ -237,7 +237,7 @@ export class ConversationSystem {
     // If no specific conversation, check if it's an NPC ship
     if (!planet || !planet.conversationTree) {
       const entity = this._getPlanetEntity?.(targetName);
-      if (entity && entity.getType && entity.getType() === 'npcship') {
+      if (entity && entity.getType && entity.getType() === 'npcShip') {
         // This is an NPC ship without a defined conversation, use ship conversation
         planet = genericProceduralShipConversation;
         this.conversations[targetName] = planet;

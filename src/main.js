@@ -45,7 +45,15 @@ class Game {
       return planet ? planet.dockable : true;
     };
     this.conversationSystem._getPlanetEntity = (planetName) => {
-      return this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName) || null;
+      // Check planets first
+      const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
+      if (planet) return planet;
+      
+      // Check NPC ships
+      const npcShip = this.environmentSystem?.npcShips?.find(npc => npc.getName && npc.getName() === planetName);
+      if (npcShip) return npcShip;
+      
+      return null;
     };
     this.conversationSystem._getStationForPlanet = (planetName) => {
       // Current environment tracks a single station (oceanusStation) possibly orbiting a planet

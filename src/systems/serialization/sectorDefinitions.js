@@ -1,8 +1,5 @@
-// Hybrid sector definitions: explicit entities + procedural (seeded) asteroid field
-// This can be extended or externally loaded later.
 import { aridusPrimeConversation } from '../../conversations/planets/aridusPrime.js';
 import { oceanusConversation } from '../../conversations/planets/oceanus.js';
-import { genericProceduralShipConversation } from '../../conversations/ships/genericProceduralShip.js';
 
 // Available sectors configuration for the sector map
 export const availableSectors = [
@@ -40,7 +37,7 @@ export const sectorDefinitions = {
           { x: -50 - 100, y: 50, z: -650 },   // Move back
           { x: -50 + 60, y: 50, z: -650 }     // Return to start
         ],
-        conversation: genericProceduralShipConversation
+        //conversation: genericProceduralShipConversation
       }
     ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 },
