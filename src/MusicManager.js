@@ -1,6 +1,8 @@
 // New MusicManager implementation using soundfont-player + @tonejs/midi
 // No direct MIDI device or JZZ usage; all rendering via WebAudio + soundfonts.
 
+const DEBUG = false;
+
 // We'll dynamically import soundfont-player to avoid ESM/CJS interop issues.
 let _soundfontModulePromise = null;
 let _soundfontInstance = null; // instance bound to current AudioContext
@@ -92,17 +94,9 @@ async function getSoundfont(ctx) {
 }
 import { Midi } from '@tonejs/midi';
 
-// Ambient MIDI assets (already bundled by Vite)
-import ambient1 from './assets/midi/ambient/ambient1.mid';
-import ambient2 from './assets/midi/ambient/ambient2.mid';
-import ambient3 from './assets/midi/ambient/ambient3.mid';
-import ambient3stretchy from './assets/midi/ambient/ambient3-stretchy.mid';
-import ambient4 from './assets/midi/ambient/ambient4.mid';
-import ambient5 from './assets/midi/ambient/ambient5.mid';
-import ambient6 from './assets/midi/ambient/ambient6.mid';
-
-
-const ambientMidiFiles = [ambient1, ambient2, ambient3, ambient3stretchy, ambient4, ambient5, ambient6];
+// Dynamic MIDI file discovery - automatically imports all .mid files from ambient folder
+const ambientMidiModules = import.meta.glob('./assets/midi/ambient/*.mid', { eager: true, as: 'url' });
+const ambientMidiFiles = Object.values(ambientMidiModules);
 
 // Utility: clamp
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));

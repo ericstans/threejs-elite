@@ -45,7 +45,7 @@ async function collectInstruments(midiDir){
     || midiMod;
   if (typeof Midi !== 'function') {
     const keys = midiMod ? Object.keys(midiMod) : [];
-    if (DEBUG) console.error('Could not resolve Midi constructor from @tonejs/midi export shape:', keys);
+    console.error('Could not resolve Midi constructor from @tonejs/midi export shape:', keys);
     return new Set(ALWAYS_INCLUDE);
   }
   const programs = new Set();
@@ -60,7 +60,7 @@ async function collectInstruments(midiDir){
         programs.add(prog);
       });
     } catch (e){
-      if (DEBUG) console.warn('Warn: failed to parse', f, e.message);
+      console.warn('Warn: failed to parse', f, e.message);
     }
   }
   const names = new Set([...programs].map(p => GM_MAP[p] || 'acoustic_grand_piano'));
@@ -106,7 +106,7 @@ async function main(){
     names = await collectInstruments(opts.midiDir);
   }
   const sorted = [...names].sort();
-  if (DEBUG) console.log(`Instruments to fetch (${sorted.length}):`, sorted.join(', '));
+  console.log(`Instruments to fetch (${sorted.length}):`, sorted.join(', '));
   let ok = 0, fail = 0;
   for (const n of sorted){
     try {
@@ -119,11 +119,11 @@ async function main(){
       process.stdout.write(` fail (${e.message})\n`);
     }
   }
-  if (DEBUG) console.log(`Done. Success ${ok}, Failed ${fail}`);
+  console.log(`Done. Success ${ok}, Failed ${fail}`);
   // Write manifest
   const manifestPath = path.join(OUT_DIR, 'manifest.json');
   fs.writeFileSync(manifestPath, JSON.stringify({ generated: new Date().toISOString(), count: sorted.length, instruments: sorted }, null, 2));
-  if (DEBUG) console.log('Manifest written to', manifestPath);
+  console.log('Manifest written to', manifestPath);
 }
 
-main().catch(e => { if (DEBUG) console.error(e); process.exit(1); });
+main().catch(e => { console.error(e); process.exit(1); });
