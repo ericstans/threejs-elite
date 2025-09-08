@@ -7,6 +7,7 @@ import { OptionsUI } from './ui/OptionsUI.js';
 import { CargoUI } from './ui/CargoUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
+import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 
@@ -143,6 +144,7 @@ export class UI {
     this.cargoUI = new CargoUI(this.uiContainer);
     this.servicesUI = new ServicesUI(this.uiContainer);
     this.titleOverlay = new TitleOverlay();
+    this.tutorialOverlay = new TutorialOverlay();
 
     // Setup escape key handlers for modals
     this.setupModalEventListeners();
@@ -502,6 +504,35 @@ export class UI {
 
   isTitleVisible() {
     return this.titleOverlay && this.titleOverlay.isVisible;
+  }
+
+  // Tutorial overlay methods
+  showTutorial() {
+    this.tutorialOverlay.show();
+  }
+
+  hideTutorial() {
+    this.tutorialOverlay.hide();
+  }
+
+  isTutorialVisible() {
+    return this.tutorialOverlay && this.tutorialOverlay.isVisible;
+  }
+
+  setOnTutorialComplete(callback) {
+    this.tutorialOverlay.setOnComplete(callback);
+  }
+
+  setOnTutorialSkip(callback) {
+    this.tutorialOverlay.setOnSkip(callback);
+  }
+
+  setOnTutorialPause(callback) {
+    this.tutorialOverlay.setOnPause(callback);
+  }
+
+  setOnTutorialResume(callback) {
+    this.tutorialOverlay.setOnResume(callback);
   }
 
   updateRadar(playerPos, playerQuat, targets) {

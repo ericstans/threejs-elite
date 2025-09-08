@@ -30,6 +30,7 @@ class Game {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
     this.engineParticles = new EngineParticles(this.gameEngine.scene, this.spaceship);
+    this.paused = false;
     // Expose spaceship to engine for starfield & UI parallax logic
     this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
@@ -667,7 +668,7 @@ class Game {
 
   update(deltaTime) {
     // Skip update if paused
-    if (this.isPaused) return;
+    if (this.paused) return;
     // Update controls
     this.controls.update(deltaTime);
 
@@ -1330,6 +1331,30 @@ setTimeout(() => {
         game.ui._updateRadarSize();
       }
     }, 100);
+    
+    // Setup tutorial callbacks
+    game.ui.setOnTutorialPause(() => {
+      game.paused = true;
+      console.log('Game paused for tutorial');
+    });
+    
+    game.ui.setOnTutorialResume(() => {
+      game.paused = false;
+      console.log('Game resumed after tutorial');
+    });
+    
+    game.ui.setOnTutorialComplete(() => {
+      console.log('Tutorial completed');
+    });
+    
+    game.ui.setOnTutorialSkip(() => {
+      console.log('Tutorial skipped');
+    });
+    
+    // Start tutorial after 3 seconds
+    setTimeout(() => {
+      game.ui.showTutorial();
+    }, 3000);
   });
 }, 1000); // Small delay to ensure everything is loaded
 
