@@ -43,6 +43,7 @@ export class ConversationSystem {
   }
 
   getGreeting(planetName) {
+    // First check if we have a specific conversation definition
     const planet = this.conversations[planetName];
     if (planet) {
       return planet.greeting;
@@ -52,6 +53,12 @@ export class ConversationSystem {
     // or by checking if we have a ship conversation available
     if (planetName === 'Derelict Cruiser' || this._isNPCShip?.(planetName)) {
       return genericProceduralShipConversation.greeting;
+    }
+    
+    // For procedural planets, try to get the actual planet's greeting
+    const planetEntity = this._getPlanetEntity?.(planetName);
+    if (planetEntity && planetEntity.getGreeting) {
+      return planetEntity.getGreeting();
     }
     
     // Fallback to generic procedural planet template
@@ -215,11 +222,15 @@ export class ConversationSystem {
     }
 
     // Otherwise treat as planet
-    const planet = this.conversations[targetName];
+    let planet = this.conversations[targetName];
     // Dockable detection: we rely on external planet entity lookup via optional hook
     const dockable = this._isPlanetDockable?.(targetName) !== false; // default true if unknown
+    
+    // If no specific conversation, use generic procedural conversation
     if (!planet || !planet.conversationTree) {
-      return [];
+      planet = genericProceduralConversation;
+      // Cache it for future lookups
+      this.conversations[targetName] = planet;
     }
 
     // Base options with inline conditional logic

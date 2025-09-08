@@ -57,6 +57,16 @@ export class NavTargetUI {
     this.navCommableIndicator.style.display = 'none';
     this.navTargetPanel.appendChild(this.navCommableIndicator);
 
+    // Nav target services indicator
+    this.navServicesIndicator = document.createElement('div');
+    this.navServicesIndicator.style.position = 'absolute';
+    this.navServicesIndicator.style.left = '80%';
+    this.navServicesIndicator.style.top = '35px';
+    this.navServicesIndicator.style.fontSize = '16px';
+    this.navServicesIndicator.style.fontFamily = 'PeaberryMono, monospace';
+    this.navServicesIndicator.style.display = 'none';
+    this.navTargetPanel.appendChild(this.navServicesIndicator);
+
     // Preview container (behind text)
     this.previewWrapper = document.createElement('div');
     this.previewWrapper.style.position = 'absolute';
@@ -117,6 +127,14 @@ export class NavTargetUI {
       this.navCommableIndicator.innerHTML = '<i class="fas fa-satellite-dish" style="color: #00ff00;margin-right:0.5rem;"></i>C';
     } else {
       this.navCommableIndicator.style.display = 'none';
+    }
+
+    // Show/hide services indicator (only when docked and services are available)
+    if (navTargetInfo.isDockedWithTarget && navTargetInfo.services && navTargetInfo.services.length > 0) {
+      this.navServicesIndicator.style.display = 'block';
+      this.navServicesIndicator.innerHTML = '<i class="fas fa-bell-concierge" style="color: #00ff00;margin-right:0.5rem;"></i>S';
+    } else {
+      this.navServicesIndicator.style.display = 'none';
     }
 
     // Update nav target indicator position
@@ -185,6 +203,7 @@ export class NavTargetUI {
     this.navTargetPanel.style.display = 'none';
     this.navTargetIndicator.style.display = 'none';
     this.navCommableIndicator.style.display = 'none';
+    this.navServicesIndicator.style.display = 'none';
     if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
     this._clearPreview();
   }

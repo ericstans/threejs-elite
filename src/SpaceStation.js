@@ -172,6 +172,10 @@ export class SpaceStation {
   isCommable() { return this.isCommable; }
   getGreeting() { return `This is ${this.name}. State your business.`; }
 
+  getServices() {
+    return this.services;
+  }
+
   // Landing vector helpers
   getLandingVectorStartWorld() {
     // Start point (slot) in local space then transformed to world

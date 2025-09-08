@@ -218,6 +218,7 @@ export class TargetingSystem {
         distance,
         isCommable: this.currentNavTarget.isCommable,
         isDockedWithTarget,
+        services: this.currentNavTarget.getServices ? this.currentNavTarget.getServices() : null,
         __ref: this.currentNavTarget
       }, targetPos, this.camera);
     } else {

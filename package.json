@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
-    "fontawesome-free": "^1.0.4",
+    "@fortawesome/fontawesome-free": "^7.0.1",
     "soundfont-player": "0.7.0",
     "three": "^0.179.1"
   },

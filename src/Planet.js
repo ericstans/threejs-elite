@@ -87,4 +87,8 @@ export class Planet {
   getGreeting() {
     return this.greeting;
   }
+
+  getServices() {
+    return this.services;
+  }
 }
