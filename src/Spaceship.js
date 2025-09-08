@@ -33,6 +33,7 @@ export class Spaceship {
       firingEnabled: true,
       isDocking: false,
       isDocked: false,
+      isInCombat: false,           // true when player is in combat with NPC ship
       dockingAuthorized: false, // station granted docking
       landingVectorLocked: false, // player aligned with landing vector
       landingAlignmentLocked: false, // fully centered on landing vector axis

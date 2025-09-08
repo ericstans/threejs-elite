@@ -34,7 +34,7 @@ class Game {
     this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
     this.soundManager = new SoundManager();
-    this.musicManager = new MusicManager();
+    this.musicManager = new MusicManager(this, this.spaceship);
     this.conversationSystem = new ConversationSystem();
     this.ui = new UI(this.conversationSystem);
     // Expose UI to engine for per-frame parallax callback
@@ -100,6 +100,14 @@ class Game {
       getNPCShip: () => this.npcShip,
       getAsteroids: () => this.asteroids,
       onHitFeedback: () => this.ui.blinkCrosshairRed(),
+      onNPCShipHit: () => {
+        // Set combat flag and switch to combat music when player attacks NPC ship (immediate)
+        // Only switch music if we weren't already in combat
+        if (!this.spaceship.flags.isInCombat) {
+          this.spaceship.flags.isInCombat = true;
+          this.musicManager.switchSoundtracksImmediate(['combat']);
+        }
+      },
       onNPCShipDestroyed: () => {
         const current = this.targetingSystem.getCurrentCombatTarget();
         if (current && current.getId && current.getId() === 'npcship') {
@@ -107,6 +115,9 @@ class Game {
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
         }
+        // Clear combat flag and switch back to ambient music when NPC ship is destroyed (immediate)
+        this.spaceship.flags.isInCombat = false;
+        this.musicManager.switchSoundtracksImmediate(['ambient']);
       },
       environmentSystem: () => this.environmentSystem
     });
@@ -173,7 +184,8 @@ class Game {
     // Global flags
     this.globalFlags = {
       gameStarted: false,
-      firstDocking: false
+      firstDocking: false,
+      soundtracks: ['ambient']
       // Add more global flags as needed
     };
 
@@ -707,6 +719,9 @@ class Game {
     // Cargo system update (resource collection and magnetism)
     this.cargoSystem.update(deltaTime);
 
+    // Music manager update (handles combat state transitions)
+    this.musicManager.update();
+
     // Persist asteroid field diff every frame (cheap to store small object)
     if (this.environmentSystem) {
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
@@ -928,6 +943,20 @@ class Game {
       this.environmentSystem.configureAsteroidField({ seed: fallback.seed, destroyedIds: [], center: fallback.center, size: fallback.size });
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
+    // Clear combat flag when switching sectors
+    this.spaceship.flags.isInCombat = false;
+    
+    // Set soundtracks from sector definition if provided, otherwise use default
+    if (def && def.soundtracks) {
+      this.globalFlags.soundtracks = def.soundtracks;
+    } else {
+      // Default soundtracks for sectors without explicit definitions
+      this.globalFlags.soundtracks = ['ambient'];
+    }
+    
+    // Note: Sector soundtrack changes wait for current track to finish naturally
+    // The MusicManager will pick up the new soundtracks on the next track
+    
     // Move player near new sector center for immediate feedback
     const activeSector = this.availableSectors.find(s => s.id === sectorId);
     if (activeSector && activeSector.center) {
@@ -1023,6 +1052,23 @@ class Game {
 
   getAllGlobalFlags() {
     return { ...this.globalFlags };
+  }
+
+  // Helper method to set soundtracks
+  setSoundtracks(soundtracks) {
+    this.globalFlags.soundtracks = Array.isArray(soundtracks) ? soundtracks : [soundtracks];
+  }
+
+  // Helper method to add a soundtrack
+  addSoundtrack(soundtrack) {
+    if (!this.globalFlags.soundtracks.includes(soundtrack)) {
+      this.globalFlags.soundtracks.push(soundtrack);
+    }
+  }
+
+  // Helper method to remove a soundtrack
+  removeSoundtrack(soundtrack) {
+    this.globalFlags.soundtracks = this.globalFlags.soundtracks.filter(s => s !== soundtrack);
   }
 
   // Process flags from conversation options

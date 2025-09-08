@@ -29,6 +29,7 @@ export class CombatSystem {
     getNPCShip,
     getAsteroids,
     onHitFeedback,
+    onNPCShipHit,
     onNPCShipDestroyed,
     environmentSystem // optional, used for marking destroyed asteroids for procedural diff
   }) {
@@ -41,6 +42,7 @@ export class CombatSystem {
     this.getNPCShip = getNPCShip;
     this.getAsteroids = getAsteroids;
     this.onHitFeedback = onHitFeedback;
+    this.onNPCShipHit = onNPCShipHit;
     this.onNPCShipDestroyed = onNPCShipDestroyed;
     // Accept either direct instance or function returning instance
     this.environmentSystem = typeof environmentSystem === 'function' ? { markAsteroidDestroyed: (a)=>environmentSystem()?.markAsteroidDestroyed(a) } : environmentSystem;
@@ -173,6 +175,7 @@ export class CombatSystem {
 
   handleLaserNPCShipCollision(laser, npcShip, laserIndex) {
     this._hitFeedback();
+    this.onNPCShipHit?.(); // Trigger soundtrack change to combat
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
 

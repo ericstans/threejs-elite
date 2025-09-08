@@ -1,7 +1,6 @@
-// New MusicManager implementation using soundfont-player + @tonejs/midi
-// No direct MIDI device or JZZ usage; all rendering via WebAudio + soundfonts.
+// soundfont-player + @tonejs/midi
 
-const DEBUG = false;
+const DEBUG = true;
 
 // We'll dynamically import soundfont-player to avoid ESM/CJS interop issues.
 let _soundfontModulePromise = null;
@@ -94,9 +93,21 @@ async function getSoundfont(ctx) {
 }
 import { Midi } from '@tonejs/midi';
 
-// Dynamic MIDI file discovery - automatically imports all .mid files from ambient folder
-const ambientMidiModules = import.meta.glob('./assets/midi/ambient/*.mid', { eager: true, as: 'url' });
-const ambientMidiFiles = Object.values(ambientMidiModules);
+// Dynamic MIDI file discovery - automatically imports all .mid files from soundtrack folders
+const soundtrackModules = import.meta.glob('./assets/midi/*/*.mid', { eager: true, as: 'url' });
+
+// Helper function to get MIDI files for specific soundtracks
+function getMidiFilesForSoundtracks(soundtracks) {
+  const files = [];
+  for (const [path, url] of Object.entries(soundtrackModules)) {
+    // Extract folder name from path (e.g., './assets/midi/ambient/file.mid' -> 'ambient')
+    const folderMatch = path.match(/\.\/assets\/midi\/([^\/]+)\//);
+    if (folderMatch && soundtracks.includes(folderMatch[1])) {
+      files.push(url);
+    }
+  }
+  return files;
+}
 
 // Utility: clamp
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -244,7 +255,7 @@ function programToInstrument(programNumber) {
 // Convert MIDI note number to frequency helper (soundfont-player accepts note names or MIDI numbers directly).
 
 export class MusicManager {
-  constructor() {
+  constructor(game = null, spaceship = null) {
     this.isInitialized = false;
     this.volume = 0.5; // master gain (0-1)
     this.currentTrack = null;
@@ -255,6 +266,8 @@ export class MusicManager {
     this._currentPlayback = null; // { stop: fn, timeoutIds: [] }
     this._ambientQueue = null; // currently playing ambient midi info
     this._scheduledNextTimeout = null;
+    this.game = game; // Reference to game object for accessing globalFlags
+    this.spaceship = spaceship; // Reference to spaceship for accessing combat flag
     this._instrumentsCache = new Map(); // key: instrumentName -> soundfont-player Instrument
     this._instrumentLoading = new Map(); // in-flight loads
     // Effects chain
@@ -264,6 +277,28 @@ export class MusicManager {
     this._reverbConvolver = null;  // convolver node
     this.reverbMix = 0.3;          // 0..1
     this._reverbEnabled = true;
+    
+    // Delay configuration for different soundtrack folders (in milliseconds)
+    this._soundtrackDelays = {
+      'ambient': 1000,    // 1 second default
+      'combat': 250,      // 0.25 seconds for combat tracks
+      'default': 1000     // fallback for unknown folders
+    };
+  }
+
+  // Get the delay for a specific soundtrack folder
+  getSoundtrackDelay(soundtrackName) {
+    return this._soundtrackDelays[soundtrackName] || this._soundtrackDelays['default'];
+  }
+
+  // Set custom delay for a soundtrack folder
+  setSoundtrackDelay(soundtrackName, delayMs) {
+    this._soundtrackDelays[soundtrackName] = delayMs;
+  }
+
+  // Get all soundtrack delay configurations
+  getSoundtrackDelays() {
+    return { ...this._soundtrackDelays };
   }
 
   async init() {
@@ -370,11 +405,23 @@ export class MusicManager {
     }
   }
 
-  update(gameState) {
-    if (!gameState) return;
+  // Immediate soundtrack switch (stops current track and starts new one immediately)
+  switchSoundtracksImmediate(soundtracks) {
+    if (this.game) {
+      this.game.globalFlags.soundtracks = Array.isArray(soundtracks) ? soundtracks : [soundtracks];
+    }
+    if (this.isPlaying) {
+      this.stopTrack();
+      this.playTrack('ambient');
+    }
+  }
+
+  update() {
+    if (!this.spaceship) return;
     // Only ambient available now; keep logic simple.
-    if (!gameState.inCombat && !gameState.isDocking && this.currentTrack !== 'ambient') {
-      this.crossfadeToTrack('ambient', 1000);
+    if (!this.spaceship.flags.isInCombat && !this.spaceship.flags.isDocking && this.currentTrack !== 'ambient') {
+      // Use immediate switch for combat transitions
+      this.switchSoundtracksImmediate(['ambient']);
     }
   }
 
@@ -432,7 +479,30 @@ export class MusicManager {
 
   async _playRandomAmbientMidi() {
     if (!this.isPlaying || this.currentTrack !== 'ambient') return;
-    const src = ambientMidiFiles[Math.floor(Math.random() * ambientMidiFiles.length)];
+    
+    // Get current soundtracks from globalFlags, default to ['ambient']
+    const soundtracks = this.game?.globalFlags?.soundtracks || ['ambient'];
+    const availableMidiFiles = getMidiFilesForSoundtracks(soundtracks);
+    
+    if (availableMidiFiles.length === 0) {
+      if (DEBUG) console.warn('No MIDI files found for soundtracks:', soundtracks);
+      return;
+    }
+    
+    const src = availableMidiFiles[Math.floor(Math.random() * availableMidiFiles.length)];
+    
+    // Determine which soundtrack folder this file came from
+    let currentSoundtrackFolder = 'default';
+    for (const [path, url] of Object.entries(soundtrackModules)) {
+      if (url === src) {
+        const folderMatch = path.match(/\.\/assets\/midi\/([^\/]+)\//);
+        if (folderMatch) {
+          currentSoundtrackFolder = folderMatch[1];
+          break;
+        }
+      }
+    }
+    
     try {
       const resp = await fetch(src);
       const arrayBuf = await resp.arrayBuffer();
@@ -588,12 +658,13 @@ export class MusicManager {
       });
 
       const totalDuration = midi.duration; // seconds
-      // Schedule next ambient after 1s gap
+      // Schedule next ambient after folder-specific delay
+      const folderDelay = this.getSoundtrackDelay(currentSoundtrackFolder);
       const nextId = setTimeout(() => {
         if (this.isPlaying && this.currentTrack === 'ambient') {
           this._playRandomAmbientMidi();
         }
-      }, (totalDuration * 1000) + 1000);
+      }, (totalDuration * 1000) + folderDelay);
       this._scheduledNextTimeout = nextId;
       this._currentPlayback = {
         stop: () => {
@@ -603,10 +674,11 @@ export class MusicManager {
       };
     } catch (err) {
       if (DEBUG) console.error('MusicManager: Failed to play ambient MIDI via soundfont-player', err);
-      // Try another file after short delay
+      // Try another file after folder-specific delay
+      const folderDelay = this.getSoundtrackDelay(currentSoundtrackFolder);
       setTimeout(() => {
         if (this.isPlaying && this.currentTrack === 'ambient') this._playRandomAmbientMidi();
-      }, 1000);
+      }, folderDelay);
     }
   }
 }

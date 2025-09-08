@@ -15,7 +15,8 @@ export const sectorDefinitions = {
     stations: [
       { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05 /*conversation: oceanusConversation */ }
     ],
-    asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 }
+    asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 },
+    soundtracks: ['ambient']
   },
   'sector-2': {
     id: 'sector-2',
@@ -32,7 +33,8 @@ export const sectorDefinitions = {
     hybridProceduralExtras: {
       proceduralPlanetCount: 3, // number of additional procedural planets to spawn
       seedOffset: 0x9e // unique offset so procedural portion differs from baseline seed
-    }
+    },
+    soundtracks: ['ambientb']
   }
 };
 
