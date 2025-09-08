@@ -503,10 +503,24 @@ class Game {
     // Place it 60 units beside the field center
     const npcShipPos = new THREE.Vector3(-50 + 60, 50, -650);
     this.npcShip = new NPCShip(npcShipPos);
-    // Wait for FBX to load, then add to scene
+    
+    // Example: Set up patrol waypoints for the NPC ship
+    // Uncomment the following lines to enable patrol behavior:
+    const patrolWaypoints = [
+      { x: -50 + 60, y: 50, z: -650 },    // Start position
+      { x: -50 + 200, y: 50, z: -650 },   // Move right
+      { x: -50 + 200, y: 50, z: -450 },   // Move forward
+      { x: -50 - 100, y: 50, z: -450 },   // Move left
+      { x: -50 - 100, y: 50, z: -650 },   // Move back
+      { x: -50 + 60, y: 50, z: -650 }     // Return to start
+    ];
+    this.npcShip.setPatrolWaypoints(patrolWaypoints);
+    this.npcShip.startPatrol();
+    // Wait for FBX to load, then add to scene and game engine
     const addNPC = () => {
       if (this.npcShip.loaded && this.npcShip.mesh.children.length > 0) {
         this.gameEngine.scene.add(this.npcShip.mesh);
+        this.gameEngine.addEntity(this.npcShip); // Add to game engine for updates
       } else {
         setTimeout(addNPC, 100);
       }
@@ -899,7 +913,7 @@ class Game {
       const baseSeed = (sMeta ? sMeta.seed : (Date.now() & 0xffff));
       const hybridSeed = baseSeed ^ (extrasCfg.seedOffset || 0x9e);
       const archetypes = this.environmentSystem._getPlanetArchetypes ? this.environmentSystem._getPlanetArchetypes() : [];
-      const spread = 1800;
+      const spread = sMeta ? sMeta.size : 1800;
       const count = (extrasCfg.proceduralPlanetCount || 3);
       for (let i = 0; i < count; i++) {
         if (!archetypes.length) break;
@@ -925,7 +939,7 @@ class Game {
     } else {
       // Fully procedural for all other sectors
       this.environmentSystem.procedural = true;
-      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff));
+      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff), sMeta ? sMeta.size : 1800);
     }
     if (fieldState) {
       this.environmentSystem.configureAsteroidField(fieldState);

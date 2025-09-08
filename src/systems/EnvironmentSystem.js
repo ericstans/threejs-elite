@@ -30,7 +30,7 @@ export class EnvironmentSystem {
     this.procedural = procedural; // if true, ignore provided planetFactory and generate
   }
 
-  initProcedural(seed) {
+  initProcedural(seed, sectorSize = 1800) {
     // Hierarchical deterministic generation using namespaced hash seeds.
     this.clearPlanetsAndStations();
     if (this.planetClusterStardust && this.planetClusterStardust.parent) {
@@ -40,7 +40,7 @@ export class EnvironmentSystem {
     this._stardustTime = 0;
     const planetTypes = this._getPlanetArchetypes();
     const radiusRange = [35, 110];
-    const spread = 1800;
+    const spread = sectorSize;
     const countRng = this._rng(hashSeed(seed, 'planetCount'));
     const planetCount = 2 + Math.floor(countRng() * 3);
     const chosen = [];
