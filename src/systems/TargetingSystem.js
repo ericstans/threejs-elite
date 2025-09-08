@@ -206,12 +206,18 @@ export class TargetingSystem {
       const spaceshipPos = ship.getPosition();
       const targetPos = this.currentNavTarget.getPosition();
       const distance = spaceshipPos.distanceTo(targetPos);
+      // Check if player is docked with the nav target
+      const isDockedWithTarget = ship.flags.isDocked && 
+        ((ship.flags.dockContext === 'planet' && ship.flags.docketPlanetId === this.currentNavTarget.getId()) ||
+         (ship.flags.dockContext === 'station' && ship.flags.dockedStationId === this.currentNavTarget.getId()));
+
       this.ui.updateNavTargetInfo({
         id: this.currentNavTarget.getId(),
         name: this.currentNavTarget.getName(),
         mass: this.currentNavTarget.getMass(),
         distance,
         isCommable: this.currentNavTarget.isCommable,
+        isDockedWithTarget,
         __ref: this.currentNavTarget
       }, targetPos, this.camera);
     } else {

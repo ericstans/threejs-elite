@@ -181,6 +181,12 @@ export class CombatSystem {
   handleLaserNPCShipCollision(laser, npcShip, laserIndex) {
     this._hitFeedback();
     this.onNPCShipHit?.(); // Trigger soundtrack change to combat
+    
+    // Set the NPC ship as hostile when attacked
+    if (npcShip.setNPCFlag) {
+      npcShip.setNPCFlag('isHostile', true);
+    }
+    
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
 

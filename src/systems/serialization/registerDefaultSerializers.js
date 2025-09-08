@@ -31,6 +31,11 @@ export function registerDefaultSerializers(sectorManager) {
       npc.maxHealth = state.maxHealth;
       npc.destroyed = state.destroyed;
       
+      // Load NPC flags if available
+      if (state.npcFlags) {
+        npc.npcFlags = { ...npc.npcFlags, ...state.npcFlags };
+      }
+      
       // Load patrol data if available
       if (state.patrolWaypoints && state.patrolWaypoints.length > 0) {
         npc.setPatrolWaypoints(state.patrolWaypoints);

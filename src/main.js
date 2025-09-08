@@ -109,9 +109,17 @@ class Game {
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
         }
-        // Clear combat flag and switch back to ambient music when NPC ship is destroyed (immediate)
-        this.spaceship.flags.isInCombat = false;
-        this.musicManager.switchSoundtracksImmediate(['ambient']);
+        
+        // Check if any remaining NPC ships are hostile
+        const hasHostileShips = this.npcShips && this.npcShips.some(npc => 
+          npc.isAlive && npc.isAlive() && npc.isHostile && npc.isHostile()
+        );
+        
+        // Only clear combat flag if no hostile ships remain
+        if (!hasHostileShips) {
+          this.spaceship.flags.isInCombat = false;
+          this.musicManager.switchSoundtracksImmediate(['ambient']);
+        }
       },
       environmentSystem: () => this.environmentSystem
     });

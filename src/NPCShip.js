@@ -14,7 +14,12 @@ export class NPCShip {
     this.health = 10;
     this.maxHealth = 10;
     this.destroyed = false;
-    this.size = 20; // Default, will be set after model loads
+    this.size = 1.25; // Default, will be set after model loads (radius of 2.5 unit diameter)
+    
+    // NPC flags for behavior tracking
+    this.npcFlags = {
+      isHostile: false
+    };
     
     // Movement properties (similar to player ship)
     this.velocity = new THREE.Vector3(0, 0, 0);
@@ -64,6 +69,19 @@ export class NPCShip {
     return this.conversation !== null;
   }
 
+  // NPC flag management
+  setNPCFlag(flagName, value) {
+    this.npcFlags[flagName] = value;
+  }
+
+  getNPCFlag(flagName) {
+    return this.npcFlags[flagName];
+  }
+
+  isHostile() {
+    return this.npcFlags.isHostile;
+  }
+
   serializeState() {
     return {
       position: { x: this.position.x, y: this.position.y, z: this.position.z },
@@ -72,6 +90,7 @@ export class NPCShip {
       health: this.health,
       maxHealth: this.maxHealth,
       destroyed: this.destroyed,
+      npcFlags: this.npcFlags,
       patrolWaypoints: this.patrolWaypoints.map(wp => ({ x: wp.x, y: wp.y, z: wp.z })),
       currentWaypointIndex: this.currentWaypointIndex,
       patrolActive: this.patrolActive
@@ -113,11 +132,11 @@ export class NPCShip {
         const center = new THREE.Vector3();
         box.getCenter(center);
         object.position.sub(center); // move geometry so origin is at center
-        // Scale so largest dimension is ~40 units (planet diameter)
+        // Scale so largest dimension matches player ship size (~2-3 units)
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 40;
+        const targetSize = 2.5; // Match player ship size
         const scale = targetSize / maxDim;
         object.scale.setScalar(scale);
         this.size = targetSize / 2; // Use radius for collision

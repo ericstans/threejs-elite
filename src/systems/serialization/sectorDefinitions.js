@@ -34,8 +34,8 @@ export const sectorDefinitions = {
         patrolWaypoints: [
           { x: -50 + 60, y: 50, z: -650 },    // Start position
           { x: -50 + 200, y: 50, z: -650 },   // Move right
-          { x: -50 + 200, y: 50, z: -450 },   // Move forward
-          { x: -50 - 100, y: 50, z: -450 },   // Move left
+          { x: -50 + 200, y: 50, z: -750 },   // Move forward
+          { x: -50 - 100, y: 50, z: -750 },   // Move left
           { x: -50 - 100, y: 50, z: -650 },   // Move back
           { x: -50 + 60, y: 50, z: -650 }     // Return to start
         ],

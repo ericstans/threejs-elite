@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const DEBUG = false;
+
 export class Spaceship {
   constructor() {
     this.mesh = this.createSpaceshipMesh();

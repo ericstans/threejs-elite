@@ -120,15 +120,22 @@ export class NavTargetUI {
     }
 
     // Update nav target indicator position
-    this.updateNavTargetIndicator(targetPosition, camera);
+    this.updateNavTargetIndicator(targetPosition, camera, navTargetInfo.isDockedWithTarget);
     // Update preview wireframe (pass through extra original target reference if supplied)
     if (navTargetInfo.__ref) {
       this._updatePreview(navTargetInfo.__ref);
     }
   }
 
-  updateNavTargetIndicator(targetPosition, camera) {
+  updateNavTargetIndicator(targetPosition, camera, isDockedWithTarget = false) {
     if (!targetPosition || !camera) {
+      this.navTargetIndicator.style.display = 'none';
+      if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
+      return;
+    }
+
+    // Don't show offscreen indicator if docked with the target
+    if (isDockedWithTarget) {
       this.navTargetIndicator.style.display = 'none';
       if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
       return;
