@@ -107,7 +107,7 @@ export class CommoditiesUI {
     this.availablePanel.appendChild(this.availableTitle);
 
     this.commoditiesList = document.createElement('div');
-    this.commoditiesList.style.maxHeight = '400px';
+    this.commoditiesList.style.maxHeight = '80%';
     this.commoditiesList.style.overflowY = 'auto';
     this.availablePanel.appendChild(this.commoditiesList);
   }
