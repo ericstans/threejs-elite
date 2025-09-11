@@ -145,6 +145,7 @@ export class UI {
     this.servicesUI = new ServicesUI(this.uiContainer);
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
+    this.tutorialOverlay.setUIInstance(this);
 
     // Setup escape key handlers for modals
     this.setupModalEventListeners();
@@ -533,6 +534,26 @@ export class UI {
 
   setOnTutorialResume(callback) {
     this.tutorialOverlay.setOnResume(callback);
+  }
+
+  // Method for testing spotlight functionality
+  testTutorialSpotlight(elementId) {
+    this.tutorialOverlay.testSpotlight(elementId);
+  }
+
+  // Method to clear spotlight for testing
+  clearTutorialSpotlight() {
+    this.tutorialOverlay.clearSpotlight();
+  }
+
+  // Method to test targeting spotlight specifically
+  testTargetingSpotlight() {
+    this.tutorialOverlay.testTargetingSpotlight();
+  }
+
+  // Method to test controls spotlight specifically
+  testControlsSpotlight() {
+    this.tutorialOverlay.testControlsSpotlight();
   }
 
   updateRadar(playerPos, playerQuat, targets) {

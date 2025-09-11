@@ -6,6 +6,7 @@ export class TutorialOverlay {
     this.onSkip = null;
     this.onPause = null;
     this.onResume = null;
+    this.spotlightCutout = null;
     
     this.tutorialSteps = [
       {
@@ -24,35 +25,40 @@ export class TutorialOverlay {
         title: 'Radar System',
         message: 'This is your radar. You can observe the position of planets, spaceships, and other objects in your vicinity. The radar shows their relative positions and helps you navigate through space.',
         position: 'radar',
-        showNext: true
+        showNext: true,
+        revealElement: 'radar'
       },
       {
         id: 'throttle',
         title: 'Throttle Control',
         message: 'This is your throttle control. Use it to adjust your ship\'s speed. The higher the throttle, the faster you\'ll move, but you\'ll also consume more fuel.',
         position: 'throttle',
-        showNext: true
+        showNext: true,
+        revealElement: 'throttle'
       },
       {
         id: 'targeting',
         title: 'Targeting System',
         message: 'This is your targeting system. You can select targets for combat (V key) or navigation (C key). The selected target will be highlighted and you can communicate with them.',
         position: 'targeting',
-        showNext: true
+        showNext: true,
+        revealElement: 'targeting'
       },
       {
         id: 'cargo',
         title: 'Cargo Display',
         message: 'This shows your current cargo and resources. Keep an eye on your fuel levels and cargo space as you explore the galaxy.',
         position: 'cargo',
-        showNext: true
+        showNext: true,
+        revealElement: 'cargo'
       },
       {
         id: 'controls',
         title: 'Control Instructions',
         message: 'Use WASD to move, mouse to look around, and the various keys shown on screen for different actions. Press H for help anytime!',
         position: 'center',
-        showEnd: true
+        showEnd: true,
+        revealElement: 'controls'
       }
     ];
     
@@ -79,6 +85,7 @@ export class TutorialOverlay {
   this.cowboy.style.fontSize = '64px';
   this.cowboy.style.userSelect = 'none';
   this.cowboy.style.cursor = 'default';
+  this.cowboy.style.zIndex = '10003';
   this.cowboy.textContent = '🤠';
 
   // Create speech bubble
@@ -95,7 +102,7 @@ export class TutorialOverlay {
   this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
   this.speechBubble.style.userSelect = 'none';
   this.speechBubble.style.cursor = 'default';
-  this.speechBubble.style.zIndex = '1';
+  this.speechBubble.style.zIndex = '10002';
 
   // Create speech bubble tail (pointer)
   this.speechTail = document.createElement('div');
@@ -105,7 +112,7 @@ export class TutorialOverlay {
   this.speechTail.style.borderLeft = '18px solid transparent';
   this.speechTail.style.borderRight = '18px solid transparent';
   this.speechTail.style.borderTop = '28px solid #ffffcc';
-  this.speechTail.style.zIndex = '0';
+  this.speechTail.style.zIndex = '10001';
     
     // Create content area
     this.content = document.createElement('div');
@@ -114,7 +121,24 @@ export class TutorialOverlay {
   this.overlay.appendChild(this.cowboy);
     this.overlay.appendChild(this.speechBubble);
     this.overlay.appendChild(this.speechTail);
+    
+    // Create spotlight cutout container
+    this.createSpotlightCutoutContainer();
+    
     document.body.appendChild(this.overlay);
+  }
+
+  createSpotlightCutoutContainer() {
+    // Create a container for spotlight cutouts that will be part of the main overlay
+    this.spotlightCutout = document.createElement('div');
+    this.spotlightCutout.style.position = 'absolute';
+    this.spotlightCutout.style.top = '0';
+    this.spotlightCutout.style.left = '0';
+    this.spotlightCutout.style.width = '100%';
+    this.spotlightCutout.style.height = '100%';
+    this.spotlightCutout.style.pointerEvents = 'none';
+    this.spotlightCutout.style.zIndex = '1'; // Above the background but below cowboy/dialog
+    this.overlay.appendChild(this.spotlightCutout);
   }
 
   show() {
@@ -211,6 +235,9 @@ export class TutorialOverlay {
     
     // Position Clippy and speech bubble
     this.positionElements(step.position);
+    
+    // Handle spotlight for revealed elements
+    this.updateSpotlight(step.revealElement);
   }
 
   positionElements(position) {
@@ -244,8 +271,117 @@ export class TutorialOverlay {
       this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';
       this.speechTail.style.borderRight = tailWidth + 'px solid transparent';
       this.speechTail.style.borderTop = tailHeight + 'px solid #ffffcc';
-      this.speechTail.style.zIndex = '2';
+      this.speechTail.style.zIndex = '10001';
     }, 0);
+  }
+
+  updateSpotlight(revealElement) {
+    if (!this.spotlightCutout) return;
+    
+    if (!revealElement) {
+      // No element to reveal, clear cutouts and use normal background
+      this.clearSpotlightCutout();
+      return;
+    }
+    
+    // Create cutout for the specified element
+    this.createSpotlightCutout(revealElement);
+  }
+
+  createSpotlightCutout(elementId) {
+    // Clear any existing cutouts
+    this.spotlightCutout.innerHTML = '';
+    
+    // Find the target element
+    const targetElement = this.findUIElement(elementId);
+    if (!targetElement) {
+      console.warn(`Tutorial spotlight: Could not find element with id '${elementId}'`);
+      return;
+    }
+    
+    // Special handling for targeting panel - temporarily show it if hidden
+    let wasHidden = false;
+    if (elementId === 'targeting' && targetElement.style.display === 'none') {
+      targetElement.style.display = 'block';
+      wasHidden = true;
+      // Store reference to restore later
+      this._temporarilyShownElement = { element: targetElement, wasHidden: true };
+    }
+    
+    // Get element position and size
+    const rect = targetElement.getBoundingClientRect();
+    const padding = 20; // Extra padding around the element
+    
+    // Create cutout using CSS clip-path
+    const cutoutLeft = Math.max(0, rect.left - padding);
+    const cutoutTop = Math.max(0, rect.top - padding);
+    const cutoutRight = Math.min(window.innerWidth, rect.right + padding);
+    const cutoutBottom = Math.min(window.innerHeight, rect.bottom + padding);
+    
+    const cutoutWidth = cutoutRight - cutoutLeft;
+    const cutoutHeight = cutoutBottom - cutoutTop;
+    
+    // Create the spotlight effect using CSS clip-path on the main overlay
+    this.applySpotlightClipPath(cutoutLeft, cutoutTop, cutoutWidth, cutoutHeight);
+  }
+
+  findUIElement(elementId) {
+    // Use stored UI instance or try to get from global scope
+    const uiInstance = this.uiInstance || window.game?.ui || window.ui;
+    if (!uiInstance) {
+      console.warn('Tutorial spotlight: Could not find UI instance');
+      return null;
+    }
+    
+    // Map element IDs to UI instance properties
+    const elementMap = {
+      'radar': uiInstance.radarWrapper,
+      'throttle': uiInstance.throttleUI?.throttleContainer,
+      'targeting': uiInstance.targetUI?.targetPanel,
+      'cargo': uiInstance.cargoUI?.cargoPanel,
+      'controls': uiInstance.controlsUI?.controlsHelp
+    };
+    
+    const element = elementMap[elementId];
+    if (element) {
+      console.log(`Tutorial spotlight: Found element '${elementId}':`, element);
+      return element;
+    }
+    
+    console.warn(`Tutorial spotlight: Could not find element '${elementId}' in UI instance`);
+    console.log('Available UI elements:', Object.keys(uiInstance).filter(key => key.includes('UI') || key.includes('Wrapper')));
+    return null;
+  }
+
+  applySpotlightClipPath(cutoutLeft, cutoutTop, cutoutWidth, cutoutHeight) {
+    // Create a clip-path that cuts out a rectangular hole in the main overlay
+    const clipPath = `polygon(
+      0% 0%, 
+      0% 100%, 
+      ${cutoutLeft}px 100%, 
+      ${cutoutLeft}px ${cutoutTop}px, 
+      ${cutoutLeft + cutoutWidth}px ${cutoutTop}px, 
+      ${cutoutLeft + cutoutWidth}px ${cutoutTop + cutoutHeight}px, 
+      ${cutoutLeft}px ${cutoutTop + cutoutHeight}px, 
+      ${cutoutLeft}px 100%, 
+      100% 100%, 
+      100% 0%
+    )`;
+    
+    // Apply the clip-path to the main overlay
+    this.overlay.style.clipPath = clipPath;
+  }
+
+  clearSpotlightCutout() {
+    // Remove clip-path to show normal full overlay
+    this.overlay.style.clipPath = 'none';
+    this.spotlightCutout.innerHTML = '';
+    
+    // Restore temporarily shown element if any
+    if (this._temporarilyShownElement) {
+      this._temporarilyShownElement.element.style.display = 'none';
+      this._temporarilyShownElement = null;
+    }
   }
 
   handleOption(action) {
@@ -293,5 +429,31 @@ export class TutorialOverlay {
 
   setOnResume(callback) {
     this.onResume = callback;
+  }
+
+  setUIInstance(uiInstance) {
+    this.uiInstance = uiInstance;
+  }
+
+  // Method for testing spotlight functionality
+  testSpotlight(elementId) {
+    this.updateSpotlight(elementId);
+  }
+
+  // Method to clear spotlight for testing
+  clearSpotlight() {
+    this.clearSpotlightCutout();
+  }
+
+  // Method to test targeting specifically
+  testTargetingSpotlight() {
+    console.log('Testing targeting spotlight...');
+    this.updateSpotlight('targeting');
+  }
+
+  // Method to test controls specifically  
+  testControlsSpotlight() {
+    console.log('Testing controls spotlight...');
+    this.updateSpotlight('controls');
   }
 }
