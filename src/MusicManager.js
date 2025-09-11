@@ -291,6 +291,8 @@ export class MusicManager {
     this._previousSoundtracks = null;
     this._wasInDocking = false;
     this._lastDockingState = false;
+    this._lastDockingCheckTime = 0;
+    this._lastIsDocked = false;
   }
 
   // Get the delay for a specific soundtrack folder
@@ -436,29 +438,47 @@ export class MusicManager {
   update() {
     if (!this.spaceship) return;
     
+    // Only check combat state every frame as it can change frequently
     const isInCombat = this.spaceship.flags.isInCombat;
-    const isDocking = this.spaceship.flags.isDocking;
-    const isDocked = this.spaceship.flags.isDocked;
-    const landingVectorLocked = this.spaceship.flags.landingVectorLocked;
     
-    // Check if we should switch to docking soundtrack
-    const shouldPlayDocking = (isDocking || landingVectorLocked) && !isDocked;
+    // Only check docking state if we haven't checked recently (throttle to 100ms)
+    const shouldCheckDocking = !this._lastDockingCheckTime || 
+                              (Date.now() - this._lastDockingCheckTime) > 100; // Check at most every 100ms
     
-    // Debug logging for docking state
-    if (DEBUG && (isDocking || landingVectorLocked || isDocked)) {
-      console.log('MusicManager: Docking state - isDocking:', isDocking, 'landingVectorLocked:', landingVectorLocked, 'isDocked:', isDocked, 'shouldPlayDocking:', shouldPlayDocking);
-    }
+    let isDocking, isDocked, landingVectorLocked, shouldPlayDocking, stateChanged;
     
-    // Only process soundtrack changes when state actually changes
-    const currentDockingState = shouldPlayDocking;
-    const stateChanged = currentDockingState !== this._lastDockingState;
-    
-    if (DEBUG && stateChanged) {
-      console.log('MusicManager: Docking state changed - previous:', this._lastDockingState, 'current:', currentDockingState);
+    if (shouldCheckDocking) {
+      isDocking = this.spaceship.flags.isDocking;
+      isDocked = this.spaceship.flags.isDocked;
+      landingVectorLocked = this.spaceship.flags.landingVectorLocked;
+      
+      // Check if we should switch to docking soundtrack
+      shouldPlayDocking = (isDocking || landingVectorLocked) && !isDocked;
+      
+      // Debug logging for docking state
+      if (DEBUG && (isDocking || landingVectorLocked || isDocked)) {
+        console.log('MusicManager: Docking state - isDocking:', isDocking, 'landingVectorLocked:', landingVectorLocked, 'isDocked:', isDocked, 'shouldPlayDocking:', shouldPlayDocking);
+      }
+      
+      // Only process soundtrack changes when state actually changes
+      const currentDockingState = shouldPlayDocking;
+      stateChanged = currentDockingState !== this._lastDockingState;
+      
+      if (DEBUG && stateChanged) {
+        console.log('MusicManager: Docking state changed - previous:', this._lastDockingState, 'current:', currentDockingState);
+      }
+      
+      this._lastDockingCheckTime = Date.now();
+    } else {
+      // Use cached values if we're not checking this frame
+      shouldPlayDocking = this._lastDockingState;
+      stateChanged = false;
+      isDocked = this._lastIsDocked;
     }
     
     if (stateChanged) {
-      this._lastDockingState = currentDockingState;
+      this._lastDockingState = shouldPlayDocking;
+      this._lastIsDocked = isDocked;
       
       if (DEBUG) {
         console.log('MusicManager: Processing state change - isInCombat:', isInCombat, 'shouldPlayDocking:', shouldPlayDocking, 'isDocked:', isDocked, 'wasInDocking:', this._wasInDocking);
