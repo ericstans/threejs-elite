@@ -26,7 +26,7 @@ export class TutorialOverlay {
         id: 'radar',
         title: 'Radar System',
         message: 'This is your radar. Red dots are targets such as ships and asteroids. Yellow dots are nav-targets such as planets and space stations.',
-        position: 'radar',
+        position: 'center',
         showNext: true,
         revealElement: 'radar'
       },
@@ -34,7 +34,7 @@ export class TutorialOverlay {
         id: 'radar2',
         title: 'Radar System',
         message: 'You can also use C to communicate with your nav-target, or V to communicate with your target. But not everyone will want to talk, and some planets are empty!',
-        position: 'radar',
+        position: 'center',
         showNext: true,
         revealElement: 'radar'
       },
@@ -66,7 +66,7 @@ export class TutorialOverlay {
         id: 'controls',
         title: 'Control Instructions',
         message: 'This area shows the controls.',
-        position: 'center',
+        position: 'controls',
         showEnd: true,
         revealElement: 'controls'
       }
@@ -250,29 +250,65 @@ export class TutorialOverlay {
     this.updateSpotlight(step.revealElement);
   }
 
-  positionElements(_position) {
-    // Position speech bubble as before
-    let bubbleLeft = '60%';
-    let bubbleTop = '60%';
+  positionElements(position) {
+    // Position speech bubble based on the position parameter
+    let bubbleLeft, bubbleTop;
+    
+    switch (position) {
+      case 'radar':
+        // Position near radar (top-right area)
+        bubbleLeft = '75%';
+        bubbleTop = '25%';
+        break;
+      case 'throttle':
+        // Position near throttle (bottom-left area)
+        bubbleLeft = '60%';
+        bubbleTop = '60%';
+        break;
+      case 'targeting':
+        // Position near targeting (top-left area)
+        bubbleLeft = '75%';
+        bubbleTop = '52%';
+        break;
+      case 'cargo':
+        // Position near cargo (bottom-right area)
+        bubbleLeft = '80%';
+        bubbleTop = '70%';
+        break;
+      case 'controls':
+        bubbleLeft = '80%';
+        bubbleTop = '15%';
+        break;
+      case 'center':
+      default:
+        // Default center position
+        bubbleLeft = '60%';
+        bubbleTop = '60%';
+        break;
+    }
+    
+    // Adjust for small screens
     if (window.innerWidth < 700) {
       bubbleLeft = '50%';
       bubbleTop = '70%';
     }
+    
     this.speechBubble.style.left = bubbleLeft;
     this.speechBubble.style.top = bubbleTop;
     this.speechBubble.style.transform = 'translate(-50%, -50%)';
 
-    // After rendering, measure bubble size and position cowboy/pointer accordingly
+    // After rendering, position cowboy and pointer consistently
     setTimeout(() => {
       const bubbleRect = this.speechBubble.getBoundingClientRect();
-      // Cowboy man: below and to the right of bubble
+      
+      // Cowboy always appears to the right and below the speech bubble
       const cowboyX = bubbleRect.right + 32;
       const cowboyY = bubbleRect.bottom + 8;
       this.cowboy.style.left = cowboyX + 'px';
       this.cowboy.style.top = cowboyY + 'px';
       this.cowboy.style.transform = 'none';
 
-      // Pointer: start at bottom-right of bubble, point to cowboy
+      // Pointer always points from bottom-right of bubble to cowboy
       const tailWidth = 32;
       const tailHeight = Math.max(48, cowboyY - bubbleRect.bottom);
       this.speechTail.style.left = (bubbleRect.right - tailWidth / 2) + 'px';
