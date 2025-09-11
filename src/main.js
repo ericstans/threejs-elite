@@ -1132,6 +1132,11 @@ setTimeout(() => {
   
   game.ui.setOnTitleDismiss(() => {
     console.log('Title dismissed - game ready');
+    
+    // Switch to Aridus Prime's soundtracks (ambient)
+    console.log('Switching to Aridus Prime soundtracks');
+    game.audioManager.musicManager.switchSoundtracksImmediate(['ambient']);
+    
     // Show UI and cockpit after title is dismissed
     game.ui.uiContainer.style.display = 'block';
     game.ui.cockpitWrapper.style.display = 'block';

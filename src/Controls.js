@@ -299,8 +299,9 @@ export class Controls {
         await this.game.musicManager.init();
         if (DEBUG) console.log('startMusic: Music manager initialized successfully');
 
-        // Start ambient track
-        if (DEBUG) console.log('startMusic: Playing ambient track');
+        // Start with title soundtrack
+        if (DEBUG) console.log('startMusic: Playing title track');
+        this.game.musicManager.switchSoundtracksImmediate(['title']);
         this.game.musicManager.playTrack('ambient');
         if (DEBUG) console.log('startMusic: Starting fade in');
         this.game.musicManager.fadeIn(3000); // 3 second fade in
