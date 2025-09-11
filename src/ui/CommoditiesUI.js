@@ -6,6 +6,7 @@ export class CommoditiesUI {
     this.sellGrid = [];
     this.sellGridSize = 20; // 4x5 grid
     this.cargoItems = []; // Items from cargo bay
+    this.movedItems = []; // Track items moved from cargo to sell grid
     this.onCargoUpdate = null; // Callback to update cargo
     this.createCommoditiesModal();
   }
@@ -215,12 +216,15 @@ export class CommoditiesUI {
   show() {
     this.isVisible = true;
     this.modal.style.display = 'block';
-    this.enableDragAndDrop();
+    this.movedItems = []; // Clear moved items when showing
+    this.updateCargoDisplay();
   }
 
   hide() {
     this.isVisible = false;
     this.modal.style.display = 'none';
+    // Return moved items to cargo bay
+    this.returnItemsToCargo();
   }
 
   updateCommodities(commodities) {
@@ -303,13 +307,16 @@ export class CommoditiesUI {
       this.onCargoUpdate(itemsToSell, totalValue);
     }
 
-    // Clear the sell grid
+    // Clear the sell grid and moved items
     this.sellGrid.forEach(slot => {
       slot.textContent = '·';
       slot.style.color = '#006644';
+      slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
+      slot.style.borderColor = '#00aa55'; // Reset to default border
       delete slot.dataset.commodity;
       delete slot.dataset.cargoIndex;
     });
+    this.movedItems = []; // Clear moved items after selling
 
     this.updateSellTotal();
     console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
@@ -322,7 +329,7 @@ export class CommoditiesUI {
   }
 
   updateCargoDisplay() {
-    // This will be implemented to show cargo items that can be dragged
+    // This will be implemented to show cargo items that can be clicked
     // For now, just log the cargo items
     console.log('Cargo items:', this.cargoItems);
   }
@@ -375,12 +382,24 @@ export class CommoditiesUI {
   addToSellGrid(slotIndex, cargoItem) {
     if (slotIndex >= 0 && slotIndex < this.sellGridSize) {
       const slot = this.sellGrid[slotIndex];
-      slot.textContent = '●'; // Circle icon
-      slot.style.color = '#00ff00';
+      slot.textContent = '●'; // Use circle icon like cargo bay
+      slot.title = cargoItem.name; // Use item name as tooltip
+      slot.style.setProperty('color', cargoItem.color || '#00ff00', 'important'); // Use item's actual color with !important
+      slot.style.backgroundColor = cargoItem.color ? this.getColorRgba(cargoItem.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
+      slot.style.borderColor = cargoItem.color || '#00ff55'; // Use item's actual color for border
       slot.dataset.commodity = cargoItem.name;
       slot.dataset.cargoIndex = cargoItem.index;
       this.updateSellTotal();
     }
+  }
+
+  // Helper method to convert hex color to rgba
+  getColorRgba(hexColor, alpha) {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   // Method to remove item from sell grid
@@ -389,9 +408,65 @@ export class CommoditiesUI {
       const slot = this.sellGrid[slotIndex];
       slot.textContent = '·';
       slot.style.color = '#006644';
+      slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
+      slot.style.borderColor = '#00aa55'; // Reset to default border
       delete slot.dataset.commodity;
       delete slot.dataset.cargoIndex;
       this.updateSellTotal();
+    }
+  }
+
+  // Method to move item from cargo to sell grid
+  moveItemToSellGrid(cargoItem) {
+    // Find first empty slot in sell grid
+    for (let i = 0; i < this.sellGridSize; i++) {
+      if (this.sellGrid[i].textContent === '·') {
+        this.addToSellGrid(i, cargoItem);
+        this.movedItems.push(cargoItem);
+        // Remove item from cargo bay
+        this.removeFromCargoBay(cargoItem);
+        return true;
+      }
+    }
+    return false; // No empty slots
+  }
+
+  // Method to remove item from cargo bay
+  removeFromCargoBay(cargoItem) {
+    if (cargoItem.slot) {
+      cargoItem.slot.textContent = '·';
+      cargoItem.slot.style.color = '#006644';
+      cargoItem.slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)';
+      cargoItem.slot.style.borderColor = '#00aa55';
+    }
+  }
+
+  // Method to return items to cargo bay
+  returnItemsToCargo() {
+    if (this.movedItems.length > 0) {
+      console.log('Returning items to cargo bay:', this.movedItems);
+      // Restore items to cargo bay
+      this.movedItems.forEach(item => {
+        if (item.slot) {
+          item.slot.textContent = '●'; // Use circle icon like cargo bay
+          item.slot.title = item.name; // Use item name as tooltip
+          item.slot.style.setProperty('color', item.color || '#00ff00', 'important');
+          item.slot.style.backgroundColor = item.color ? this.getColorRgba(item.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
+          item.slot.style.borderColor = item.color || '#00ff55';
+        }
+      });
+      // Clear the sell grid
+      this.sellGrid.forEach(slot => {
+        slot.textContent = '·';
+        slot.title = ''; // Clear tooltip
+        slot.style.color = '#006644';
+        slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
+        slot.style.borderColor = '#00aa55'; // Reset to default border
+        delete slot.dataset.commodity;
+        delete slot.dataset.cargoIndex;
+      });
+      this.updateSellTotal();
+      this.movedItems = [];
     }
   }
 }

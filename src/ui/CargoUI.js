@@ -2,6 +2,7 @@ export class CargoUI {
   constructor(container) {
     this.container = container;
     this.cargoGrid = [];
+    this.onItemClick = null; // Callback for item clicks
     this.createCargoGrid();
   }
 
@@ -60,13 +61,48 @@ export class CargoUI {
 
       // Add hover effects
       slot.addEventListener('mouseenter', () => {
-        slot.style.background = 'rgba(0, 170, 85, 0.2)';
-        slot.style.borderColor = '#00ff55';
+        // Store original colors if not already stored
+        if (!slot.dataset.originalBackground) {
+          slot.dataset.originalBackground = slot.style.backgroundColor || 'rgba(0, 170, 85, 0.1)';
+          slot.dataset.originalBorderColor = slot.style.borderColor || '#00aa55';
+        }
+        // Use brighter version for hover effect
+        const originalBg = slot.dataset.originalBackground;
+        const originalBorder = slot.dataset.originalBorderColor;
+        
+        // Make background slightly brighter (increase alpha)
+        if (originalBg.includes('rgba')) {
+          const match = originalBg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+          if (match) {
+            const [, r, g, b, a] = match;
+            const newAlpha = Math.min(parseFloat(a) * 1.5, 0.3);
+            slot.style.background = `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
+          }
+        } else {
+          slot.style.background = originalBg;
+        }
+        
+        // Make border slightly brighter
+        slot.style.borderColor = originalBorder;
       });
 
       slot.addEventListener('mouseleave', () => {
-        slot.style.background = 'rgba(0, 170, 85, 0.1)';
-        slot.style.borderColor = '#00aa55';
+        // Restore original colors
+        slot.style.background = slot.dataset.originalBackground || 'rgba(0, 170, 85, 0.1)';
+        slot.style.borderColor = slot.dataset.originalBorderColor || '#00aa55';
+      });
+
+      // Add click functionality
+      slot.addEventListener('click', () => {
+        if (slot.textContent !== '·' && this.onItemClick) {
+          const itemData = {
+            name: slot.dataset.itemName || slot.textContent,
+            color: slot.dataset.itemColor || '#00ff00',
+            index: i,
+            slot: slot
+          };
+          this.onItemClick(itemData);
+        }
       });
 
       // Empty slot indicator
@@ -99,11 +135,20 @@ export class CargoUI {
       slot.textContent = cargoIcon;
       slot.style.color = color;
       slot.title = cargoName; // Tooltip
+      slot.dataset.itemColor = color; // Store color in dataset
+      slot.dataset.itemName = cargoName; // Store name in dataset
 
       // Add a small indicator for occupied slots with resource color
       const colorRgb = this.hexToRgb(color);
-      slot.style.background = `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.1)`;
-      slot.style.borderColor = color;
+      const backgroundColor = `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.1)`;
+      const borderColor = color;
+      
+      slot.style.background = backgroundColor;
+      slot.style.borderColor = borderColor;
+      
+      // Store original colors for hover effects
+      slot.dataset.originalBackground = backgroundColor;
+      slot.dataset.originalBorderColor = borderColor;
     }
   }
 

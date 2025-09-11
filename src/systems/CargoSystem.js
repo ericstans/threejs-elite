@@ -146,6 +146,30 @@ export class CargoSystem {
     }
   }
 
+  // Add test cargo items for debugging
+  addTestCargo() {
+    const testItems = [
+      { name: 'Iron Ore', color: '#8B4513' },
+      { name: 'Copper Ore', color: '#B87333' },
+      { name: 'Gold Ore', color: '#FFD700' },
+      { name: 'Steel Ingots', color: '#C0C0C0' },
+      { name: 'Electronics', color: '#00FF00' },
+      { name: 'Crystals', color: '#FF00FF' },
+      { name: 'Fuel Cells', color: '#00FFFF' },
+      { name: 'Food Rations', color: '#FFA500' }
+    ];
+
+    // Add test items to cargo
+    testItems.forEach(item => {
+      if (this.cargo.length < this.maxCargoSlots) {
+        this.cargo.push(item);
+      }
+    });
+
+    this.updateCargoUI();
+    console.log(`Added ${testItems.length} test cargo items`);
+  }
+
   // Helper method to convert Three.js color value to hex string
   threeColorToHex(colorValue) {
     // Convert Three.js color value (0xRRGGBB) to hex string (#RRGGBB)

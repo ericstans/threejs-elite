@@ -157,6 +157,11 @@ export class UI {
     this.commoditiesUI.onCargoUpdate = (itemsToSell, totalValue) => {
       this.handleCommoditiesSale(itemsToSell, totalValue);
     };
+
+    // Set up cargo item click callback
+    this.cargoUI.onItemClick = (itemData) => {
+      this.handleCargoItemClick(itemData);
+    };
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
@@ -996,16 +1001,27 @@ export class UI {
     this.simulateCommoditiesSale(itemsToSell, totalValue);
   }
 
+  handleCargoItemClick(itemData) {
+    // Only handle clicks when commodities UI is visible
+    if (this.isCommoditiesVisible()) {
+      console.log('Cargo item clicked:', itemData);
+      this.commoditiesUI.moveItemToSellGrid(itemData);
+    }
+  }
+
   simulateCommoditiesSale(itemsToSell, totalValue) {
-    // Simulate adding cash (this will be replaced with actual cash system integration)
-    console.log(`Simulated sale: Adding $${totalValue.toFixed(0)} to player cash`);
+    // Add cash to spaceship
+    if (this.spaceship) {
+      this.spaceship.addCash(totalValue);
+    }
     
     // Update cash display
-    if (this.cashUI) {
-      // This is a placeholder - in real implementation, this would update actual player cash
-      const currentCash = 0; // Would get from spaceship.getCash()
-      this.cashUI.updateCash(currentCash + totalValue);
+    if (this.cashUI && this.spaceship) {
+      const currentCash = this.spaceship.getCash();
+      this.cashUI.updateCash(currentCash);
     }
+    
+    console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
   }
 
   // Method to get current player cash (placeholder for game integration)
@@ -1073,6 +1089,8 @@ export class UI {
   }
 
   setGame(game) {
+    this.game = game;
+    this.spaceship = game ? game.spaceship : null;
     this.optionsUI.setGame(game);
     this.optionsUI.onClose = () => {
       if (game && game.resume) {

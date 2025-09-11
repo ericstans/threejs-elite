@@ -1356,9 +1356,16 @@ setTimeout(() => {
       console.log('Tutorial skipped');
     });
 
-    // Check for skip tutorial parameter
+    // Check for URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const skipTutorial = urlParams.get('skiptutorial') === '1';
+    const startWithCargo = urlParams.get('startWithCargo') === '1';
+    
+    // Add test cargo if requested
+    if (startWithCargo) {
+      game.cargoSystem.addTestCargo();
+      console.log('Test cargo added via URL parameter');
+    }
     
     // Start tutorial after 3 seconds (unless skipped)
     if (!skipTutorial) {
