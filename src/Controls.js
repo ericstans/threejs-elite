@@ -216,7 +216,7 @@ export class Controls {
     // F1 toggles third-person mode
     if (this.keys['F1']) {
       if (this.game) {
-        if (!this.game.thirdPersonInitialized) {
+        if (!this.game.thirdPersonCamera.isInitialized) {
           this.game.initThirdPerson();
           // After initialization, immediately toggle to third person
           // The initThirdPerson method will handle the actual toggle when the model loads
