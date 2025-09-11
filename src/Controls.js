@@ -44,7 +44,8 @@ export class Controls {
           if (!this.game.ui.isCommsModalVisible() &&
               !this.game.ui.isMapModalVisible() &&
               !this.game.ui.isOptionsVisible() &&
-              !this.game.ui.isTitleVisible()) {
+              !this.game.ui.isTitleVisible() &&
+              !this.game.ui.isServicesVisible()) {
             // No modals are open - open options and pause game
             this.game.ui.showOptions();
             this.game.pause();

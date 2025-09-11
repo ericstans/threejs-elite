@@ -120,9 +120,8 @@ export class NavTargetUI {
     this.navTargetName.textContent = navTargetInfo.name;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
     
-    // Show distance as 0 when docked with the target
-    const displayDistance = navTargetInfo.isDockedWithTarget ? 0 : navTargetInfo.distance;
-    this.navTargetDistance.textContent = `Distance: ${displayDistance.toFixed(1)}`;
+    // Distance is now calculated as surface distance (distance - radius/size)
+    this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
 
     // Show/hide commable indicator
     if (navTargetInfo.isCommable) {

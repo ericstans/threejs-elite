@@ -214,7 +214,18 @@ export class TargetingSystem {
       const ship = this.getSpaceship();
       const spaceshipPos = ship.getPosition();
       const targetPos = this.currentNavTarget.getPosition();
-      const distance = spaceshipPos.distanceTo(targetPos);
+      const rawDistance = spaceshipPos.distanceTo(targetPos);
+      
+      // Calculate surface distance for planets (distance - radius) and stations (distance - size)
+      let distance = rawDistance;
+      if (this.currentNavTarget.getType && this.currentNavTarget.getType() === 'planet') {
+        // For planets, subtract radius to get distance to surface
+        distance = Math.max(0, rawDistance - (this.currentNavTarget.radius || 0));
+      } else if (this.currentNavTarget.getType && this.currentNavTarget.getType() === 'station') {
+        // For stations, subtract size to get distance to surface
+        distance = Math.max(0, rawDistance - (this.currentNavTarget.size || 0));
+      }
+      
       // Check if player is docked with the nav target
       const isDockedWithTarget = ship.flags.isDocked &&
         ((ship.flags.dockContext === 'planet' && ship.flags.docketPlanetId === this.currentNavTarget.getId()) ||

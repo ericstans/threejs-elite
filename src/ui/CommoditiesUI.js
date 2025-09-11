@@ -181,7 +181,6 @@ export class CommoditiesUI {
     this.bottomPanel.style.display = 'flex';
     this.bottomPanel.style.justifyContent = 'space-between';
     this.bottomPanel.style.alignItems = 'center';
-    this.bottomPanel.style.borderTop = '1px solid #00ff00';
     this.bottomPanel.style.paddingTop = '15px';
     this.content.appendChild(this.bottomPanel);
 

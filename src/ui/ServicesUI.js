@@ -63,29 +63,31 @@ export class ServicesUI {
 
     // Service definitions
     const serviceDefinitions = {
-      'refuel+repair': { name: 'Refuel & Repair', description: 'Refuel your ship and repair hull damage', icon: '🔧' },
-      'shipyard': { name: 'Shipyard', description: 'Buy, sell, and upgrade ships', icon: '🚀' },
-      'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️' },
-      'commodities': { name: 'Commodities', description: 'Buy and sell trade goods', icon: '📦' },
-      'rumors': { name: 'Rumors', description: 'Gather information and rumors', icon: '💬' },
-      'jobs': { name: 'Jobs', description: 'Find work and missions', icon: '📋' }
+      'refuel+repair': { name: 'Refuel & Repair', description: 'Refuel your ship and repair hull damage', icon: '🔧', implemented: false },
+      'shipyard': { name: 'Shipyard', description: 'Buy, sell, and upgrade ships', icon: '🚀', implemented: false },
+      'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️', implemented: false },
+      'commodities': { name: 'Commodities', description: 'Buy and sell trade goods', icon: '📦', implemented: true },
+      'rumors': { name: 'Rumors', description: 'Gather information and rumors', icon: '💬', implemented: false },
+      'jobs': { name: 'Jobs', description: 'Find work and missions', icon: '📋', implemented: false }
     };
 
     // Add each service
     services.forEach(serviceId => {
-      const serviceDef = serviceDefinitions[serviceId] || { name: serviceId, description: 'Service available', icon: '❓' };
+      const serviceDef = serviceDefinitions[serviceId] || { name: serviceId, description: 'Service available', icon: '❓', implemented: false };
+      const isImplemented = serviceDef.implemented;
 
       const serviceItem = document.createElement('div');
       serviceItem.style.display = 'flex';
       serviceItem.style.alignItems = 'center';
       serviceItem.style.padding = '15px';
-      serviceItem.style.border = '1px solid #00ff00';
+      serviceItem.style.border = isImplemented ? '1px solid #00ff00' : '1px solid #666';
       serviceItem.style.borderRadius = '4px';
-      serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
-      serviceItem.style.cursor = 'pointer';
+      serviceItem.style.backgroundColor = isImplemented ? 'rgba(0, 255, 0, 0.1)' : 'rgba(100, 100, 100, 0.1)';
+      serviceItem.style.cursor = isImplemented ? 'pointer' : 'not-allowed';
       serviceItem.style.transition = 'background-color 0.2s';
       serviceItem.style.pointerEvents = 'auto';
       serviceItem.style.userSelect = 'none';
+      serviceItem.style.opacity = isImplemented ? '1' : '0.5';
 
       // Service icon
       const icon = document.createElement('div');
@@ -106,30 +108,39 @@ export class ServicesUI {
       name.style.fontWeight = 'bold';
       name.style.marginBottom = '5px';
       name.style.pointerEvents = 'none';
+      name.style.color = isImplemented ? '#00ff00' : '#666';
       name.textContent = serviceDef.name;
       info.appendChild(name);
 
       const description = document.createElement('div');
       description.style.fontSize = '14px';
-      description.style.color = '#aaa';
+      description.style.color = isImplemented ? '#aaa' : '#555';
       description.style.pointerEvents = 'none';
-      description.textContent = serviceDef.description;
+      description.textContent = isImplemented ? serviceDef.description : `${serviceDef.description} (Coming Soon)`;
       info.appendChild(description);
 
       serviceItem.appendChild(info);
 
-      // Hover effects
-      serviceItem.addEventListener('mouseenter', () => {
-        serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
-      });
-      serviceItem.addEventListener('mouseleave', () => {
-        serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
-      });
+      // Hover effects (only for implemented services)
+      if (isImplemented) {
+        serviceItem.addEventListener('mouseenter', () => {
+          serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
+        });
+        serviceItem.addEventListener('mouseleave', () => {
+          serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+        });
+      }
 
       // Click handler
       serviceItem.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
+        
+        if (!isImplemented) {
+          console.log(`Service not implemented: ${serviceId}`);
+          return;
+        }
+        
         console.log(`Service clicked: ${serviceId}`);
         if (serviceId === 'commodities' && this.onCommoditiesClick) {
           console.log('Calling commodities callback');
@@ -142,6 +153,10 @@ export class ServicesUI {
       
       // Also add a mousedown event to test
       serviceItem.addEventListener('mousedown', (event) => {
+        if (!isImplemented) {
+          event.preventDefault();
+          return;
+        }
         console.log(`Service mousedown: ${serviceId}`);
       });
 
