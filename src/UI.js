@@ -351,6 +351,11 @@ export class UI {
   applyThirdPersonLayout() {
     if (!this.firstPersonMode) return; // already third-person
     this.firstPersonMode = false;
+    
+    // Update ThrottleUI positioning for third-person view
+    if (this.throttleUI) {
+      this.throttleUI.setViewMode(false);
+    }
     // Hide cockpit image
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'none';
     // Reparent target & nav panels back to uiContainer
@@ -409,6 +414,11 @@ export class UI {
   applyFirstPersonLayout() {
     if (this.firstPersonMode) return; // already first-person
     this.firstPersonMode = true;
+    
+    // Update ThrottleUI positioning for first-person view
+    if (this.throttleUI) {
+      this.throttleUI.setViewMode(true);
+    }
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'block';
     // Reparent panels into cockpit wrapper with overlay positioning
     if (this.targetUI?.targetPanel) {
