@@ -59,37 +59,43 @@ export class CargoUI {
       slot.style.cursor = 'pointer';
       slot.style.transition = 'all 0.2s ease';
 
-      // Add hover effects
+      // Add hover effects (only for occupied slots)
       slot.addEventListener('mouseenter', () => {
-        // Store original colors if not already stored
-        if (!slot.dataset.originalBackground) {
-          slot.dataset.originalBackground = slot.style.backgroundColor || 'rgba(0, 170, 85, 0.1)';
-          slot.dataset.originalBorderColor = slot.style.borderColor || '#00aa55';
-        }
-        // Use brighter version for hover effect
-        const originalBg = slot.dataset.originalBackground;
-        const originalBorder = slot.dataset.originalBorderColor;
-        
-        // Make background slightly brighter (increase alpha)
-        if (originalBg.includes('rgba')) {
-          const match = originalBg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
-          if (match) {
-            const [, r, g, b, a] = match;
-            const newAlpha = Math.min(parseFloat(a) * 1.5, 0.3);
-            slot.style.background = `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
+        // Only apply hover effects to occupied slots
+        if (slot.textContent !== '·') {
+          // Store original colors if not already stored
+          if (!slot.dataset.originalBackground) {
+            slot.dataset.originalBackground = slot.style.backgroundColor || 'rgba(0, 170, 85, 0.1)';
+            slot.dataset.originalBorderColor = slot.style.borderColor || '#00aa55';
           }
-        } else {
-          slot.style.background = originalBg;
+          // Use brighter version for hover effect
+          const originalBg = slot.dataset.originalBackground;
+          const originalBorder = slot.dataset.originalBorderColor;
+          
+          // Make background slightly brighter (increase alpha)
+          if (originalBg.includes('rgba')) {
+            const match = originalBg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+            if (match) {
+              const [, r, g, b, a] = match;
+              const newAlpha = Math.min(parseFloat(a) * 1.5, 0.3);
+              slot.style.background = `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
+            }
+          } else {
+            slot.style.background = originalBg;
+          }
+          
+          // Make border slightly brighter
+          slot.style.borderColor = originalBorder;
         }
-        
-        // Make border slightly brighter
-        slot.style.borderColor = originalBorder;
       });
 
       slot.addEventListener('mouseleave', () => {
-        // Restore original colors
-        slot.style.background = slot.dataset.originalBackground || 'rgba(0, 170, 85, 0.1)';
-        slot.style.borderColor = slot.dataset.originalBorderColor || '#00aa55';
+        // Only restore colors for occupied slots
+        if (slot.textContent !== '·') {
+          // Restore original colors
+          slot.style.background = slot.dataset.originalBackground || 'rgba(0, 170, 85, 0.1)';
+          slot.style.borderColor = slot.dataset.originalBorderColor || '#00aa55';
+        }
       });
 
       // Add click functionality

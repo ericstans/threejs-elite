@@ -8,6 +8,7 @@ export class CommoditiesUI {
     this.cargoItems = []; // Items from cargo bay
     this.movedItems = []; // Track items moved from cargo to sell grid
     this.onCargoUpdate = null; // Callback to update cargo
+    this.onCargoAdd = null; // Callback to add items back to cargo
     this.createCommoditiesModal();
   }
 
@@ -445,6 +446,14 @@ export class CommoditiesUI {
   returnItemsToCargo() {
     if (this.movedItems.length > 0) {
       console.log('Returning items to cargo bay:', this.movedItems);
+      
+      // Add items back to cargo system
+      if (this.onCargoAdd) {
+        this.movedItems.forEach(item => {
+          this.onCargoAdd(item);
+        });
+      }
+      
       // Restore items to cargo bay
       this.movedItems.forEach(item => {
         if (item.slot) {

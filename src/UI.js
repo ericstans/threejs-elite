@@ -162,6 +162,11 @@ export class UI {
     this.cargoUI.onItemClick = (itemData) => {
       this.handleCargoItemClick(itemData);
     };
+
+    // Set up commodities cargo add callback
+    this.commoditiesUI.onCargoAdd = (item) => {
+      this.addItemToCargo(item);
+    };
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
@@ -1006,6 +1011,18 @@ export class UI {
     if (this.isCommoditiesVisible()) {
       console.log('Cargo item clicked:', itemData);
       this.commoditiesUI.moveItemToSellGrid(itemData);
+      
+      // Remove item from cargo system immediately to prevent it from being restored
+      if (this.cargoSystem && itemData.index !== undefined) {
+        this.cargoSystem.removeCargo(itemData.index);
+      }
+    }
+  }
+
+  addItemToCargo(item) {
+    // Add item back to cargo system
+    if (this.cargoSystem) {
+      this.cargoSystem.addCargo(item);
     }
   }
 
@@ -1014,6 +1031,9 @@ export class UI {
     if (this.spaceship) {
       this.spaceship.addCash(totalValue);
     }
+    
+    // Note: Items are already removed from cargo system when moved to sell grid
+    // No need to remove them again here
     
     // Update cash display
     if (this.cashUI && this.spaceship) {
@@ -1091,6 +1111,7 @@ export class UI {
   setGame(game) {
     this.game = game;
     this.spaceship = game ? game.spaceship : null;
+    this.cargoSystem = game ? game.cargoSystem : null;
     this.optionsUI.setGame(game);
     this.optionsUI.onClose = () => {
       if (game && game.resume) {

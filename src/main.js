@@ -59,28 +59,25 @@ class Game {
       return null;
     };
     this.conversationSystem._getStationForPlanet = (planetName) => {
-      // Current environment tracks a single station (oceanusStation) possibly orbiting a planet
-      const st = this.environmentSystem?.oceanusStation;
-      if (st && st.planet && st.planet.getName && st.planet.getName() === planetName) return st;
-      return null;
+      // Find station orbiting the specified planet
+      const stations = this.environmentSystem?.stations || [];
+      return stations.find(st => st.planet && st.planet.getName && st.planet.getName() === planetName) || null;
     };
 
     // Station detection and docking hooks
     this.conversationSystem.setStationDetectionHook((targetName) => {
       // Check if it's a known station
+      const stations = this.environmentSystem?.stations || [];
       return targetName === 'Oceanus Station' ||
-             (this.environmentSystem?.oceanusStation &&
-              this.environmentSystem.oceanusStation.getName &&
-              this.environmentSystem.oceanusStation.getName() === targetName);
+             stations.some(station => station.getName && station.getName() === targetName);
     });
 
     this.conversationSystem.setStationDockableHook((stationName) => {
       // Check if station is dockable
-      if (stationName === 'Oceanus Station' ||
-          (this.environmentSystem?.oceanusStation &&
-           this.environmentSystem.oceanusStation.getName &&
-           this.environmentSystem.oceanusStation.getName() === stationName)) {
-        return this.environmentSystem?.oceanusStation?.dockable !== false;
+      const stations = this.environmentSystem?.stations || [];
+      const station = stations.find(st => st.getName && st.getName() === stationName);
+      if (station) {
+        return station.dockable !== false;
       }
       return true; // default to dockable
     });
@@ -135,63 +132,13 @@ class Game {
       environmentSystem: () => this.environmentSystem
     });
 
-    this.targetingSystem = new TargetingSystem({
-      camera: this.gameEngine.camera,
-      ui: this.ui,
-      soundManager: this.soundManager,
-      getSpaceship: () => this.spaceship,
-      getAsteroids: () => this.asteroids,
-      getNPCShips: () => this.npcShips,
-      getPlanets: () => this.planets,
-      getStation: () => this.oceanusStation,
-      getResources: () => this.gameEngine.getResources()
-    });
+    // Targeting system will be created after environment system
 
-    this.navigationSystem = new NavigationSystem({
-      getSpaceship: () => this.spaceship,
-      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
-      ui: this.ui
-    });
-    this.navigationSystem.assignCamera(this.gameEngine.camera);
+    // Navigation system will be created after targeting system
 
-    this.dockingManager = new DockingManager({
-      ui: this.ui,
-      getSpaceship: () => this.spaceship,
-      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
-      clearCombatTarget: () => {
-        if (this.targetingSystem.currentTarget) {
-          this.targetingSystem.currentTarget.setTargeted && this.targetingSystem.currentTarget.setTargeted(false);
-          this.targetingSystem.currentTarget = null;
-          this.ui.clearTargetInfo();
-        }
-      }
-    });
+    // Docking manager will be created after targeting system
 
-    // Backwards compatibility proxies so existing controls logic (T/Y clearing & comms) still works
-    Object.defineProperty(this, 'currentTarget', {
-      get: () => this.targetingSystem.getCurrentCombatTarget(),
-      set: (val) => {
-        const existing = this.targetingSystem.currentTarget;
-        if (existing && existing !== val) {
-          existing.setTargeted && existing.setTargeted(false);
-          existing.setNavTargeted && existing.setNavTargeted(false);
-        }
-        this.targetingSystem.currentTarget = val;
-      }
-    });
-    Object.defineProperty(this, 'currentNavTarget', {
-      get: () => this.targetingSystem.getCurrentNavTarget(),
-      set: (val) => {
-        const existing = this.targetingSystem.currentNavTarget;
-        if (existing && existing !== val) {
-          existing.setNavTargeted && existing.setNavTargeted(false);
-          existing.setTargeted && existing.setTargeted(false);
-        }
-        this.targetingSystem.currentNavTarget = val;
-      }
-    });
-    this.currentTarget = null;
-    this.currentNavTarget = null;
+    // Backwards compatibility proxies will be created after targeting system
     this.planets = [];
     this.musicStarted = false;
     // Global flags
@@ -419,6 +366,79 @@ class Game {
     // Aridus sector uses predefined planets; procedural sectors will regenerate on switch
     this.environmentSystem.init();
 
+    // Targeting system initialization (after environment system)
+    this.targetingSystem = new TargetingSystem({
+      camera: this.gameEngine.camera,
+      ui: this.ui,
+      soundManager: this.soundManager,
+      getSpaceship: () => this.spaceship,
+      getAsteroids: () => this.asteroids,
+      getNPCShips: () => this.npcShips,
+      getPlanets: () => this.planets,
+      getStations: () => {
+        const stations = this.environmentSystem.stations;
+        console.log('Main.js getStations callback: returning', stations.length, 'stations');
+        return stations;
+      },
+      getResources: () => this.gameEngine.getResources()
+    });
+
+    // Navigation system initialization (after targeting system)
+    this.navigationSystem = new NavigationSystem({
+      getSpaceship: () => this.spaceship,
+      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
+      ui: this.ui
+    });
+    this.navigationSystem.assignCamera(this.gameEngine.camera);
+
+    // Docking manager initialization (after targeting system)
+    this.dockingManager = new DockingManager({
+      ui: this.ui,
+      getSpaceship: () => this.spaceship,
+      getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
+      clearCombatTarget: () => {
+        if (this.targetingSystem.currentTarget) {
+          this.targetingSystem.currentTarget.setTargeted && this.targetingSystem.currentTarget.setTargeted(false);
+          this.targetingSystem.currentTarget = null;
+          this.ui.clearTargetInfo();
+        }
+      },
+      clearNavTarget: () => {
+        if (this.targetingSystem.currentNavTarget) {
+          if (this.targetingSystem.currentNavTarget.setNavTargeted) this.targetingSystem.currentNavTarget.setNavTargeted(false);
+          this.targetingSystem.currentNavTarget = null;
+          this.ui.clearNavTargetInfo && this.ui.clearNavTargetInfo();
+        }
+      },
+      environmentSystem: () => this.environmentSystem
+    });
+
+    // Backwards compatibility proxies (after targeting system)
+    Object.defineProperty(this, 'currentTarget', {
+      get: () => this.targetingSystem.getCurrentCombatTarget(),
+      set: (val) => {
+        const existing = this.targetingSystem.currentTarget;
+        if (existing && existing !== val) {
+          existing.setTargeted && existing.setTargeted(false);
+          existing.setNavTargeted && existing.setNavTargeted(false);
+        }
+        this.targetingSystem.currentTarget = val;
+      }
+    });
+    Object.defineProperty(this, 'currentNavTarget', {
+      get: () => this.targetingSystem.getCurrentNavTarget(),
+      set: (val) => {
+        const existing = this.targetingSystem.currentNavTarget;
+        if (existing && existing !== val) {
+          existing.setNavTargeted && existing.setNavTargeted(false);
+          existing.setTargeted && existing.setTargeted(false);
+        }
+        this.targetingSystem.currentNavTarget = val;
+      }
+    });
+    this.currentTarget = null;
+    this.currentNavTarget = null;
+
     // Cargo system initialization
     this.cargoSystem = new CargoSystem({
       getSpaceship: () => this.spaceship,
@@ -486,7 +506,7 @@ class Game {
           const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
           if (host) {
             const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed, services: s.services });
-            this.environmentSystem.oceanusStation = station; // keep compatibility reference
+            this.environmentSystem.stations.push(station);
             this.gameEngine.addEntity(station);
             this.gameEngine.scene.add(station.mesh);
           }
@@ -519,7 +539,7 @@ class Game {
     }
     // Backwards compatibility references
     this.planets = this.environmentSystem.planets;
-    this.oceanusStation = this.environmentSystem.oceanusStation;
+    this.oceanusStation = this.environmentSystem.oceanusStation; // Getter for backwards compatibility
     this.asteroids = this.environmentSystem.asteroids;
     this.npcShips = this.environmentSystem.npcShips;
 
@@ -579,6 +599,11 @@ class Game {
 
     // Map toggle
     this.controls.setOnMapToggle(() => {
+      // Disable map when docked
+      if (this.spaceship.flags.isDocked) {
+        return;
+      }
+      
       if (this.ui.mapModal.style.display === 'block') {
         this.ui.hideMapModal();
       } else {
@@ -706,9 +731,9 @@ class Game {
       }
     }
 
-    // Update station orbit
-    if (this.oceanusStation) {
-      this.oceanusStation.update(deltaTime);
+    // Update station orbits
+    for (const station of this.environmentSystem.stations) {
+      station.update(deltaTime);
     }
 
     // Update UI
@@ -761,7 +786,7 @@ class Game {
       const playerQuat = this.spaceship.mesh.quaternion.clone();
       const targets = [];
       if (this.environmentSystem?.planets) targets.push(...this.environmentSystem.planets);
-      if (this.environmentSystem?.oceanusStation) targets.push(this.environmentSystem.oceanusStation);
+      if (this.environmentSystem?.stations) targets.push(...this.environmentSystem.stations);
       // Include moons (nav-targetable, non-commable)
       if (this.environmentSystem?.planets) {
         for (const p of this.environmentSystem.planets) {
@@ -912,7 +937,7 @@ class Game {
         const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
         if (host) {
           const station = new SpaceStation(host, { orbitRadius: s.orbitRadius, size: s.size, name: s.name, orbitSpeed: s.orbitSpeed, services: s.services });
-          this.environmentSystem.oceanusStation = station;
+          this.environmentSystem.stations.push(station);
           this.gameEngine.addEntity(station);
           this.gameEngine.scene.add(station.mesh);
         }
@@ -986,7 +1011,7 @@ class Game {
     }
     this.asteroids = this.environmentSystem.asteroids;
     this.planets = this.environmentSystem.planets;
-    this.oceanusStation = this.environmentSystem.oceanusStation;
+    this.oceanusStation = this.environmentSystem.oceanusStation; // Getter for backwards compatibility
   }
 
   checkNavTargetProximity() {
@@ -1072,7 +1097,9 @@ class Game {
     if (this.spaceship.flags.dockContext === 'planet') {
       dockedEntity = this.environmentSystem.planets.find(p => p.id === this.spaceship.flags.docketPlanetId);
     } else if (this.spaceship.flags.dockContext === 'station') {
-      dockedEntity = this.environmentSystem.oceanusStation; // For now, assume it's the oceanus station
+      // Find the station the player is docked with
+      const dockedStationId = this.spaceship.flags.dockedStationId;
+      dockedEntity = this.environmentSystem.stations.find(s => s.id === dockedStationId) || this.environmentSystem.oceanusStation;
     }
 
     if (dockedEntity && dockedEntity.services) {

@@ -5,7 +5,7 @@ export const genericProceduralConversation = {
       response: (playerFlags, planet) => `Automated services node for ${planet.name}. Limited liaison personnel available.`,
       options: (playerFlags, planet) => [
         { id: 'information', text: `Request ${planet.name} information` },
-        planet.dockable ? { id: 'docking', text: 'Request docking clearance' } : { id: 'docking_unavailable', text: 'Docking services inquiry' },
+        planet.dockable ? { id: 'docking', text: 'Request docking clearance' } : { id: 'docking_unavailable', text: 'Request docking clearance' },
         { id: 'end', text: 'Goodbye. (End conversation)' }
       ]
     },
@@ -13,7 +13,7 @@ export const genericProceduralConversation = {
     docking: {
       response: 'You are authorized to dock. Please provide your ship registration and cargo manifest.',
       options: [
-        { id: 'confirm_dock', text: 'Initiating docking request.', flags: { player: { isDocking: true }, global: { firstDocking: true } } },
+        { id: 'confirm_dock', text: 'Beginning docking sequence.', flags: { player: { isDocking: true } } },
         { id: 'end', text: 'Actually, never mind. (End conversation)' }
       ]
     },

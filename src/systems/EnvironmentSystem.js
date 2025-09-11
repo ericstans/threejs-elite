@@ -20,7 +20,7 @@ export class EnvironmentSystem {
     this.planets = [];
     this.asteroids = [];
     this.npcShips = []; // Array to hold NPC ships
-    this.oceanusStation = null;
+    this.stations = []; // Array to hold all stations
     this.derelictStardust = null;
     // Additional procedural stardust field centered on planet cluster
     this.planetClusterStardust = null;
@@ -75,9 +75,10 @@ export class EnvironmentSystem {
       const pl = chosen[idx];
       const stRng = this._rng(hashSeed(seed, 'station', s));
       const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3) });
+      this.stations.push(station);
+      console.log('EnvironmentSystem: Created station:', station.getName?.(), 'Total stations:', this.stations.length);
       this.gameEngine.addEntity(station);
       this.gameEngine.scene.add(station.mesh);
-      if (!this.oceanusStation) this.oceanusStation = station;
     }
     // No NPC ships in procedural sectors for now
     this.clearNPCShips();
@@ -93,9 +94,11 @@ export class EnvironmentSystem {
     for (const p of this.planets) this.gameEngine.addEntity(p);
     const oceanus = this.planets.find(p => p.getName && p.getName() === 'Oceanus') || this.planets[1];
     if (oceanus) {
-      this.oceanusStation = new SpaceStation(oceanus, { orbitRadius: oceanus.radius * 2, size: oceanus.radius * 0.48 });
-      this.gameEngine.addEntity(this.oceanusStation);
-      this.gameEngine.scene.add(this.oceanusStation.mesh);
+      const station = new SpaceStation(oceanus, { orbitRadius: oceanus.radius * 2, size: oceanus.radius * 0.48 });
+      this.stations.push(station);
+      console.log('EnvironmentSystem: Created initial station:', station.getName?.(), 'Total stations:', this.stations.length);
+      this.gameEngine.addEntity(station);
+      this.gameEngine.scene.add(station.mesh);
     }
   }
 
@@ -115,11 +118,11 @@ export class EnvironmentSystem {
       this.gameEngine.removeEntity && this.gameEngine.removeEntity(p);
     }
     this.planets = [];
-    if (this.oceanusStation) {
-      if (this.oceanusStation.mesh && this.oceanusStation.mesh.parent) this.oceanusStation.mesh.parent.remove(this.oceanusStation.mesh);
-      this.gameEngine.removeEntity && this.gameEngine.removeEntity(this.oceanusStation);
-      this.oceanusStation = null;
+    for (const station of this.stations) {
+      if (station.mesh && station.mesh.parent) station.mesh.parent.remove(station.mesh);
+      this.gameEngine.removeEntity && this.gameEngine.removeEntity(station);
     }
+    this.stations = [];
     // Clear NPC ships
     this.clearNPCShips();
   }
@@ -627,8 +630,15 @@ export class EnvironmentSystem {
     this.gameEngine.scene.add(points);
   }
 
+  // Getter for backwards compatibility
+  get oceanusStation() {
+    return this.stations.length > 0 ? this.stations[0] : null;
+  }
+
   update(deltaTime) {
-    if (this.oceanusStation) this.oceanusStation.update(deltaTime);
+    for (const station of this.stations) {
+      station.update(deltaTime);
+    }
     // Stardust rotation handled via userData.update if needed by main (or we can call here):
     this._stardustTime += deltaTime;
     const updateDust = (points) => {

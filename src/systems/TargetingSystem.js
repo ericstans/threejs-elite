@@ -18,7 +18,7 @@ export class TargetingSystem {
     getAsteroids,
     getNPCShips,
     getPlanets,
-    getStation,
+    getStations,
     getResources
   }) {
     this.camera = camera;
@@ -28,7 +28,7 @@ export class TargetingSystem {
     this.getAsteroids = getAsteroids;
     this.getNPCShips = getNPCShips;
     this.getPlanets = getPlanets;
-    this.getStation = getStation;
+    this.getStations = getStations;
     this.getResources = getResources;
 
     this.currentTarget = null;      // combat target (asteroid / npc ship)
@@ -159,9 +159,16 @@ export class TargetingSystem {
 
   // --- Nav Targeting ---
   targetNearestNav({ blockIfDockingFlags } = { blockIfDockingFlags: true }) {
+    console.log('TargetingSystem: targetNearestNav called');
     const ship = this.getSpaceship();
-    if (!ship) return;
-    if (blockIfDockingFlags && (ship.flags.isDocked || ship.flags.isDocking || ship.flags.landingVectorLocked)) return;
+    if (!ship) {
+      console.log('TargetingSystem: No ship found');
+      return;
+    }
+    if (blockIfDockingFlags && (ship.flags.isDocked || ship.flags.isDocking || ship.flags.landingVectorLocked)) {
+      console.log('TargetingSystem: Blocked by docking flags');
+      return;
+    }
 
     if (this.currentNavTarget) {
       this.currentNavTarget.setNavTargeted(false);
@@ -177,8 +184,10 @@ export class TargetingSystem {
         if (pl.moon) navTargets.push(pl.moon);
       }
     }
-    const station = this.getStation?.();
-    if (station) navTargets.push(station);
+    // Add all stations
+    const stations = this.getStations?.() || [];
+    console.log('TargetingSystem: Found stations:', stations.length, stations.map(s => s.getName?.() || 'unnamed'));
+    navTargets.push(...stations);
 
     let closest = null;
     let closestScreenDistance = Infinity;
@@ -257,6 +266,7 @@ export class TargetingSystem {
   }
 
   cycleNavTarget() {
+    console.log('TargetingSystem: cycleNavTarget called');
     const now = Date.now();
 
     // Reset cycle if too much time has passed
@@ -367,8 +377,10 @@ export class TargetingSystem {
         if (pl.moon) navTargets.push(pl.moon);
       }
     }
-    const station = this.getStation?.();
-    if (station) navTargets.push(station);
+    // Add all stations
+    const stations = this.getStations?.() || [];
+    console.log('TargetingSystem: buildNavTargetCycle found stations:', stations.length, stations.map(s => s.getName?.() || 'unnamed'));
+    navTargets.push(...stations);
 
     // Sort by distance from crosshair
     const targetsWithDistance = [];
