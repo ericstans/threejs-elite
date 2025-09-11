@@ -6,7 +6,9 @@
     "build": "npx vite build",
     "preview": "npx vite preview",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
@@ -15,7 +17,9 @@
     "three": "^0.179.1"
   },
   "devDependencies": {
+    "@types/three": "^0.180.0",
     "eslint": "^9.35.0",
+    "typescript": "^5.9.2",
     "vite": "^7.1.4"
   }
 }

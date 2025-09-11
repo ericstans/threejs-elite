@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    // Allow JavaScript files and type-check them
+    "allowJs": true,
+    "checkJs": true,
+    
+    // Don't emit files, just type-check
+    "noEmit": true,
+    
+    // Start with lenient settings for gradual migration
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    
+    // Modern JavaScript target
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    
+    // Include Three.js types
+    "types": ["three"],
+    
+    // Source and output
+    "rootDir": "./src",
+    "outDir": "./dist",
+    
+    // Skip library checking for faster builds
+    "skipLibCheck": true,
+    
+    // Enable some useful checks
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    // Allow importing from .js files
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "public"
+  ]
+}

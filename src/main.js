@@ -16,6 +16,8 @@ import { MusicManager } from './MusicManager.js';
 import { SectorManager } from './systems/SectorManager.js';
 import { CargoSystem } from './systems/CargoSystem.js';
 import { ThirdPersonCamera } from './systems/ThirdPersonCamera.js';
+import { GameStateManager } from './systems/GameStateManager.js';
+import { AudioManager } from './systems/AudioManager.js';
 import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
 import { getSectorDefinition, availableSectors } from './systems/serialization/sectorDefinitions.js';
 import { hashSeed } from './util/seedUtils.js';
@@ -32,7 +34,6 @@ class Game {
     this.gameEngine = new GameEngine();
     this.spaceship = new Spaceship();
     this.engineParticles = new EngineParticles(this.gameEngine.scene, this.spaceship);
-    this.paused = false;
     // Expose spaceship to engine for starfield & UI parallax logic
     this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
@@ -82,6 +83,10 @@ class Game {
       return true; // default to dockable
     });
     this.asteroids = [];
+    // Game state management system
+    this.gameStateManager = new GameStateManager(this.musicManager, this.soundManager);
+    // Audio management system
+    this.audioManager = new AudioManager(this.musicManager, this.soundManager, this.gameStateManager);
     // Third-person camera system
     this.thirdPersonCamera = new ThirdPersonCamera(this.gameEngine, this.spaceship, this.ui, this.engineParticles);
     // Sector persistence
@@ -105,12 +110,7 @@ class Game {
       getAsteroids: () => this.asteroids,
       onHitFeedback: () => this.ui.blinkCrosshairRed(),
       onNPCShipHit: () => {
-        // Set combat flag and switch to combat music when player attacks NPC ship (immediate)
-        // Only switch music if we weren't already in combat
-        if (!this.spaceship.flags.isInCombat) {
-          this.spaceship.flags.isInCombat = true;
-          this.musicManager.switchSoundtracksImmediate(['combat']);
-        }
+        this.audioManager.onCombatStart();
       },
       onNPCShipDestroyed: () => {
         const current = this.targetingSystem.getCurrentCombatTarget();
@@ -127,8 +127,7 @@ class Game {
 
         // Only clear combat flag if no hostile ships remain
         if (!hasHostileShips) {
-          this.spaceship.flags.isInCombat = false;
-          this.musicManager.switchSoundtracksImmediate(['ambient']);
+          this.audioManager.onCombatEnd();
         }
       },
       environmentSystem: () => this.environmentSystem
@@ -142,14 +141,7 @@ class Game {
 
     // Backwards compatibility proxies will be created after targeting system
     this.planets = [];
-    this.musicStarted = false;
-    // Global flags
-    this.globalFlags = {
-      gameStarted: false,
-      firstDocking: false,
-      soundtracks: ['ambient']
-      // Add more global flags as needed
-    };
+    // Global flags are now managed by GameStateManager
 
     this.setupGame();
     this.setupControls();
@@ -497,33 +489,16 @@ class Game {
 
   // Pause/Resume functionality
   pause() {
-    this.isPaused = true;
-    // Pause music
-    if (this.musicManager && this.musicManager.pauseTrack) {
-      this.musicManager.pauseTrack();
-    }
-    // Stop engine rumble
-    if (this.soundManager && this.soundManager.stopEngineRumble) {
-      this.soundManager.stopEngineRumble();
-    }
+    this.gameStateManager.pause();
   }
 
   resume() {
-    this.isPaused = false;
-    // Resume music
-    if (this.musicManager && this.musicManager.resumeTrack) {
-      this.musicManager.resumeTrack();
-    }
-    // Restart engine rumble with current throttle
-    if (this.soundManager && this.spaceship) {
-      const currentThrottle = this.spaceship.getThrottle();
-      this.soundManager.updateEngineRumble(currentThrottle, false);
-    }
+    this.gameStateManager.resume();
   }
 
   update(deltaTime) {
     // Skip update if paused
-    if (this.paused) return;
+    if (this.gameStateManager.isGamePaused) return;
     // Update controls
     this.controls.update(deltaTime);
 
@@ -577,8 +552,8 @@ class Game {
     // Cargo system update (resource collection and magnetism)
     this.cargoSystem.update(deltaTime);
 
-    // Music manager update (handles combat state transitions)
-    this.musicManager.update();
+    // Audio manager update (handles music and sound transitions)
+    this.audioManager.update();
 
     // Persist asteroid field diff every frame (cheap to store small object)
     if (this.environmentSystem) {
@@ -650,28 +625,7 @@ class Game {
     }
 
     // Update engine rumble based on throttle & docking (station or planet)
-    // Stop engine sound completely when docked, restart when undocked
-    let isActuallyDocked = false;
-    if (this.spaceship.flags.isDocked) {
-      if (this.spaceship.dockingTarget && this.spaceship.dockingTarget.getPosition && !this.spaceship.takeoffActive) {
-        isActuallyDocked = true;
-      }
-      if (this.spaceship.flags.stationDocked) {
-        isActuallyDocked = true;
-      }
-    }
-    if (!this._lastEngineDocked) this._lastEngineDocked = false;
-    if (isActuallyDocked && !this._lastEngineDocked) {
-      this.soundManager.stopEngineRumble();
-    }
-    if (!isActuallyDocked && this._lastEngineDocked) {
-      // Resume engine rumble on undock
-      this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
-    }
-    this._lastEngineDocked = isActuallyDocked;
-    if (!isActuallyDocked) {
-      this.soundManager.updateEngineRumble(this.spaceship.getThrottle(), false);
-    }
+    this.audioManager.updateEngineRumble(this.spaceship);
     // (landing vector lock handled by navigationSystem)
     // Hide crosshair and auto-aim cone if firing is disabled
     if (!this.spaceship.flags.firingEnabled) {
@@ -795,12 +749,7 @@ class Game {
     this.spaceship.flags.isInCombat = false;
 
     // Set soundtracks from sector definition if provided, otherwise use default
-    if (def && def.soundtracks) {
-      this.globalFlags.soundtracks = def.soundtracks;
-    } else {
-      // Default soundtracks for sectors without explicit definitions
-      this.globalFlags.soundtracks = ['ambient'];
-    }
+    this.audioManager.setSectorSoundtracks(def);
 
     // Note: Sector soundtrack changes wait for current track to finish naturally
     // The MusicManager will pick up the new soundtracks on the next track
@@ -915,47 +864,29 @@ class Game {
 
   // Global flag management methods
   setGlobalFlag(flagName, value) {
-    this.globalFlags[flagName] = value;
+    this.gameStateManager.setGlobalFlag(flagName, value);
   }
 
   getGlobalFlag(flagName) {
-    return this.globalFlags[flagName] || false;
+    return this.gameStateManager.getGlobalFlag(flagName);
   }
 
   hasGlobalFlag(flagName) {
-    return Object.prototype.hasOwnProperty.call(this.globalFlags, flagName) && this.globalFlags[flagName];
+    return this.gameStateManager.hasGlobalFlag(flagName);
   }
 
   getAllGlobalFlags() {
-    return { ...this.globalFlags };
+    return this.gameStateManager.getAllGlobalFlags();
   }
 
-  // Helper method to set soundtracks
-  setSoundtracks(soundtracks) {
-    this.globalFlags.soundtracks = Array.isArray(soundtracks) ? soundtracks : [soundtracks];
-  }
-
-  // Helper method to add a soundtrack
-  addSoundtrack(soundtrack) {
-    if (!this.globalFlags.soundtracks.includes(soundtrack)) {
-      this.globalFlags.soundtracks.push(soundtrack);
-    }
-  }
-
-  // Helper method to remove a soundtrack
-  removeSoundtrack(soundtrack) {
-    this.globalFlags.soundtracks = this.globalFlags.soundtracks.filter(s => s !== soundtrack);
-  }
+  // Audio management methods are now handled by AudioManager
 
   // Process flags from conversation options
   processFlags(flags) {
     // Delegate docking-related flag handling
     this.dockingManager.processFlags(flags);
-    if (flags.global) {
-      for (const [flagName, value] of Object.entries(flags.global)) {
-        this.setGlobalFlag(flagName, value);
-      }
-    }
+    // Delegate global flag handling
+    this.gameStateManager.processFlags(flags);
   }
 
   // startDockingProcess removed (handled by DockingManager)
@@ -1168,12 +1099,12 @@ setTimeout(() => {
 
     // Setup tutorial callbacks
     game.ui.setOnTutorialPause(() => {
-      game.paused = true;
+      game.gameStateManager.pause();
       console.log('Game paused for tutorial');
     });
 
     game.ui.setOnTutorialResume(() => {
-      game.paused = false;
+      game.gameStateManager.resume();
       console.log('Game resumed after tutorial');
     });
 
