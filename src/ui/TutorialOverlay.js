@@ -100,7 +100,7 @@ export class TutorialOverlay {
     this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
     this.speechBubble.style.userSelect = 'none';
     this.speechBubble.style.cursor = 'default';
-    this.speechBubble.style.zIndex = '10002';
+    this.speechBubble.style.zIndex = '10001';
 
     // Create speech bubble tail (pointer)
     this.speechTail = document.createElement('div');
@@ -108,9 +108,10 @@ export class TutorialOverlay {
     this.speechTail.style.width = '0';
     this.speechTail.style.height = '0';
     this.speechTail.style.borderLeft = '18px solid transparent';
-    this.speechTail.style.borderRight = '18px solid transparent';
+    this.speechTail.style.borderRight = '0px';
     this.speechTail.style.borderTop = '28px solid #ffffcc';
-    this.speechTail.style.zIndex = '10001';
+    this.speechTail.style.zIndex = '10002';
+    this.speechTail.style.rotate = '-30deg';
 
     // Create content area
     this.content = document.createElement('div');
@@ -267,7 +268,7 @@ export class TutorialOverlay {
       this.speechTail.style.top = (bubbleRect.bottom - 8) + 'px';
       this.speechTail.style.transform = 'none';
       this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';
-      this.speechTail.style.borderRight = tailWidth + 'px solid transparent';
+      this.speechTail.style.borderRight = '0';
       this.speechTail.style.borderTop = tailHeight + 'px solid #ffffcc';
       this.speechTail.style.zIndex = '10001';
     }, 0);
