@@ -30,9 +30,10 @@ export class NPCShip {
     // --- Ship type config ---
     this.shipType = shipType;
     const typeConfig = getShipType(shipType);
-    this.maxSpeed = typeConfig.stats.maxSpeed;
-    this.acceleration = typeConfig.stats.acceleration;
-    this.rotationSpeed = typeConfig.stats.rotationSpeed;
+  // Apply 0.95 scaling factor to NPC stats
+  this.maxSpeed = typeConfig.stats.maxSpeed * 0.95;
+  this.acceleration = typeConfig.stats.acceleration * 0.95;
+  this.rotationSpeed = typeConfig.stats.rotationSpeed * 0.95;
     this.modelFile = typeConfig.model;
     this.modelScale = typeConfig.scale;
     this.exhaustType = typeConfig.exhaust;
