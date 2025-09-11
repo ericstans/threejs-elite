@@ -12,6 +12,7 @@ export class CommoditiesUI {
     this.currentCash = 0; // Track current cash amount
     this.onCargoUpdate = null; // Callback to update cargo
     this.onCargoAdd = null; // Callback to add items back to cargo
+    this.onCargoRemove = null; // Callback to remove items from cargo
     this.onBuyItems = null; // Callback to handle buying items
     this.createCommoditiesModal();
   }
@@ -707,6 +708,11 @@ export class CommoditiesUI {
       this.sellQuantities[commodityName] = currentSellQuantity + 1;
       this.updateSellQuantityDisplay(commodityName, currentSellQuantity + 1);
       this.updateSellTotal();
+      
+      // Immediately remove one item from cargo system for visual feedback
+      if (this.onCargoRemove) {
+        this.onCargoRemove(commodityName, 1);
+      }
     }
   }
 
@@ -718,6 +724,18 @@ export class CommoditiesUI {
       this.sellQuantities[commodityName] = currentSellQuantity - 1;
       this.updateSellQuantityDisplay(commodityName, currentSellQuantity - 1);
       this.updateSellTotal();
+      
+      // Add one item back to cargo system
+      if (this.onCargoAdd) {
+        const commodity = this.commodities.find(c => c.name === commodityName);
+        if (commodity) {
+          this.onCargoAdd({
+            name: commodityName,
+            icon: commodity.icon,
+            color: commodity.color
+          });
+        }
+      }
     }
   }
 
@@ -785,15 +803,14 @@ export class CommoditiesUI {
           const value = commodity.sellPrice * quantity;
           totalValue += value;
           
-          // Find items in cargo to remove
-          const cargoItemsToRemove = this.cargoItems.filter(item => item.name === commodityName).slice(0, quantity);
-          cargoItemsToRemove.forEach(item => {
+          // Create sell items (items are already removed from cargo)
+          for (let i = 0; i < quantity; i++) {
             itemsToSell.push({
               commodity: commodity,
               value: commodity.sellPrice,
-              cargoItem: item
+              cargoItem: { name: commodityName } // Simplified since item is already removed
             });
-          });
+          }
         }
       }
     });
@@ -803,7 +820,7 @@ export class CommoditiesUI {
       return;
     }
 
-    // Call the cargo update callback to remove items and add cash
+    // Call the cargo update callback to add cash (items already removed)
     if (this.onCargoUpdate) {
       this.onCargoUpdate(itemsToSell, totalValue);
     }

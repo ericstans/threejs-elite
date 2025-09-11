@@ -34,12 +34,12 @@ class Game {
     this.spaceship = new Spaceship();
     this.engineParticles = new EngineParticles(this.gameEngine.scene, this.spaceship);
     // Expose spaceship to engine for starfield & UI parallax logic
-    this.gameEngine.spaceship = this.spaceship;
+    /** @type {any} */ (this.gameEngine).spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
     this.conversationSystem = new ConversationSystem();
     this.ui = new UI(this.conversationSystem);
     // Expose UI to engine for per-frame parallax callback
-    this.gameEngine.ui = this.ui;
+    /** @type {any} */ (this.gameEngine).ui = this.ui;
     // Provide dockable query hook for conversation system
     this.conversationSystem._isPlanetDockable = (planetName) => {
       const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
@@ -213,7 +213,7 @@ class Game {
     this.navigationSystem.assignCamera(this.gameEngine.camera);
 
     // Docking manager initialization (after targeting system)
-    this.dockingManager = new DockingManager({
+    this.dockingManager = new DockingManager(/** @type {any} */ ({
       ui: this.ui,
       getSpaceship: () => this.spaceship,
       getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
@@ -232,7 +232,7 @@ class Game {
         }
       },
       environmentSystem: () => this.environmentSystem
-    });
+    }));
 
     // Backwards compatibility proxies (after targeting system)
     Object.defineProperty(this, 'currentTarget', {
@@ -311,13 +311,13 @@ class Game {
           moon.userData.navMass = Math.pow(moonRadius, 3) * 800;
           moon.userData.isNavTargeted = false;
           moon.userData.isCommable = false; // not commable
-          moon.getId = () => moon.userData.navId;
-          moon.getName = () => moon.userData.navName;
-          moon.getMass = () => moon.userData.navMass;
-          moon.setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
-          moon.isNavTarget = () => moon.userData.isNavTargeted;
-          moon.getPosition = () => moon.position.clone();
-          moon.getType = () => 'moon';
+          /** @type {any} */ (moon).getId = () => moon.userData.navId;
+          /** @type {any} */ (moon).getName = () => moon.userData.navName;
+          /** @type {any} */ (moon).getMass = () => moon.userData.navMass;
+          /** @type {any} */ (moon).setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
+          /** @type {any} */ (moon).isNavTarget = () => moon.userData.isNavTargeted;
+          /** @type {any} */ (moon).getPosition = () => moon.position.clone();
+          /** @type {any} */ (moon).getType = () => 'moon';
           this.gameEngine.scene.add(moon);
           planet.moon = moon;
         }

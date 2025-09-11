@@ -171,6 +171,11 @@ export class UI {
       this.addItemToCargo(item);
     };
 
+    // Set up commodities cargo remove callback
+    this.commoditiesUI.onCargoRemove = (commodityName, quantity) => {
+      this.removeItemsFromCargo(commodityName, quantity);
+    };
+
     // Set up commodities buy callback
     this.commoditiesUI.onBuyItems = (itemsToBuy, totalCost) => {
       this.handleCommoditiesPurchase(itemsToBuy, totalCost);
@@ -1080,14 +1085,26 @@ export class UI {
   }
 
   handleCommoditiesSale(itemsToSell, totalValue) {
-    // This will be implemented when we connect to the cargo system
-    // For now, just log the sale
     console.log(`Commodities sale: ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
     
-    // TODO: Remove items from cargo and add cash to player
-    // This will require integration with the CargoSystem and Spaceship
-    // For now, simulate the sale
-    this.simulateCommoditiesSale(itemsToSell, totalValue);
+    // Add cash to spaceship
+    if (this.spaceship) {
+      this.spaceship.addCash(totalValue);
+    }
+    
+    // Items are already removed from cargo system when using > buttons or clicking cargo
+    // Just update the commodities UI to reflect current cargo state
+    this.updateCommoditiesCargoItems();
+    
+    // Update cash display
+    if (this.cashUI && this.spaceship) {
+      const currentCash = this.spaceship.getCash();
+      this.cashUI.updateCash(currentCash);
+      // Also update commodities UI cash display
+      if (this.commoditiesUI) {
+        this.commoditiesUI.updateCash(currentCash);
+      }
+    }
   }
 
   handleCargoItemClick(itemData) {
@@ -1095,10 +1112,10 @@ export class UI {
     if (this.isCommoditiesVisible()) {
       console.log('Cargo item clicked:', itemData);
       
-      // Add to sell quantities instead of moving to grid
+      // Add to sell quantities
       this.commoditiesUI.increaseSellQuantity(itemData.name);
       
-      // Remove item from cargo system immediately
+      // Immediately remove item from cargo system for visual feedback
       if (this.cargoSystem && itemData.index !== undefined) {
         this.cargoSystem.removeCargo(itemData.index);
         // Update commodities UI with new cargo items
@@ -1116,35 +1133,29 @@ export class UI {
     }
   }
 
+  removeItemsFromCargo(commodityName, quantity) {
+    // Remove items from cargo system
+    if (this.cargoSystem) {
+      for (let i = 0; i < quantity; i++) {
+        const cargoItems = this.cargoSystem.getCargo();
+        const itemIndex = cargoItems.findIndex(item => item.name === commodityName);
+        if (itemIndex !== -1) {
+          this.cargoSystem.removeCargo(itemIndex);
+        }
+      }
+      // Update commodities UI with new cargo items
+      this.updateCommoditiesCargoItems();
+    }
+  }
+
   updateCommoditiesCargoItems() {
-    // Update cargo items in commodities UI if it's visible
-    if (this.commoditiesUI && this.commoditiesUI.isVisible && this.cargoSystem) {
+    // Update cargo items in commodities UI
+    if (this.commoditiesUI && this.cargoSystem) {
       const cargoItems = this.cargoSystem.getCargo();
       this.commoditiesUI.updateCargoItems(cargoItems);
     }
   }
 
-  simulateCommoditiesSale(itemsToSell, totalValue) {
-    // Add cash to spaceship
-    if (this.spaceship) {
-      this.spaceship.addCash(totalValue);
-    }
-    
-    // Note: Items are already removed from cargo system when moved to sell grid
-    // No need to remove them again here
-    
-    // Update cash display
-    if (this.cashUI && this.spaceship) {
-      const currentCash = this.spaceship.getCash();
-      this.cashUI.updateCash(currentCash);
-      // Also update commodities UI cash display
-      if (this.commoditiesUI) {
-        this.commoditiesUI.updateCash(currentCash);
-      }
-    }
-    
-    console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
-  }
 
   handleCommoditiesPurchase(itemsToBuy, totalCost) {
     // Deduct cash from spaceship
@@ -1164,6 +1175,9 @@ export class UI {
         }
       });
     }
+    
+    // Update commodities UI with new cargo items
+    this.updateCommoditiesCargoItems();
     
     // Update cash display
     if (this.cashUI && this.spaceship) {

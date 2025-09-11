@@ -7,11 +7,13 @@
  *  - Fail-safe visibility of landing vector when authorized
  */
 export class DockingManager {
-  constructor({ ui, getSpaceship, getNavTarget, clearCombatTarget }) {
+  constructor({ ui, getSpaceship, getNavTarget, clearCombatTarget, clearNavTarget = null, environmentSystem = null }) {
     this.ui = ui;
     this.getSpaceship = getSpaceship;
     this.getNavTarget = getNavTarget; // station or planet nav target
     this.clearCombatTarget = clearCombatTarget; // function to clear combat target & UI
+    this.clearNavTarget = clearNavTarget; // function to clear nav target & UI
+    this.environmentSystem = environmentSystem; // environment system reference
   }
 
   processFlags(flags) {

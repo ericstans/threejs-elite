@@ -50,6 +50,8 @@ npm run dev
 # Build optimized production bundle
 npm run build
 
+### URL parameters
+`?skiptutorial=1&startWithCargo=1`
 
 ### Credits
 
