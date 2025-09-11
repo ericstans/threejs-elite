@@ -29,6 +29,9 @@ export class Spaceship {
     this.dockingSpeed = 10;
     this.dockingPosition = new THREE.Vector3();
     this.dockingRotation = new THREE.Quaternion();
+    // Player cash
+    this.cash = 0;
+    
     // Player flags
     this.flags = {
       firingEnabled: true,
@@ -889,5 +892,25 @@ export class Spaceship {
     this.flags.isDocking = false;
     this.flags.isDocked = false;
     this.flags.firingEnabled = true;
+  }
+
+  // Cash management methods
+  getCash() {
+    return this.cash;
+  }
+
+  addCash(amount) {
+    this.cash += amount;
+    return this.cash;
+  }
+
+  removeCash(amount) {
+    this.cash = Math.max(0, this.cash - amount);
+    return this.cash;
+  }
+
+  setCash(amount) {
+    this.cash = Math.max(0, amount);
+    return this.cash;
   }
 }

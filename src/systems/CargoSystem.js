@@ -152,4 +152,25 @@ export class CargoSystem {
     const hex = colorValue.toString(16).padStart(6, '0');
     return `#${hex}`;
   }
+
+  // Cash management methods
+  getCash() {
+    const spaceship = this.getSpaceship();
+    return spaceship ? spaceship.getCash() : 0;
+  }
+
+  addCash(amount) {
+    const spaceship = this.getSpaceship();
+    return spaceship ? spaceship.addCash(amount) : 0;
+  }
+
+  removeCash(amount) {
+    const spaceship = this.getSpaceship();
+    return spaceship ? spaceship.removeCash(amount) : 0;
+  }
+
+  setCash(amount) {
+    const spaceship = this.getSpaceship();
+    return spaceship ? spaceship.setCash(amount) : 0;
+  }
 }

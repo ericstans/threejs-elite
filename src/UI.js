@@ -5,6 +5,7 @@ import { TargetUI } from './ui/TargetUI.js';
 import { NavTargetUI } from './ui/NavTargetUI.js';
 import { OptionsUI } from './ui/OptionsUI.js';
 import { CargoUI } from './ui/CargoUI.js';
+import { CashUI } from './ui/CashUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -142,6 +143,7 @@ export class UI {
     this.navTargetUI = new NavTargetUI(this.uiContainer);
     this.optionsUI = new OptionsUI();
     this.cargoUI = new CargoUI(this.uiContainer);
+    this.cashUI = new CashUI(this.uiContainer);
     this.servicesUI = new ServicesUI(this.uiContainer);
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
@@ -903,6 +905,12 @@ export class UI {
 
   updateFlagsDisplay(playerFlags, globalFlags) {
     this.debugFlagsUI.updateFlagsDisplay(playerFlags, globalFlags);
+  }
+
+  updateCashDisplay(cashAmount) {
+    if (this.cashUI) {
+      this.cashUI.updateCash(cashAmount);
+    }
   }
 
   // Docking UI methods

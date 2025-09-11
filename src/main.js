@@ -25,6 +25,8 @@ import { EngineParticles } from './EngineParticles.js';
 import { ConversationSystem } from './ConversationSystem.js';
 import { SpaceStation } from './SpaceStation.js';
 
+const DEBUG = false;
+
 class Game {
   constructor() {
     this.gameEngine = new GameEngine();
@@ -718,6 +720,9 @@ class Game {
 
     // Update debug flags display (only in dev mode)
     this.ui.updateFlagsDisplay(this.spaceship.getAllFlags(), this.getAllGlobalFlags());
+
+    // Update cash display
+    this.ui.updateCashDisplay(this.spaceship.getCash());
 
     // Docking UI/status
     this.dockingManager.update(deltaTime);

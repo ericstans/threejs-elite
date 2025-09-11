@@ -94,7 +94,7 @@ async function getSoundfont(ctx) {
 import { Midi } from '@tonejs/midi';
 
 // Dynamic MIDI file discovery - automatically imports all .mid files from soundtrack folders
-const soundtrackModules = import.meta.glob('./assets/midi/*/*.mid', { eager: true, as: 'url' });
+const soundtrackModules = import.meta.glob('./assets/midi/*/*.mid', { eager: true, query: '?url', import: 'default' });
 
 // Helper function to get MIDI files for specific soundtracks
 function getMidiFilesForSoundtracks(soundtracks) {
@@ -633,7 +633,7 @@ export class MusicManager {
           try {
             const velocityGain = Math.min(1, (note.velocity || 0.5) * 0.9);
             // Schedule directly at noteStart; provide duration so it auto stops without extra timers.
-            const node = inst.play(note.midi, noteStart, { gain: velocityGain, duration: noteDuration });
+            const node = _inst.play(note.midi, noteStart, { gain: velocityGain, duration: noteDuration });
             if (node && typeof node.stop === 'function') {
               // CRITICAL FIX: Disconnect from destination and reconnect to effects chain
               node.disconnect();
