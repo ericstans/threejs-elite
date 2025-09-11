@@ -72,43 +72,46 @@ export class TutorialOverlay {
     this.overlay.style.zIndex = '10001';
     this.overlay.style.pointerEvents = 'auto';
     
-    // Create Clippy character
-    this.clippy = document.createElement('div');
-    this.clippy.style.position = 'absolute';
-    this.clippy.style.fontSize = '48px';
-    this.clippy.style.userSelect = 'none';
-    this.clippy.style.cursor = 'default';
-    this.clippy.textContent = '🤠';
-    
-    // Create speech bubble
-    this.speechBubble = document.createElement('div');
-    this.speechBubble.style.position = 'absolute';
-    this.speechBubble.style.background = '#ffffcc';
-    this.speechBubble.style.border = '2px solid #000000';
-    this.speechBubble.style.borderRadius = '15px';
-    this.speechBubble.style.padding = '15px 20px';
-    this.speechBubble.style.maxWidth = '300px';
-    this.speechBubble.style.fontFamily = 'monospace';
-    this.speechBubble.style.fontSize = '14px';
-    this.speechBubble.style.color = '#000000';
-    this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
-    this.speechBubble.style.userSelect = 'none';
-    this.speechBubble.style.cursor = 'default';
-    
-    // Create speech bubble tail
-    this.speechTail = document.createElement('div');
-    this.speechTail.style.position = 'absolute';
-    this.speechTail.style.width = '0';
-    this.speechTail.style.height = '0';
-    this.speechTail.style.borderLeft = '15px solid transparent';
-    this.speechTail.style.borderRight = '15px solid transparent';
-    this.speechTail.style.borderTop = '15px solid #000000';
+
+  // Create cowboy man character
+  this.cowboy = document.createElement('div');
+  this.cowboy.style.position = 'absolute';
+  this.cowboy.style.fontSize = '64px';
+  this.cowboy.style.userSelect = 'none';
+  this.cowboy.style.cursor = 'default';
+  this.cowboy.textContent = '🤠';
+
+  // Create speech bubble
+  this.speechBubble = document.createElement('div');
+  this.speechBubble.style.position = 'absolute';
+  this.speechBubble.style.background = '#ffffcc';
+  this.speechBubble.style.border = '2px solid #000000';
+  this.speechBubble.style.borderRadius = '15px';
+  this.speechBubble.style.padding = '15px 20px';
+  this.speechBubble.style.maxWidth = '320px';
+  this.speechBubble.style.fontFamily = 'monospace';
+  this.speechBubble.style.fontSize = '15px';
+  this.speechBubble.style.color = '#000000';
+  this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
+  this.speechBubble.style.userSelect = 'none';
+  this.speechBubble.style.cursor = 'default';
+  this.speechBubble.style.zIndex = '1';
+
+  // Create speech bubble tail (pointer)
+  this.speechTail = document.createElement('div');
+  this.speechTail.style.position = 'absolute';
+  this.speechTail.style.width = '0';
+  this.speechTail.style.height = '0';
+  this.speechTail.style.borderLeft = '18px solid transparent';
+  this.speechTail.style.borderRight = '18px solid transparent';
+  this.speechTail.style.borderTop = '28px solid #ffffcc';
+  this.speechTail.style.zIndex = '0';
     
     // Create content area
     this.content = document.createElement('div');
     this.speechBubble.appendChild(this.content);
     
-    this.overlay.appendChild(this.clippy);
+  this.overlay.appendChild(this.cowboy);
     this.overlay.appendChild(this.speechBubble);
     this.overlay.appendChild(this.speechTail);
     document.body.appendChild(this.overlay);
@@ -211,71 +214,38 @@ export class TutorialOverlay {
   }
 
   positionElements(position) {
-    const clippySize = 48;
-    const bubbleWidth = 300;
-    const bubbleHeight = 200;
-    
-    switch (position) {
-      case 'center':
-        this.clippy.style.left = '50%';
-        this.clippy.style.top = '40%';
-        this.clippy.style.transform = 'translate(-50%, -50%)';
-        this.speechBubble.style.left = '50%';
-        this.speechBubble.style.top = '50%';
-        this.speechBubble.style.transform = 'translate(-50%, -50%)';
-        this.speechTail.style.left = '50%';
-        this.speechTail.style.top = '60%';
-        this.speechTail.style.transform = 'translateX(-50%)';
-        break;
-        
-      case 'radar':
-        this.clippy.style.left = '20%';
-        this.clippy.style.top = '20%';
-        this.clippy.style.transform = 'translate(-50%, -50%)';
-        this.speechBubble.style.left = '25%';
-        this.speechBubble.style.top = '25%';
-        this.speechBubble.style.transform = 'translate(-50%, -50%)';
-        this.speechTail.style.left = '15%';
-        this.speechTail.style.top = '35%';
-        this.speechTail.style.transform = 'translateX(-50%)';
-        break;
-        
-      case 'throttle':
-        this.clippy.style.left = '80%';
-        this.clippy.style.top = '70%';
-        this.clippy.style.transform = 'translate(-50%, -50%)';
-        this.speechBubble.style.left = '75%';
-        this.speechBubble.style.top = '60%';
-        this.speechBubble.style.transform = 'translate(-50%, -50%)';
-        this.speechTail.style.left = '85%';
-        this.speechTail.style.top = '70%';
-        this.speechTail.style.transform = 'translateX(-50%)';
-        break;
-        
-      case 'targeting':
-        this.clippy.style.left = '20%';
-        this.clippy.style.top = '70%';
-        this.clippy.style.transform = 'translate(-50%, -50%)';
-        this.speechBubble.style.left = '25%';
-        this.speechBubble.style.top = '60%';
-        this.speechBubble.style.transform = 'translate(-50%, -50%)';
-        this.speechTail.style.left = '15%';
-        this.speechTail.style.top = '70%';
-        this.speechTail.style.transform = 'translateX(-50%)';
-        break;
-        
-      case 'cargo':
-        this.clippy.style.left = '80%';
-        this.clippy.style.top = '20%';
-        this.clippy.style.transform = 'translate(-50%, -50%)';
-        this.speechBubble.style.left = '75%';
-        this.speechBubble.style.top = '30%';
-        this.speechBubble.style.transform = 'translate(-50%, -50%)';
-        this.speechTail.style.left = '85%';
-        this.speechTail.style.top = '20%';
-        this.speechTail.style.transform = 'translateX(-50%)';
-        break;
+    // Position speech bubble as before
+    let bubbleLeft = '60%';
+    let bubbleTop = '60%';
+    if (window.innerWidth < 700) {
+      bubbleLeft = '50%';
+      bubbleTop = '70%';
     }
+    this.speechBubble.style.left = bubbleLeft;
+    this.speechBubble.style.top = bubbleTop;
+    this.speechBubble.style.transform = 'translate(-50%, -50%)';
+
+    // After rendering, measure bubble size and position cowboy/pointer accordingly
+    setTimeout(() => {
+      const bubbleRect = this.speechBubble.getBoundingClientRect();
+      // Cowboy man: below and to the right of bubble
+      const cowboyX = bubbleRect.right + 32;
+      const cowboyY = bubbleRect.bottom + 8;
+      this.cowboy.style.left = cowboyX + 'px';
+      this.cowboy.style.top = cowboyY + 'px';
+      this.cowboy.style.transform = 'none';
+
+      // Pointer: start at bottom-right of bubble, point to cowboy
+      const tailWidth = 32;
+      const tailHeight = Math.max(48, cowboyY - bubbleRect.bottom);
+      this.speechTail.style.left = (bubbleRect.right - tailWidth/2) + 'px';
+      this.speechTail.style.top = (bubbleRect.bottom - 8) + 'px';
+      this.speechTail.style.transform = 'none';
+      this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';
+      this.speechTail.style.borderRight = tailWidth + 'px solid transparent';
+      this.speechTail.style.borderTop = tailHeight + 'px solid #ffffcc';
+      this.speechTail.style.zIndex = '2';
+    }, 0);
   }
 
   handleOption(action) {
