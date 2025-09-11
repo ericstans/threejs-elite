@@ -1,4 +1,7 @@
+const DEBUG = false;
+
 export class TutorialOverlay {
+
   constructor() {
     this.isVisible = false;
     this.currentStep = 0;
@@ -302,7 +305,7 @@ export class TutorialOverlay {
     // Find the target element
     const targetElement = this.findUIElement(elementId);
     if (!targetElement) {
-      if (typeof DEBUG !== 'undefined' && DEBUG) {
+      if (DEBUG) {
         console.warn(`Tutorial spotlight: Could not find element with id '${elementId}'`);
       }
       return;
@@ -336,7 +339,7 @@ export class TutorialOverlay {
     // Use stored UI instance or try to get from global scope
     const uiInstance = this.uiInstance || window.game?.ui || window.ui;
     if (!uiInstance) {
-      if (typeof DEBUG !== 'undefined' && DEBUG) {
+      if (DEBUG) {
         console.warn('Tutorial spotlight: Could not find UI instance');
       }
       return null;
@@ -353,13 +356,13 @@ export class TutorialOverlay {
 
     const element = elementMap[elementId];
     if (element) {
-      if (typeof DEBUG !== 'undefined' && DEBUG) {
+      if (DEBUG) {
         console.log(`Tutorial spotlight: Found element '${elementId}':`, element);
       }
       return element;
     }
 
-    if (typeof DEBUG !== 'undefined' && DEBUG) {
+    if (DEBUG) {
       console.warn(`Tutorial spotlight: Could not find element '${elementId}' in UI instance`);
       console.log('Available UI elements:', Object.keys(uiInstance).filter(key => key.includes('UI') || key.includes('Wrapper')));
     }
@@ -460,7 +463,7 @@ export class TutorialOverlay {
 
   // Method to test targeting specifically
   testTargetingSpotlight() {
-    if (typeof DEBUG !== 'undefined' && DEBUG) {
+    if (DEBUG) {
       console.log('Testing targeting spotlight...');
     }
     this.updateSpotlight('targeting');
@@ -468,7 +471,7 @@ export class TutorialOverlay {
 
   // Method to test controls specifically
   testControlsSpotlight() {
-    if (typeof DEBUG !== 'undefined' && DEBUG) {
+    if (DEBUG) {
       console.log('Testing controls spotlight...');
     }
     this.updateSpotlight('controls');
