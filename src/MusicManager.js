@@ -255,7 +255,7 @@ function programToInstrument(programNumber) {
 // Convert MIDI note number to frequency helper (soundfont-player accepts note names or MIDI numbers directly).
 
 export class MusicManager {
-  constructor(game = null, spaceship = null) {
+  constructor(game = null, spaceship = null, gameStateManager = null) {
     this.isInitialized = false;
     this.volume = 0.5; // master gain (0-1)
     this.currentTrack = null;
@@ -266,8 +266,9 @@ export class MusicManager {
     this._currentPlayback = null; // { stop: fn, timeoutIds: [] }
     this._ambientQueue = null; // currently playing ambient midi info
     this._scheduledNextTimeout = null;
-    this.game = game; // Reference to game object for accessing globalFlags
+    this.game = game; // Reference to game object for compatibility
     this.spaceship = spaceship; // Reference to spaceship for accessing combat flag
+    this.gameStateManager = gameStateManager; // Reference to GameStateManager for accessing globalFlags
     this._instrumentsCache = new Map(); // key: instrumentName -> soundfont-player Instrument
     this._instrumentLoading = new Map(); // in-flight loads
     // Effects chain
@@ -413,12 +414,22 @@ export class MusicManager {
 
   // Immediate soundtrack switch (stops current track and starts new one immediately)
   switchSoundtracksImmediate(soundtracks) {
-    if (this.game) {
-      this.game.globalFlags.soundtracks = Array.isArray(soundtracks) ? soundtracks : [soundtracks];
+    if (DEBUG) console.log('MusicManager: switchSoundtracksImmediate called with:', soundtracks);
+    
+    if (this.gameStateManager) {
+      this.gameStateManager.setSoundtracks(Array.isArray(soundtracks) ? soundtracks : [soundtracks]);
+      if (DEBUG) console.log('MusicManager: Switched soundtracks to:', this.gameStateManager.getCurrentSoundtracks());
+    } else {
+      if (DEBUG) console.warn('MusicManager: gameStateManager is null!');
     }
+    
     if (this.isPlaying) {
       this.stopTrack();
+      // Always play 'ambient' - the _playRandomAmbientMidi method will read the current soundtracks
+      // from GameStateManager and play from the appropriate folder
       this.playTrack('ambient');
+    } else {
+      if (DEBUG) console.log('MusicManager: Not playing, skipping track restart');
     }
   }
 
@@ -433,20 +444,35 @@ export class MusicManager {
     // Check if we should switch to docking soundtrack
     const shouldPlayDocking = (isDocking || landingVectorLocked) && !isDocked;
     
+    // Debug logging for docking state
+    if (DEBUG && (isDocking || landingVectorLocked || isDocked)) {
+      console.log('MusicManager: Docking state - isDocking:', isDocking, 'landingVectorLocked:', landingVectorLocked, 'isDocked:', isDocked, 'shouldPlayDocking:', shouldPlayDocking);
+    }
+    
     // Only process soundtrack changes when state actually changes
     const currentDockingState = shouldPlayDocking;
     const stateChanged = currentDockingState !== this._lastDockingState;
     
+    if (DEBUG && stateChanged) {
+      console.log('MusicManager: Docking state changed - previous:', this._lastDockingState, 'current:', currentDockingState);
+    }
+    
     if (stateChanged) {
       this._lastDockingState = currentDockingState;
       
+      if (DEBUG) {
+        console.log('MusicManager: Processing state change - isInCombat:', isInCombat, 'shouldPlayDocking:', shouldPlayDocking, 'isDocked:', isDocked, 'wasInDocking:', this._wasInDocking);
+      }
+      
       if (isInCombat) {
         // Combat takes priority - switch to combat soundtrack
+        if (DEBUG) console.log('MusicManager: Switching to combat soundtrack');
         this.switchSoundtracksImmediate(['combat']);
       } else if (shouldPlayDocking) {
         // Docking soundtrack when docking starts
+        if (DEBUG) console.log('MusicManager: Switching to docking soundtrack');
         if (!this._wasInDocking) {
-          this._previousSoundtracks = this.game?.globalFlags?.soundtracks || ['ambient'];
+          this._previousSoundtracks = this.gameStateManager?.getCurrentSoundtracks() || ['ambient'];
         }
         this.switchSoundtracksImmediate(['docking']);
         this._wasInDocking = true;
@@ -519,8 +545,9 @@ export class MusicManager {
   async _playRandomAmbientMidi() {
     if (!this.isPlaying || this.currentTrack !== 'ambient') return;
 
-    // Get current soundtracks from globalFlags, default to ['ambient']
-    const soundtracks = this.game?.globalFlags?.soundtracks || ['ambient'];
+    // Get current soundtracks from GameStateManager, default to ['ambient']
+    const soundtracks = this.gameStateManager?.getCurrentSoundtracks() || ['ambient'];
+    if (DEBUG) console.log('MusicManager: Playing from soundtracks:', soundtracks);
     const availableMidiFiles = getMidiFilesForSoundtracks(soundtracks);
 
     if (availableMidiFiles.length === 0) {

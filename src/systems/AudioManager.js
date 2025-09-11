@@ -5,11 +5,19 @@
  * - Audio state management
  * - Integration with MusicManager and SoundManager
  */
+import { SoundManager } from '../SoundManager.js';
+import { MusicManager } from '../MusicManager.js';
+
 export class AudioManager {
-  constructor(musicManager, soundManager, gameStateManager) {
-    this._musicManager = musicManager;
-    this._soundManager = soundManager;
+  constructor(game, spaceship, gameStateManager) {
+    this._soundManager = new SoundManager();
+    this._musicManager = new MusicManager(game, spaceship, gameStateManager);
     this.gameStateManager = gameStateManager;
+    
+    // Update MusicManager with GameStateManager reference if it was provided later
+    if (this.gameStateManager) {
+      this._musicManager.gameStateManager = this.gameStateManager;
+    }
     
     // Audio state tracking
     this.musicStarted = false;
@@ -17,9 +25,20 @@ export class AudioManager {
   }
 
   // Initialize audio systems
-  initialize() {
+  async initialize() {
     this.musicStarted = false;
     this._lastEngineDocked = false;
+    
+    // Initialize the music manager
+    if (this._musicManager && this._musicManager.init) {
+      await this._musicManager.init();
+      
+      // Start playing ambient music
+      if (this._musicManager.playTrack) {
+        this._musicManager.playTrack('ambient');
+        this.musicStarted = true;
+      }
+    }
   }
 
   // Update audio systems (called from main game loop)
@@ -117,5 +136,11 @@ export class AudioManager {
 
   set isMusicStarted(value) {
     this.musicStarted = value;
+  }
+
+  // Update GameStateManager reference (called after GameStateManager is created)
+  setGameStateManager(gameStateManager) {
+    this.gameStateManager = gameStateManager;
+    this._musicManager.gameStateManager = gameStateManager;
   }
 }

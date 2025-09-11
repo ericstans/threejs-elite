@@ -71,6 +71,10 @@ export class GameStateManager {
     this.globalFlags.soundtracks = Array.isArray(soundtracks) ? soundtracks : [soundtracks];
   }
 
+  getCurrentSoundtracks() {
+    return this.globalFlags.soundtracks || ['ambient'];
+  }
+
   addSoundtrack(soundtrack) {
     if (!this.globalFlags.soundtracks.includes(soundtrack)) {
       this.globalFlags.soundtracks.push(soundtrack);

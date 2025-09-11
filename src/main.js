@@ -11,8 +11,6 @@ import { TargetingSystem } from './systems/TargetingSystem.js';
 import { NavigationSystem } from './systems/NavigationSystem.js';
 import { DockingManager } from './systems/DockingManager.js';
 import { EnvironmentSystem } from './systems/EnvironmentSystem.js';
-import { SoundManager } from './SoundManager.js';
-import { MusicManager } from './MusicManager.js';
 import { SectorManager } from './systems/SectorManager.js';
 import { CargoSystem } from './systems/CargoSystem.js';
 import { ThirdPersonCamera } from './systems/ThirdPersonCamera.js';
@@ -37,8 +35,6 @@ class Game {
     // Expose spaceship to engine for starfield & UI parallax logic
     this.gameEngine.spaceship = this.spaceship;
     this.controls = new Controls(this.spaceship, this);
-    this.soundManager = new SoundManager();
-    this.musicManager = new MusicManager(this, this.spaceship);
     this.conversationSystem = new ConversationSystem();
     this.ui = new UI(this.conversationSystem);
     // Expose UI to engine for per-frame parallax callback
@@ -83,10 +79,12 @@ class Game {
       return true; // default to dockable
     });
     this.asteroids = [];
+    // Audio management system (creates SoundManager and MusicManager internally)
+    this.audioManager = new AudioManager(this, this.spaceship, null);
     // Game state management system
-    this.gameStateManager = new GameStateManager(this.musicManager, this.soundManager);
-    // Audio management system
-    this.audioManager = new AudioManager(this.musicManager, this.soundManager, this.gameStateManager);
+    this.gameStateManager = new GameStateManager(this.audioManager.musicManager, this.audioManager.soundManager);
+    // Update AudioManager with GameStateManager reference
+    this.audioManager.setGameStateManager(this.gameStateManager);
     // Third-person camera system
     this.thirdPersonCamera = new ThirdPersonCamera(this.gameEngine, this.spaceship, this.ui, this.engineParticles);
     // Sector persistence
@@ -101,7 +99,7 @@ class Game {
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
       gameEngine: this.gameEngine,
-      soundManager: this.soundManager,
+      soundManager: this.audioManager.soundManager,
       ui: this.ui,
       getSpaceship: () => this.spaceship,
       getCurrentTarget: () => this.targetingSystem.getCurrentCombatTarget(),
@@ -149,7 +147,7 @@ class Game {
     // Initialize OptionsUI with game reference
     this.ui.setGame(this);
 
-    this.start();
+    this.start().catch(console.error);
   }
 
   // Third-person camera event handlers are now handled by ThirdPersonCamera system
@@ -190,7 +188,7 @@ class Game {
     this.targetingSystem = new TargetingSystem({
       camera: this.gameEngine.camera,
       ui: this.ui,
-      soundManager: this.soundManager,
+      soundManager: this.audioManager.soundManager,
       getSpaceship: () => this.spaceship,
       getAsteroids: () => this.asteroids,
       getNPCShips: () => this.npcShips,
@@ -265,7 +263,7 @@ class Game {
       getResources: () => this.gameEngine.getResources(),
       gameEngine: this.gameEngine,
       cargoUI: this.ui.cargoUI,
-      soundManager: this.soundManager,
+      soundManager: this.audioManager.soundManager,
       targetingSystem: this.targetingSystem
     });
 
@@ -1061,7 +1059,10 @@ class Game {
 
 
 
-  start() {
+  async start() {
+    // Initialize audio systems
+    await this.audioManager.initialize();
+    
     // Override the game engine's update to include our custom update
     const originalUpdate = this.gameEngine.update.bind(this.gameEngine);
     this.gameEngine.update = (deltaTime) => {
