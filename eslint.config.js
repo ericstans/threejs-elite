@@ -122,7 +122,7 @@ export default [
       'no-var': 'error',
 
       // Three.js specific considerations
-      'no-undef': 'off', // Allow undefined globals for Three.js
+      'no-undef': 'error', // Catch undefined variables
       'camelcase': ['error', {
         properties: 'never',
         ignoreDestructuring: true
