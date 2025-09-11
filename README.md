@@ -59,3 +59,4 @@ Peaberry fonts by https://emhuo.itch.io/peaberry-pixel-font
 monogram fonts by https://datagoblin.itch.io/monogram
 m5x7 font by https://managore.itch.io/m5x7
 nico pixel fonts pack by https://emhuo.itch.io/nico-pixel-fonts-pack
+Gymnopedie No. 1 midi by https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=37

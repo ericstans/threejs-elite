@@ -282,8 +282,14 @@ export class MusicManager {
     this._soundtrackDelays = {
       'ambient': 1000,    // 1 second default
       'combat': 250,      // 0.25 seconds for combat tracks
+      'docking': 500,     // 0.5 seconds for docking tracks
       'default': 1000     // fallback for unknown folders
     };
+
+    // Previous soundtrack storage for docking restoration
+    this._previousSoundtracks = null;
+    this._wasInDocking = false;
+    this._lastDockingState = false;
   }
 
   // Get the delay for a specific soundtrack folder
@@ -418,10 +424,43 @@ export class MusicManager {
 
   update() {
     if (!this.spaceship) return;
-    // Only ambient available now; keep logic simple.
-    if (!this.spaceship.flags.isInCombat && !this.spaceship.flags.isDocking && this.currentTrack !== 'ambient') {
-      // Use immediate switch for combat transitions
-      this.switchSoundtracksImmediate(['ambient']);
+    
+    const isInCombat = this.spaceship.flags.isInCombat;
+    const isDocking = this.spaceship.flags.isDocking;
+    const isDocked = this.spaceship.flags.isDocked;
+    const landingVectorLocked = this.spaceship.flags.landingVectorLocked;
+    
+    // Check if we should switch to docking soundtrack
+    const shouldPlayDocking = (isDocking || landingVectorLocked) && !isDocked;
+    
+    // Only process soundtrack changes when state actually changes
+    const currentDockingState = shouldPlayDocking;
+    const stateChanged = currentDockingState !== this._lastDockingState;
+    
+    if (stateChanged) {
+      this._lastDockingState = currentDockingState;
+      
+      if (isInCombat) {
+        // Combat takes priority - switch to combat soundtrack
+        this.switchSoundtracksImmediate(['combat']);
+      } else if (shouldPlayDocking) {
+        // Docking soundtrack when docking starts
+        if (!this._wasInDocking) {
+          this._previousSoundtracks = this.game?.globalFlags?.soundtracks || ['ambient'];
+        }
+        this.switchSoundtracksImmediate(['docking']);
+        this._wasInDocking = true;
+      } else if (isDocked && this._wasInDocking) {
+        // Return to previous soundtrack when docking completes
+        if (this._previousSoundtracks) {
+          this.switchSoundtracksImmediate(this._previousSoundtracks);
+          this._previousSoundtracks = null;
+          this._wasInDocking = false;
+        }
+      } else if (!isInCombat && !isDocked && this.currentTrack !== 'ambient') {
+        // Fallback to ambient if not in any special state
+        this.switchSoundtracksImmediate(['ambient']);
+      }
     }
   }
 
