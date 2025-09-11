@@ -26,7 +26,7 @@ export class Spaceship {
     // Docking system
     this.dockingTarget = null;
     this.dockingProgress = 0;
-    this.dockingSpeed = 10;
+    this.dockingSpeed = this.maxSpeed * 0.9; // 90% of max speed
     this.dockingPosition = new THREE.Vector3();
     this.dockingRotation = new THREE.Quaternion();
     // Player cash

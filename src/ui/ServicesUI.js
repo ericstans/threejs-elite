@@ -4,7 +4,9 @@ export class ServicesUI {
     this.servicesModal = null;
     this.isVisible = false;
     this.onCommoditiesClick = null; // Callback for commodities service
+    this.availableServices = []; // Track available services for number key mapping
     this.createServicesModal();
+    this.setupKeyboardHandlers();
   }
 
   createServicesModal() {
@@ -50,16 +52,42 @@ export class ServicesUI {
     this.instructions.style.textAlign = 'center';
     this.instructions.style.marginTop = '20px';
     this.instructions.style.color = '#888';
-    this.instructions.textContent = 'Press ESC to close';
+    this.instructions.innerHTML = 'Press <strong>1-9</strong> to select services or <strong>ESC</strong> to close';
     this.servicesModal.appendChild(this.instructions);
     
+  }
+
+  setupKeyboardHandlers() {
+    this.keyHandler = (event) => {
+      if (!this.isVisible) return;
+      
+      // Handle number keys 1-9
+      if (event.code >= 'Digit1' && event.code <= 'Digit9') {
+        event.preventDefault();
+        const serviceIndex = parseInt(event.code.replace('Digit', '')) - 1;
+        this.selectServiceByIndex(serviceIndex);
+      }
+    };
+    
+    document.addEventListener('keydown', this.keyHandler);
+  }
+
+  selectServiceByIndex(index) {
+    if (index >= 0 && index < this.availableServices.length) {
+      const serviceId = this.availableServices[index];
+      const serviceItem = this.servicesList.children[index];
+      if (serviceItem) {
+        serviceItem.click();
+      }
+    }
   }
 
   showServices(services, locationName) {
     this.title.textContent = `SERVICES - ${locationName}`;
 
-    // Clear existing services
+    // Clear existing services and reset available services
     this.servicesList.innerHTML = '';
+    this.availableServices = [];
 
     // Service definitions
     const serviceDefinitions = {
@@ -72,7 +100,8 @@ export class ServicesUI {
     };
 
     // Add each service
-    services.forEach(serviceId => {
+    services.forEach((serviceId, index) => {
+      this.availableServices.push(serviceId);
       const serviceDef = serviceDefinitions[serviceId] || { name: serviceId, description: 'Service available', icon: '❓', implemented: false };
       const isImplemented = serviceDef.implemented;
 
@@ -97,6 +126,18 @@ export class ServicesUI {
       icon.style.pointerEvents = 'none';
       icon.textContent = serviceDef.icon;
       serviceItem.appendChild(icon);
+
+      // Number indicator
+      const numberIndicator = document.createElement('div');
+      numberIndicator.style.fontSize = '16px';
+      numberIndicator.style.fontWeight = 'bold';
+      numberIndicator.style.marginRight = '15px';
+      numberIndicator.style.minWidth = '20px';
+      numberIndicator.style.textAlign = 'center';
+      numberIndicator.style.pointerEvents = 'none';
+      numberIndicator.style.color = isImplemented ? '#00ff00' : '#666';
+      numberIndicator.textContent = (index + 1).toString();
+      serviceItem.appendChild(numberIndicator);
 
       // Service info
       const info = document.createElement('div');
@@ -174,5 +215,12 @@ export class ServicesUI {
 
   isServicesVisible() {
     return this.isVisible;
+  }
+
+  // Cleanup method to remove event listeners
+  destroy() {
+    if (this.keyHandler) {
+      document.removeEventListener('keydown', this.keyHandler);
+    }
   }
 }

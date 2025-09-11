@@ -531,8 +531,14 @@ class Game {
     // Update UI
     // Pass targetSpeed, currentSpeed, and maxSpeed for UI
     const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
-    const currentSpeed = this.spaceship.getSpeed();
+    let currentSpeed = this.spaceship.getSpeed();
     const maxSpeed = this.spaceship.maxSpeed;
+    
+    // If docking, show docking speed instead of 0
+    if (this.spaceship.flags.isDocking && currentSpeed < 0.1) {
+      currentSpeed = this.spaceship.dockingSpeed;
+    }
+    
     this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
 
     // Update debug flags display (only in dev mode)
