@@ -1,6 +1,7 @@
 export class CommoditiesUI {
-  constructor(container) {
+  constructor(container, cargoSystem = null) {
     this.container = container;
+    this.cargoSystem = cargoSystem;
     this.isVisible = false;
     this.commodities = [];
     this.sellGrid = [];
@@ -562,15 +563,27 @@ export class CommoditiesUI {
     
     // Check if we have enough cash
     const currentBuyTotal = this.calculateBuyTotal();
-    if (currentBuyTotal + additionalCost <= this.currentCash) {
-      this.buyQuantities[commodityName] = newQuantity;
-      this.updateQuantityDisplay(commodityName, newQuantity);
-      this.updateBuyTotal();
-      // Update all button states after a successful purchase
-      this.updateAllButtonStates();
-    } else {
+    if (currentBuyTotal + additionalCost > this.currentCash) {
       console.log('Not enough cash to buy more of this item');
+      return;
     }
+    
+    // Check if adding this item would exceed cargo capacity
+    if (this.cargoSystem) {
+      const currentCargoCount = this.cargoSystem.getCargoCount();
+      const totalItemsToAdd = this.calculateTotalItemsToBuy();
+      
+      if (currentCargoCount + totalItemsToAdd + 1 > this.cargoSystem.maxCargoSlots) {
+        console.log(`Cannot buy more items - would exceed cargo capacity! Current: ${currentCargoCount}, Trying to add: ${totalItemsToAdd + 1}, Max: ${this.cargoSystem.maxCargoSlots}`);
+        return;
+      }
+    }
+    
+    this.buyQuantities[commodityName] = newQuantity;
+    this.updateQuantityDisplay(commodityName, newQuantity);
+    this.updateBuyTotal();
+    // Update all button states after a successful purchase
+    this.updateAllButtonStates();
   }
 
   decreaseBuyQuantity(commodityName) {
@@ -630,7 +643,15 @@ export class CommoditiesUI {
       const additionalCost = commodity.buyPrice;
       const canAfford = (currentBuyTotal + additionalCost) <= this.currentCash;
 
-      if (!canAfford) {
+      // Check if adding another item would exceed cargo capacity
+      let canFitInCargo = true;
+      if (this.cargoSystem) {
+        const currentCargoCount = this.cargoSystem.getCargoCount();
+        const totalItemsToAdd = this.calculateTotalItemsToBuy();
+        canFitInCargo = (currentCargoCount + totalItemsToAdd + 1) <= this.cargoSystem.maxCargoSlots;
+      }
+
+      if (!canAfford || !canFitInCargo) {
         this.greyOutButton(increaseBtn);
       } else {
         this.enableButton(increaseBtn);
@@ -669,6 +690,17 @@ export class CommoditiesUI {
         if (commodity) {
           total += commodity.buyPrice * quantity;
         }
+      }
+    });
+    return total;
+  }
+
+  calculateTotalItemsToBuy() {
+    let total = 0;
+    Object.keys(this.buyQuantities).forEach(commodityName => {
+      const quantity = this.buyQuantities[commodityName];
+      if (quantity > 0) {
+        total += quantity;
       }
     });
     return total;
@@ -1028,8 +1060,34 @@ export class CommoditiesUI {
 
   // Method to return items to cargo bay
   returnItemsToCargo() {
+    // Return items from sell quantities back to cargo system
+    if (this.onCargoAdd) {
+      Object.keys(this.sellQuantities).forEach(commodityName => {
+        const quantity = this.sellQuantities[commodityName];
+        if (quantity > 0) {
+          const commodity = this.commodities.find(c => c.name === commodityName);
+          if (commodity) {
+            // Add each item back to cargo
+            for (let i = 0; i < quantity; i++) {
+              this.onCargoAdd({
+                name: commodityName,
+                icon: commodity.icon,
+                color: commodity.color
+              });
+            }
+          }
+        }
+      });
+    }
+    
+    // Clear sell quantities
+    this.sellQuantities = {};
+    this.updateSellCommoditiesList();
+    this.updateSellTotal();
+    
+    // Also handle old movedItems for backward compatibility
     if (this.movedItems.length > 0) {
-      console.log('Returning items to cargo bay:', this.movedItems);
+      console.log('Returning moved items to cargo bay:', this.movedItems);
       
       // Add items back to cargo system
       if (this.onCargoAdd) {
@@ -1038,40 +1096,6 @@ export class CommoditiesUI {
         });
       }
       
-      // Restore items to cargo bay
-      this.movedItems.forEach(item => {
-        if (item.slot) {
-          // Clear any existing content
-          item.slot.innerHTML = '';
-          
-          // Check if it's a FontAwesome icon
-          if (item.icon && item.icon.startsWith('fa-')) {
-            // Create FontAwesome icon element
-            const iconElement = document.createElement('i');
-            iconElement.className = item.icon;
-            iconElement.style.color = item.color || '#00ff00';
-            iconElement.style.fontSize = '16px';
-            item.slot.appendChild(iconElement);
-          } else {
-            // Use as text/emoji or fallback to circle
-            item.slot.textContent = item.icon || '●';
-            item.slot.style.color = item.color || '#00ff00';
-          }
-          
-          item.slot.title = item.name; // Use item name as tooltip
-          
-          // Set background and border colors
-          const backgroundColor = item.color ? this.getColorRgba(item.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
-          const borderColor = item.color || '#00ff55';
-          
-          item.slot.style.backgroundColor = backgroundColor;
-          item.slot.style.borderColor = borderColor;
-          
-          // Store original colors for hover effects
-          item.slot.dataset.originalBackground = backgroundColor;
-          item.slot.dataset.originalBorderColor = borderColor;
-        }
-      });
       // Clear the sell grid
       this.sellGrid.forEach(slot => {
         slot.innerHTML = '·';
@@ -1082,7 +1106,6 @@ export class CommoditiesUI {
         delete slot.dataset.commodity;
         delete slot.dataset.cargoIndex;
       });
-      this.updateSellTotal();
       this.movedItems = [];
     }
   }

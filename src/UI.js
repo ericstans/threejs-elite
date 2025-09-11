@@ -148,7 +148,7 @@ export class UI {
     this.optionsUI = new OptionsUI();
     this.cargoUI = new CargoUI(this.uiContainer);
     this.cashUI = new CashUI(this.uiContainer);
-    this.commoditiesUI = new CommoditiesUI(this.uiContainer);
+    this.commoditiesUI = new CommoditiesUI(this.uiContainer, this.cargoSystem);
     this.servicesUI = new ServicesUI(this.uiContainer);
     
     // Set up commodities callback
@@ -1112,15 +1112,8 @@ export class UI {
     if (this.isCommoditiesVisible()) {
       console.log('Cargo item clicked:', itemData);
       
-      // Add to sell quantities
+      // Add to sell quantities - this will handle cargo removal
       this.commoditiesUI.increaseSellQuantity(itemData.name);
-      
-      // Immediately remove item from cargo system for visual feedback
-      if (this.cargoSystem && itemData.index !== undefined) {
-        this.cargoSystem.removeCargo(itemData.index);
-        // Update commodities UI with new cargo items
-        this.updateCommoditiesCargoItems();
-      }
     }
   }
 
@@ -1158,6 +1151,17 @@ export class UI {
 
 
   handleCommoditiesPurchase(itemsToBuy, totalCost) {
+    // Check if purchase would exceed cargo capacity BEFORE deducting cash
+    if (this.cargoSystem) {
+      const currentCargoCount = this.cargoSystem.getCargoCount();
+      const totalItemsToAdd = itemsToBuy.reduce((total, item) => total + item.quantity, 0);
+      
+      if (currentCargoCount + totalItemsToAdd > this.cargoSystem.maxCargoSlots) {
+        console.log(`Purchase would exceed cargo capacity! Current: ${currentCargoCount}, Trying to add: ${totalItemsToAdd}, Max: ${this.cargoSystem.maxCargoSlots}`);
+        return;
+      }
+    }
+    
     // Deduct cash from spaceship
     if (this.spaceship) {
       this.spaceship.removeCash(totalCost);
