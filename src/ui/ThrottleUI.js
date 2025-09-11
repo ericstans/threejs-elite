@@ -51,30 +51,68 @@ export class ThrottleUI {
 
   // Positioning methods for different view modes
   setFirstPersonPositioning() {
-    // First-person positioning (current default)
+    // First-person positioning - show throttle bar without container background and label
     if (this.throttleContainer) {
-      this.throttleContainer.style.bottom = '20px';
-      this.throttleContainer.style.left = '20px';
+      this.throttleContainer.style.display = 'block';
+      this.throttleContainer.style.bottom = '20.5%';
+      this.throttleContainer.style.left = '61.5%';
       this.throttleContainer.style.right = 'auto';
+      this.throttleContainer.style.width = '2.25%';
+      this.throttleContainer.style.height = '7.75%';
+      this.throttleBar.style.width = '100%';
+      this.throttleBar.style.height = '100%';
+      // Remove container background and padding for first-person
+      this.throttleContainer.style.background = 'transparent';
+      this.throttleContainer.style.padding = '0';
+      this.throttleContainer.style.border = 'none';
+      this.throttleBar.style.border = 'none';
+      this.throttleBar.style.backgroundColor = 'none';
+    }
+    if (this.throttleLabel) {
+      this.throttleLabel.style.display = 'none'; // Hide the "THROTTLE" label
     }
     if (this.speedDisplay) {
-      this.speedDisplay.style.bottom = '282px'; // Above the throttle container
-      this.speedDisplay.style.left = '20px';
+      this.speedDisplay.style.bottom = '27%';
+      this.speedDisplay.style.left = '58.5%';
       this.speedDisplay.style.right = 'auto';
+      this.speedDisplay.style.display = 'block';
+      this.speedDisplay.style.border = 'none';
+      this.speedDisplay.style.backgroundColor = 'none';
     }
   }
 
   setThirdPersonPositioning() {
-    // Third-person positioning 
+    // Third-person positioning - show both throttle container and speed display
     if (this.throttleContainer) {
+      this.throttleContainer.style.display = 'block';
       this.throttleContainer.style.bottom = '20px';
       this.throttleContainer.style.left = '20px';
       this.throttleContainer.style.right = 'auto';
+      this.throttleContainer.style.width = 'auto'; // Reset width to auto
+      this.throttleContainer.style.height = 'auto'; // Reset height to auto
+      // Restore container background and styling for third-person
+      this.throttleContainer.style.background = 'rgba(0, 0, 0, 0.7)';
+      this.throttleContainer.style.padding = '10px';
+      this.throttleContainer.style.border = '1px solid #00ff00';
+    }
+    if (this.throttleBar) {
+      // Restore throttle bar styling for third-person
+      this.throttleBar.style.width = '20px';
+      this.throttleBar.style.height = '200px';
+      this.throttleBar.style.border = '1px solid #00ff00';
+      this.throttleBar.style.backgroundColor = '#333';
+    }
+    if (this.throttleLabel) {
+      this.throttleLabel.style.display = 'block'; // Show the "THROTTLE" label
     }
     if (this.speedDisplay) {
       this.speedDisplay.style.bottom = '282px'; // Above the throttle container
       this.speedDisplay.style.left = '20px';
       this.speedDisplay.style.right = 'auto';
+      this.speedDisplay.style.display = 'block';
+      // Restore speed display styling for third-person
+      this.speedDisplay.style.border = '1px solid #ffff00';
+      this.speedDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     }
   }
 

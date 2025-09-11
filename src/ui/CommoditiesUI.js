@@ -470,6 +470,8 @@ export class CommoditiesUI {
       // Check if this commodity exists in cargo
       const cargoQuantity = this.getCargoQuantity(commodity.name);
       const hasInCargo = cargoQuantity > 0;
+      const currentSellQuantity = this.sellQuantities[commodity.name] || 0;
+      const canDecrease = currentSellQuantity > 0;
 
       const decreaseBtn = document.createElement('button');
       decreaseBtn.textContent = '<';
@@ -482,7 +484,7 @@ export class CommoditiesUI {
       decreaseBtn.style.fontFamily = 'PeaberryMono, monospace';
       decreaseBtn.style.fontSize = '14px';
       decreaseBtn.style.transition = 'all 0.2s ease';
-      decreaseBtn.disabled = !hasInCargo;
+      decreaseBtn.disabled = !canDecrease;
       decreaseBtn.addEventListener('click', (e) => {
         if (!(e.target instanceof HTMLButtonElement) || !e.target.disabled) {
           this.decreaseSellQuantity(commodity.name);
@@ -515,8 +517,10 @@ export class CommoditiesUI {
       });
 
       // Style disabled buttons
-      if (!hasInCargo) {
+      if (!canDecrease) {
         this.greyOutButton(decreaseBtn);
+      }
+      if (!hasInCargo) {
         this.greyOutButton(increaseBtn);
       }
 
@@ -534,6 +538,11 @@ export class CommoditiesUI {
       item.appendChild(price);
 
       this.sellCommoditiesList.appendChild(item);
+    });
+    
+    // Update button states for all commodities after the list is created
+    this.commodities.forEach(commodity => {
+      this.updateSellButtonStates(commodity.name);
     });
   }
 
@@ -719,6 +728,49 @@ export class CommoditiesUI {
     const quantityDisplay = this.sellCommoditiesList.querySelector(`[data-commodity-name="${commodityName}"]`);
     if (quantityDisplay) {
       quantityDisplay.textContent = quantity;
+    }
+    // Update button states when quantity changes
+    this.updateSellButtonStates(commodityName);
+  }
+
+  // Update sell button states for a specific commodity
+  updateSellButtonStates(commodityName) {
+    const currentSellQuantity = this.sellQuantities[commodityName] || 0;
+    const cargoQuantity = this.getCargoQuantity(commodityName);
+    const hasInCargo = cargoQuantity > 0;
+    const canDecrease = currentSellQuantity > 0;
+
+    // Find the commodity item container
+    const commodityItems = this.sellCommoditiesList.querySelectorAll('[data-commodity-name]');
+    let commodityContainer = null;
+    
+    for (let item of commodityItems) {
+      if (item instanceof HTMLElement && item.dataset.commodityName === commodityName) {
+        commodityContainer = item.closest('div[style*="display: flex"]');
+        break;
+      }
+    }
+
+    if (!commodityContainer) return;
+
+    // Get buttons for this commodity using CSS classes
+    const decreaseBtn = commodityContainer.querySelector('.sell-decrease-btn');
+    const increaseBtn = commodityContainer.querySelector('.sell-increase-btn');
+
+    if (decreaseBtn) {
+      if (canDecrease) {
+        this.enableButton(decreaseBtn);
+      } else {
+        this.greyOutButton(decreaseBtn);
+      }
+    }
+
+    if (increaseBtn) {
+      if (hasInCargo && currentSellQuantity < cargoQuantity) {
+        this.enableButton(increaseBtn);
+      } else {
+        this.greyOutButton(increaseBtn);
+      }
     }
   }
 
