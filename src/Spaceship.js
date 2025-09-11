@@ -31,7 +31,7 @@ export class Spaceship {
     this.dockingRotation = new THREE.Quaternion();
     
     // Enhanced landing animation state
-    this.landingPhase = 'approach'; // 'approach', 'descent', 'landing'
+    this.landingPhase = 'approach'; // 'approach', 'descent'
     this.landingStartTime = 0;
     this.landingDuration = 3.0; // Total landing duration in seconds
     this.descentStartTime = 0;
@@ -901,30 +901,24 @@ export class Spaceship {
       
       // Check if descent is complete
       if (descentProgress >= 1.0) {
-        this.landingPhase = 'landing';
-        if (DEBUG) console.log('Descent phase complete, starting landing phase');
+        // Ensure we're exactly at the target position
+        this.mesh.position.copy(targetLocalPos);
+        this.mesh.quaternion.copy(this.landingTargetRotation);
+        this.mesh.rotation.setFromQuaternion(this.landingTargetRotation);
+        
+        // Update logical position and rotation
+        this.position.copy(this.dockingTarget.mesh.localToWorld(targetLocalPos));
+        this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(this.landingTargetRotation));
+        this.rotation.setFromQuaternion(this.quaternion);
+        
+        // Complete docking immediately
+        this.flags.isDocking = false;
+        this.flags.isDocked = true;
+        this.dockingProgress = 1;
+        this.landingPhase = 'approach'; // Reset for next time
+        
+        if (DEBUG) console.log('Landing completed!');
       }
-    }
-    // Phase 3: Landing - final positioning and completion
-    else if (this.landingPhase === 'landing') {
-      // Ensure ship is exactly on the surface in local space
-      const surfacePos = this.dockingPosition.clone().normalize().multiplyScalar(planetRadius);
-      this.mesh.position.copy(surfacePos);
-      this.mesh.quaternion.copy(this.dockingRotation);
-      this.mesh.rotation.setFromQuaternion(this.dockingRotation);
-      
-      // Update logical position and rotation
-      this.position.copy(this.dockingTarget.mesh.localToWorld(surfacePos));
-      this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(this.dockingRotation));
-      this.rotation.setFromQuaternion(this.quaternion);
-      
-      // Complete docking
-      this.flags.isDocking = false;
-      this.flags.isDocked = true;
-      this.dockingProgress = 1;
-      this.landingPhase = 'approach'; // Reset for next time
-      
-      if (DEBUG) console.log('Landing completed!');
     }
   }
 
