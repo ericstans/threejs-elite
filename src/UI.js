@@ -6,6 +6,7 @@ import { NavTargetUI } from './ui/NavTargetUI.js';
 import { OptionsUI } from './ui/OptionsUI.js';
 import { CargoUI } from './ui/CargoUI.js';
 import { CashUI } from './ui/CashUI.js';
+import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -144,7 +145,18 @@ export class UI {
     this.optionsUI = new OptionsUI();
     this.cargoUI = new CargoUI(this.uiContainer);
     this.cashUI = new CashUI(this.uiContainer);
+    this.commoditiesUI = new CommoditiesUI(this.uiContainer);
     this.servicesUI = new ServicesUI(this.uiContainer);
+    
+    // Set up commodities callback
+    this.servicesUI.onCommoditiesClick = () => {
+      this.showCommoditiesFromCurrentLocation();
+    };
+
+    // Set up commodities cargo update callback
+    this.commoditiesUI.onCargoUpdate = (itemsToSell, totalValue) => {
+      this.handleCommoditiesSale(itemsToSell, totalValue);
+    };
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
@@ -493,10 +505,12 @@ export class UI {
 
   showServices(services, locationName) {
     this.servicesUI.showServices(services, locationName);
+    this.debugFlagsUI.minimize();
   }
 
   hideServices() {
     this.servicesUI.hideServices();
+    this.debugFlagsUI.restore();
   }
 
   isServicesVisible() {
@@ -813,6 +827,7 @@ export class UI {
     }
 
     this.commsModal.style.display = 'block';
+    this.debugFlagsUI.minimize();
   }
 
   updateCommsModal(message, options) {
@@ -872,6 +887,7 @@ export class UI {
 
   hideCommsModal() {
     this.commsModal.style.display = 'none';
+    this.debugFlagsUI.restore();
   }
 
   isCommsModalVisible() {
@@ -901,10 +917,12 @@ export class UI {
       this.mapList.appendChild(el);
     });
     this.mapModal.style.display = 'block';
+    this.debugFlagsUI.minimize();
   }
 
   hideMapModal() {
     this.mapModal.style.display = 'none';
+    this.debugFlagsUI.restore();
   }
 
   setOnMapSelect(cb) { this.onMapSelect = cb; }
@@ -921,6 +939,86 @@ export class UI {
     if (this.cashUI) {
       this.cashUI.updateCash(cashAmount);
     }
+  }
+
+  // Commodities UI methods
+  showCommodities(commodities) {
+    if (this.commoditiesUI) {
+      this.commoditiesUI.updateCommodities(commodities);
+      this.commoditiesUI.show();
+      this.debugFlagsUI.minimize();
+    }
+  }
+
+  hideCommodities() {
+    if (this.commoditiesUI) {
+      this.commoditiesUI.hide();
+      this.debugFlagsUI.restore();
+    }
+  }
+
+  isCommoditiesVisible() {
+    return this.commoditiesUI ? this.commoditiesUI.isVisible : false;
+  }
+
+  showCommoditiesFromCurrentLocation() {
+    // Get commodities from current location
+    const commodities = this.getCurrentLocationCommodities();
+    if (commodities && commodities.length > 0) {
+      this.showCommodities(commodities);
+    } else {
+      // Show message that no commodities are available
+      const noCommodities = [{ name: 'No commodities available', buyPrice: 0, sellPrice: 0 }];
+      this.showCommodities(noCommodities);
+    }
+  }
+
+  getCurrentLocationCommodities() {
+    // This will be implemented to get commodities from the current docked location
+    // For now, return all commodities as a placeholder
+    return [
+      { name: 'Iron Ore', buyPrice: 50, sellPrice: 40 },
+      { name: 'Copper Ore', buyPrice: 75, sellPrice: 60 },
+      { name: 'Gold Ore', buyPrice: 200, sellPrice: 160 },
+      { name: 'Steel Ingots', buyPrice: 120, sellPrice: 96 },
+      { name: 'Electronics', buyPrice: 300, sellPrice: 240 }
+    ];
+  }
+
+  handleCommoditiesSale(itemsToSell, totalValue) {
+    // This will be implemented when we connect to the cargo system
+    // For now, just log the sale
+    console.log(`Commodities sale: ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
+    
+    // TODO: Remove items from cargo and add cash to player
+    // This will require integration with the CargoSystem and Spaceship
+    // For now, simulate the sale
+    this.simulateCommoditiesSale(itemsToSell, totalValue);
+  }
+
+  simulateCommoditiesSale(itemsToSell, totalValue) {
+    // Simulate adding cash (this will be replaced with actual cash system integration)
+    console.log(`Simulated sale: Adding $${totalValue.toFixed(0)} to player cash`);
+    
+    // Update cash display
+    if (this.cashUI) {
+      // This is a placeholder - in real implementation, this would update actual player cash
+      const currentCash = 0; // Would get from spaceship.getCash()
+      this.cashUI.updateCash(currentCash + totalValue);
+    }
+  }
+
+  // Method to get current player cash (placeholder for game integration)
+  getCurrentCash() {
+    // This will be replaced with actual spaceship.getCash() call
+    return 0;
+  }
+
+  // Method to add cash to player (placeholder for game integration)
+  addCash(amount) {
+    // This will be replaced with actual spaceship.addCash() call
+    console.log(`Adding $${amount} to player cash`);
+    return amount;
   }
 
   // Docking UI methods
@@ -961,6 +1059,8 @@ export class UI {
           this.hideCommsModal();
         } else if (this.isMapModalVisible()) {
           this.hideMapModal();
+        } else if (this.isCommoditiesVisible()) {
+          this.hideCommodities();
         }
       }
     };

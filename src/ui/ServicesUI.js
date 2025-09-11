@@ -3,6 +3,7 @@ export class ServicesUI {
     this.container = container;
     this.servicesModal = null;
     this.isVisible = false;
+    this.onCommoditiesClick = null; // Callback for commodities service
     this.createServicesModal();
   }
 
@@ -51,6 +52,7 @@ export class ServicesUI {
     this.instructions.style.color = '#888';
     this.instructions.textContent = 'Press ESC to close';
     this.servicesModal.appendChild(this.instructions);
+    
   }
 
   showServices(services, locationName) {
@@ -82,29 +84,35 @@ export class ServicesUI {
       serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
       serviceItem.style.cursor = 'pointer';
       serviceItem.style.transition = 'background-color 0.2s';
+      serviceItem.style.pointerEvents = 'auto';
+      serviceItem.style.userSelect = 'none';
 
       // Service icon
       const icon = document.createElement('div');
       icon.style.fontSize = '24px';
       icon.style.marginRight = '15px';
       icon.style.minWidth = '30px';
+      icon.style.pointerEvents = 'none';
       icon.textContent = serviceDef.icon;
       serviceItem.appendChild(icon);
 
       // Service info
       const info = document.createElement('div');
       info.style.flex = '1';
+      info.style.pointerEvents = 'none';
 
       const name = document.createElement('div');
       name.style.fontSize = '18px';
       name.style.fontWeight = 'bold';
       name.style.marginBottom = '5px';
+      name.style.pointerEvents = 'none';
       name.textContent = serviceDef.name;
       info.appendChild(name);
 
       const description = document.createElement('div');
       description.style.fontSize = '14px';
       description.style.color = '#aaa';
+      description.style.pointerEvents = 'none';
       description.textContent = serviceDef.description;
       info.appendChild(description);
 
@@ -118,10 +126,23 @@ export class ServicesUI {
         serviceItem.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
       });
 
-      // Click handler (placeholder for future implementation)
-      serviceItem.addEventListener('click', () => {
-        console.log(`Selected service: ${serviceId}`);
-        // TODO: Implement service functionality
+      // Click handler
+      serviceItem.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log(`Service clicked: ${serviceId}`);
+        if (serviceId === 'commodities' && this.onCommoditiesClick) {
+          console.log('Calling commodities callback');
+          this.onCommoditiesClick();
+        } else {
+          console.log(`Selected service: ${serviceId}`);
+          // TODO: Implement other service functionality
+        }
+      };
+      
+      // Also add a mousedown event to test
+      serviceItem.addEventListener('mousedown', (event) => {
+        console.log(`Service mousedown: ${serviceId}`);
       });
 
       this.servicesList.appendChild(serviceItem);

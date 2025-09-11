@@ -1356,10 +1356,18 @@ setTimeout(() => {
       console.log('Tutorial skipped');
     });
 
-    // Start tutorial after 3 seconds
-    setTimeout(() => {
-      game.ui.showTutorial();
-    }, 3000);
+    // Check for skip tutorial parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const skipTutorial = urlParams.get('skiptutorial') === '1';
+    
+    // Start tutorial after 3 seconds (unless skipped)
+    if (!skipTutorial) {
+      setTimeout(() => {
+        game.ui.showTutorial();
+      }, 3000);
+    } else {
+      console.log('Tutorial skipped via URL parameter');
+    }
   });
 }, 1000); // Small delay to ensure everything is loaded
 

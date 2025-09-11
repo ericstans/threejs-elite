@@ -91,4 +91,36 @@ export class DebugFlagsUI {
       this.globalFlagsContent.appendChild(flagElement);
     }
   }
+
+  minimize() {
+    if (!this.isDevMode || !this.flagsDisplay) {
+      return;
+    }
+
+    // Hide all content except the title
+    this.playerFlagsTitle.style.display = 'none';
+    this.playerFlagsContent.style.display = 'none';
+    this.globalFlagsTitle.style.display = 'none';
+    this.globalFlagsContent.style.display = 'none';
+    
+    // Adjust the container size
+    this.flagsDisplay.style.maxWidth = '120px';
+    this.flagsDisplay.style.padding = '5px 10px';
+  }
+
+  restore() {
+    if (!this.isDevMode || !this.flagsDisplay) {
+      return;
+    }
+
+    // Show all content
+    this.playerFlagsTitle.style.display = 'block';
+    this.playerFlagsContent.style.display = 'block';
+    this.globalFlagsTitle.style.display = 'block';
+    this.globalFlagsContent.style.display = 'block';
+    
+    // Restore the container size
+    this.flagsDisplay.style.maxWidth = '300px';
+    this.flagsDisplay.style.padding = '10px';
+  }
 }

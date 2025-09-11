@@ -22,6 +22,7 @@ export class CargoUI {
     this.cargoPanel.style.color = '#00ff00';
     this.cargoPanel.style.boxShadow = '0 0 10px rgba(0,255,0,0.3)';
     this.cargoPanel.style.pointerEvents = 'auto';
+    this.cargoPanel.style.zIndex = '5000';
     this.container.appendChild(this.cargoPanel);
 
     // Cargo title
