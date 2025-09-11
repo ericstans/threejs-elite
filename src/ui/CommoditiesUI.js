@@ -96,7 +96,7 @@ export class CommoditiesUI {
   createAvailableCommoditiesPanel() {
     this.availablePanel = document.createElement('div');
     this.availablePanel.style.flex = '1';
-    this.availablePanel.style.border = '1px solid #00ff00';
+    //this.availablePanel.style.border = '1px solid #00ff00';
     this.availablePanel.style.borderRadius = '4px';
     this.availablePanel.style.padding = '15px';
     this.mainContent.appendChild(this.availablePanel);
@@ -108,7 +108,6 @@ export class CommoditiesUI {
     this.availablePanel.appendChild(this.availableTitle);
 
     this.commoditiesList = document.createElement('div');
-    this.commoditiesList.style.maxHeight = '80%';
     this.commoditiesList.style.overflowY = 'auto';
     this.availablePanel.appendChild(this.commoditiesList);
   }
@@ -116,7 +115,7 @@ export class CommoditiesUI {
   createSellGridPanel() {
     this.sellPanel = document.createElement('div');
     this.sellPanel.style.flex = '1';
-    this.sellPanel.style.border = '1px solid #00ff00';
+    //this.sellPanel.style.border = '1px solid #00ff00';
     this.sellPanel.style.borderRadius = '4px';
     this.sellPanel.style.padding = '15px';
     this.mainContent.appendChild(this.sellPanel);
@@ -129,7 +128,6 @@ export class CommoditiesUI {
 
     // Sell commodities list container
     this.sellCommoditiesList = document.createElement('div');
-    this.sellCommoditiesList.style.maxHeight = '80%';
     this.sellCommoditiesList.style.overflowY = 'auto';
     this.sellPanel.appendChild(this.sellCommoditiesList);
 

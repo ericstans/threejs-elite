@@ -105,7 +105,7 @@ export class TargetingSystem {
       const pos = obj.getPosition();
       const screenPos = pos.clone();
       screenPos.project(camera);
-      if (screenPos.z > 1) continue;
+      //if (screenPos.z > 1) continue;
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
       if (screenDistance < closestScreenDistance) {
         closestScreenDistance = screenDistance;
@@ -195,7 +195,7 @@ export class TargetingSystem {
       const pos = target.getPosition();
       const screenPos = pos.clone();
       screenPos.project(camera);
-      if (screenPos.z > 1) continue;
+      //if (screenPos.z > 1) continue;
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
       if (screenDistance < closestScreenDistance) {
         closestScreenDistance = screenDistance;
@@ -364,7 +364,7 @@ export class TargetingSystem {
       const pos = obj.getPosition();
       const screenPos = pos.clone();
       screenPos.project(camera);
-      if (screenPos.z > 1) continue;
+      //if (screenPos.z > 1) continue;
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
       targetsWithDistance.push({ target: obj, distance: screenDistance });
     }
@@ -399,7 +399,7 @@ export class TargetingSystem {
       const pos = target.getPosition();
       const screenPos = pos.clone();
       screenPos.project(camera);
-      if (screenPos.z > 1) continue;
+      //if (screenPos.z > 1) continue;
       const screenDistance = crosshairCenter.distanceTo(new THREE.Vector2(screenPos.x, screenPos.y));
       targetsWithDistance.push({ target, distance: screenDistance });
     }
