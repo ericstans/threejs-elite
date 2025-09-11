@@ -227,6 +227,14 @@ export class Controls {
       }
       this.keys['F1'] = false; // prevent repeat
     }
+
+    // F9 toggles controls panel visibility
+    if (this.keys['F9']) {
+      if (this.game && this.game.ui && this.game.ui.controlsUI) {
+        this.game.ui.controlsUI.toggle();
+      }
+      this.keys['F9'] = false; // prevent repeat
+    }
   }
 
   setOnNavComms(callback) {

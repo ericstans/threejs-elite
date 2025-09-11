@@ -1,6 +1,7 @@
 export class ControlsUI {
   constructor(container) {
     this.container = container;
+    this.isVisible = true;
     this.createControlsHelp();
   }
 
@@ -26,5 +27,33 @@ export class ControlsUI {
       <div>T - Target</div>
       <div>Y - Nav Target</div>
     `;
+
+    // Add F9 indicator in top right corner
+    this.f9Indicator = document.createElement('div');
+    this.f9Indicator.textContent = 'F9';
+    this.f9Indicator.style.position = 'absolute';
+    this.f9Indicator.style.top = '5px';
+    this.f9Indicator.style.right = '5px';
+    this.f9Indicator.style.color = '#666666';
+    this.f9Indicator.style.fontSize = '10px';
+    this.f9Indicator.style.fontWeight = 'bold';
+    this.f9Indicator.style.opacity = '0.6';
+    this.f9Indicator.style.pointerEvents = 'none';
+    this.controlsHelp.appendChild(this.f9Indicator);
+  }
+
+  toggle() {
+    this.isVisible = !this.isVisible;
+    this.controlsHelp.style.display = this.isVisible ? 'block' : 'none';
+  }
+
+  show() {
+    this.isVisible = true;
+    this.controlsHelp.style.display = 'block';
+  }
+
+  hide() {
+    this.isVisible = false;
+    this.controlsHelp.style.display = 'none';
   }
 }
