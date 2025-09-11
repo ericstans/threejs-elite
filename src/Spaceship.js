@@ -29,6 +29,20 @@ export class Spaceship {
     this.dockingSpeed = this.maxSpeed * 0.9; // 90% of max speed
     this.dockingPosition = new THREE.Vector3();
     this.dockingRotation = new THREE.Quaternion();
+    
+    // Enhanced landing animation state
+    this.landingPhase = 'approach'; // 'approach', 'descent', 'landing'
+    this.landingStartTime = 0;
+    this.landingDuration = 3.0; // Total landing duration in seconds
+    this.descentStartTime = 0;
+    this.descentDuration = 2.0; // Descent phase duration
+    this.landingStartPosition = new THREE.Vector3();
+    this.landingTargetPosition = new THREE.Vector3();
+    this.landingStartRotation = new THREE.Quaternion();
+    this.landingTargetRotation = new THREE.Quaternion();
+    this.landingStartLocalPosition = new THREE.Vector3();
+    this.landingStartLocalRotation = new THREE.Quaternion();
+    this.isParentedToPlanet = false;
     // Player cash
     this.cash = 0;
     
@@ -730,25 +744,38 @@ export class Spaceship {
     this.dockingTarget = targetPlanet;
     this.dockingProgress = 0;
 
-    // Calculate landing position on planet surface (near equator)
-    const _planetPos = targetPlanet.getPosition();
+    // Initialize enhanced landing animation
+    this.landingPhase = 'approach';
+    this.landingStartTime = Date.now() / 1000;
+    this.isParentedToPlanet = false;
+    
+    // Store current position and rotation as starting points
+    this.landingStartPosition.copy(this.position);
+    this.landingStartRotation.copy(this.quaternion);
+
+    // Calculate landing position on planet surface (center of a face)
+    const planetPos = targetPlanet.getPosition();
     const planetRadius = targetPlanet.radius;
 
-    // Choose a random point on the equator
-    const angle = Math.random() * Math.PI * 2;
+    // Choose a point on the planet surface (not necessarily equator)
+    // Use a more natural landing spot
+    const theta = Math.random() * Math.PI * 2; // Azimuth
+    const phi = (Math.random() - 0.5) * Math.PI; // Elevation (not just equator)
     const landingPoint = new THREE.Vector3(
-      Math.cos(angle) * planetRadius,
-      0, // Equator level
-      Math.sin(angle) * planetRadius
+      Math.cos(phi) * Math.cos(theta) * planetRadius,
+      Math.sin(phi) * planetRadius,
+      Math.cos(phi) * Math.sin(theta) * planetRadius
     );
 
     // Store the landing point relative to planet center
     this.dockingPosition.copy(landingPoint);
+    this.landingTargetPosition.copy(planetPos.clone().add(landingPoint));
 
     // Calculate rotation so ship's bottom faces planet surface
     // The ship's -Y axis should point toward the planet center
     const directionToPlanet = landingPoint.clone().normalize().negate();
     this.dockingRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
+    this.landingTargetRotation.copy(this.dockingRotation);
   }
 
   updateDocking(deltaTime) {
@@ -756,54 +783,148 @@ export class Spaceship {
       return;
     }
 
-    // If ship is still moving, wait for it to stop
-    if (this.velocity.length() > 0.1) {
+    const currentTime = Date.now() / 1000;
+    const elapsedTime = currentTime - this.landingStartTime;
+    const planetPos = this.dockingTarget.getPosition();
+    const planetRadius = this.dockingTarget.radius;
+
+    // Phase 1: Approach - move toward planet at 90% max speed
+    if (this.landingPhase === 'approach') {
+      const targetWorldPosition = planetPos.clone().add(this.dockingPosition);
+      const distanceToTarget = this.position.distanceTo(targetWorldPosition);
+      const moveDistance = this.dockingSpeed * deltaTime;
+
+      if (distanceToTarget > moveDistance) {
+        // Move towards docking position at 90% max speed
+        const direction = targetWorldPosition.clone().sub(this.position).normalize();
+        this.position.add(direction.multiplyScalar(moveDistance));
+
+        // Only adjust rotation when close to the planet (within 2x planet radius)
+        const distanceToPlanet = this.position.distanceTo(planetPos);
+        const planetRadius = this.dockingTarget.radius;
+
+        if (distanceToPlanet < planetRadius * 2) {
+          // Rotate so ship's bottom faces the planet center
+          const directionToPlanet = planetPos.clone().sub(this.position).normalize();
+          const targetRotation = new THREE.Quaternion();
+          targetRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
+
+          // Smoothly interpolate rotation
+          this.quaternion.slerp(targetRotation, 2 * deltaTime);
+          this.rotation.setFromQuaternion(this.quaternion);
+        }
+      } else {
+        // Reached close enough to planet - start descent phase
+        this.landingPhase = 'descent';
+        this.descentStartTime = currentTime;
+        
+        // Parent ship to planet mesh at the start of descent
+        if (!this.isParentedToPlanet) {
+          // Store the current world position and rotation
+          const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
+          const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
+          
+          // Calculate where the ship should be relative to the planet
+          // Position it at a safe distance from the planet surface
+          const directionFromPlanet = worldPos.clone().sub(planetPos).normalize();
+          const distanceFromSurface = worldPos.distanceTo(planetPos) - this.dockingTarget.radius;
+          const safeDistance = Math.max(distanceFromSurface, this.dockingTarget.radius * 0.5);
+          const localPos = directionFromPlanet.clone().multiplyScalar(this.dockingTarget.radius + safeDistance);
+          
+          // Calculate the rotation that maintains the ship's current orientation
+          // relative to the planet's surface at the landing point
+          const directionToPlanet = this.dockingPosition.clone().normalize().negate();
+          const targetRotation = new THREE.Quaternion();
+          targetRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
+          
+          // Remove from current parent and add to planet
+          if (this.mesh.parent) {
+            this.mesh.parent.remove(this.mesh);
+          }
+          this.dockingTarget.mesh.add(this.mesh);
+          
+          // Set the local position and rotation
+          this.mesh.position.copy(localPos);
+          this.mesh.quaternion.copy(targetRotation);
+          this.mesh.rotation.setFromQuaternion(targetRotation);
+          
+          // Update the logical position and rotation
+          this.position.copy(this.dockingTarget.mesh.localToWorld(localPos));
+          this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(targetRotation));
+          this.rotation.setFromQuaternion(this.quaternion);
+          
+          // Store the starting local position for interpolation
+          this.landingStartLocalPosition = localPos.clone();
+          this.landingStartLocalRotation = targetRotation.clone();
+          
+          this.isParentedToPlanet = true;
+          if (DEBUG) console.log('Ship parented to planet for landing animation');
+        }
+      }
       return;
     }
 
-    // Start automated docking movement
-    const planetPos = this.dockingTarget.getPosition();
-    const targetWorldPosition = planetPos.clone().add(this.dockingPosition);
-    const distanceToTarget = this.position.distanceTo(targetWorldPosition);
-    const moveDistance = this.dockingSpeed * deltaTime;
-
-    if (distanceToTarget > moveDistance) {
-      // Move towards docking position
-      const direction = targetWorldPosition.clone().sub(this.position).normalize();
-      this.position.add(direction.multiplyScalar(moveDistance));
-
-      // Only adjust rotation when close to the planet (within 2x planet radius)
-      const distanceToPlanet = this.position.distanceTo(planetPos);
-      const planetRadius = this.dockingTarget.radius;
-
-      if (distanceToPlanet < planetRadius * 2) {
-        // Rotate so ship's bottom faces the planet center
-        const directionToPlanet = planetPos.clone().sub(this.position).normalize();
-        const targetRotation = new THREE.Quaternion();
-        targetRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
-
-        // Smoothly interpolate rotation
-        this.quaternion.slerp(targetRotation, 2 * deltaTime);
-        this.rotation.setFromQuaternion(this.quaternion);
-      }
-    } else {
-      // Reached docking position - complete docking
-      this.position.copy(targetWorldPosition);
-      this.quaternion.copy(this.dockingRotation);
+    // Phase 2: Descent - smooth descent to planet surface
+    if (this.landingPhase === 'descent') {
+      const descentElapsed = currentTime - this.descentStartTime;
+      const descentProgress = Math.min(descentElapsed / this.descentDuration, 1.0);
+      
+      // Use smooth easing for descent
+      const easeProgress = 1 - Math.pow(1 - descentProgress, 3); // easeOutCubic
+      
+      // Work entirely in local space since ship is parented to planet
+      const startLocalPos = this.landingStartLocalPosition;
+      const targetLocalPos = this.dockingPosition.clone();
+      
+      // Interpolate position in local space
+      const currentLocalPos = startLocalPos.clone().lerp(targetLocalPos, easeProgress);
+      this.mesh.position.copy(currentLocalPos);
+      
+      // Interpolate rotation in local space
+      const currentRotation = this.landingStartLocalRotation.clone().slerp(this.landingTargetRotation, easeProgress);
+      this.mesh.quaternion.copy(currentRotation);
+      this.mesh.rotation.setFromQuaternion(currentRotation);
+      
+      // Update logical position and rotation by converting from local to world
+      this.position.copy(this.dockingTarget.mesh.localToWorld(currentLocalPos));
+      this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(currentRotation));
       this.rotation.setFromQuaternion(this.quaternion);
-
-      // Attach to planet mesh and set correct relative position
-      this.dockingTarget.mesh.add(this.mesh);
-      this.mesh.position.copy(this.dockingPosition); // Position relative to planet
+      
+      // Check for collision with planet surface (prevent penetration)
+      const distanceFromCenter = currentLocalPos.length();
+      if (distanceFromCenter < planetRadius) {
+        // Ship is inside planet - push it back to surface
+        const surfacePos = currentLocalPos.clone().normalize().multiplyScalar(planetRadius);
+        this.mesh.position.copy(surfacePos);
+        this.position.copy(this.dockingTarget.mesh.localToWorld(surfacePos));
+      }
+      
+      // Check if descent is complete
+      if (descentProgress >= 1.0) {
+        this.landingPhase = 'landing';
+        if (DEBUG) console.log('Descent phase complete, starting landing phase');
+      }
+    }
+    // Phase 3: Landing - final positioning and completion
+    else if (this.landingPhase === 'landing') {
+      // Ensure ship is exactly on the surface in local space
+      const surfacePos = this.dockingPosition.clone().normalize().multiplyScalar(planetRadius);
+      this.mesh.position.copy(surfacePos);
       this.mesh.quaternion.copy(this.dockingRotation);
       this.mesh.rotation.setFromQuaternion(this.dockingRotation);
-
-      // Update flags
+      
+      // Update logical position and rotation
+      this.position.copy(this.dockingTarget.mesh.localToWorld(surfacePos));
+      this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(this.dockingRotation));
+      this.rotation.setFromQuaternion(this.quaternion);
+      
+      // Complete docking
       this.flags.isDocking = false;
       this.flags.isDocked = true;
       this.dockingProgress = 1;
-
-      if (DEBUG) console.log('Docking completed!');
+      this.landingPhase = 'approach'; // Reset for next time
+      
+      if (DEBUG) console.log('Landing completed!');
     }
   }
 
@@ -813,6 +934,11 @@ export class Spaceship {
 
   startPlanetTakeoff(planet, scene) {
     if (!this.flags.isDocked || this.flags.stationDocked) return;
+    
+    // Reset landing animation state
+    this.landingPhase = 'approach';
+    this.isParentedToPlanet = false;
+    
     // Keep parented initially; store parent for later reattachment if needed
     this.takeoffSceneParent = planet.mesh.parent || scene;
     const local = this.dockingPosition.clone(); // starting local position relative to planet center
