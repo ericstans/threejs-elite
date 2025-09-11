@@ -17,9 +17,19 @@ export class Planet {
     this.isNavTargeted = false;
     this.isCommable = true; // All planets are commable
     this.dockable = true; // default; procedural generation may override
+    this.moon = null; // Optional moon object
 
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
+    
+    // Add custom properties to mesh for navigation targeting
+    this.mesh.getId = () => this.getId();
+    this.mesh.getName = () => this.getName();
+    this.mesh.getMass = () => this.getMass();
+    this.mesh.setNavTargeted = (targeted) => this.setNavTargeted(targeted);
+    this.mesh.isNavTarget = () => this.isNavTarget();
+    this.mesh.getPosition = () => this.getPosition();
+    this.mesh.getType = () => this.getType();
   }
 
   getType() { return 'planet'; }

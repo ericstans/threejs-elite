@@ -31,12 +31,6 @@ function _cdnInstrumentUrl(name){
   return `${CDN_SF_BASE}/${name}-ogg.js`;
 }
 
-async function _resolveInstrumentUrl(name){
-  const manifest = await _loadLocalManifestOnce();
-  const lower = name.toLowerCase();
-  if (manifest.has(lower)) return _localInstrumentUrl(lower);
-  return _cdnInstrumentUrl(lower);
-}
 
 // Synchronous fallback resolver used by soundfont-player; it can't await, so we optimistically point to local if we THINK it's there, else CDN.
 // We refine our guess based on manifest (loaded earlier in getSoundfont).
@@ -94,6 +88,7 @@ async function getSoundfont(ctx) {
 import { Midi } from '@tonejs/midi';
 
 // Dynamic MIDI file discovery - automatically imports all .mid files from soundtrack folders
+// @ts-ignore - import.meta.glob is a Vite-specific feature
 const soundtrackModules = import.meta.glob('./assets/midi/*/*.mid', { eager: true, query: '?url', import: 'default' });
 
 // Helper function to get MIDI files for specific soundtracks
@@ -313,6 +308,7 @@ export class MusicManager {
   async init() {
     if (this.isInitialized) return;
     // Create AudioContext lazily (user interaction must have happened already via Controls.startMusic)
+    // @ts-ignore - webkitAudioContext is a legacy WebKit property
     this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this._masterGain = this._audioCtx.createGain();
     this._masterGain.gain.value = this.volume;

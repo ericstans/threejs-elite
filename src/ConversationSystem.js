@@ -8,6 +8,11 @@ export class ConversationSystem {
     // Station detection and docking hooks
     this._isStation = null;
     this._isStationDockable = null;
+    
+    // Planet detection and entity hooks
+    this._isPlanetDockable = null;
+    this._getPlanetEntity = null;
+    this._getStationForPlanet = null;
   }
 
   // Load conversations from sector definitions
@@ -311,6 +316,19 @@ export class ConversationSystem {
 
   setStationDockableHook(isStationDockableFunction) {
     this._isStationDockable = isStationDockableFunction;
+  }
+
+  // Hook methods for external systems to provide planet/station data
+  setPlanetDockableHook(isPlanetDockableFunction) {
+    this._isPlanetDockable = isPlanetDockableFunction;
+  }
+
+  setPlanetEntityHook(getPlanetEntityFunction) {
+    this._getPlanetEntity = getPlanetEntityFunction;
+  }
+
+  setStationForPlanetHook(getStationForPlanetFunction) {
+    this._getStationForPlanet = getStationForPlanetFunction;
   }
 
   // Method to add new conversation branches dynamically

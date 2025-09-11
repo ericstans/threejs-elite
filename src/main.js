@@ -24,6 +24,7 @@ import { hashSeed } from './util/seedUtils.js';
 import { EngineParticles } from './EngineParticles.js';
 import { ConversationSystem } from './ConversationSystem.js';
 import { SpaceStation } from './SpaceStation.js';
+import { Laser } from './Laser.js';
 
 const DEBUG = false;
 
@@ -79,6 +80,8 @@ class Game {
       return true; // default to dockable
     });
     this.asteroids = [];
+    // Extra updatables for custom objects
+    this._extraUpdatables = [];
     // Audio management system (creates SoundManager and MusicManager internally)
     this.audioManager = new AudioManager(this, this.spaceship, null);
     // Game state management system
@@ -481,7 +484,7 @@ class Game {
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
 
     // Create new laser with calculated direction
-    const _laser = new Laser(laserStartPos, laserDirection);
+    new Laser(laserStartPos, laserDirection);
     this.combatSystem.shootLaser();
   }
 
@@ -915,7 +918,7 @@ class Game {
     // Previously 0.15 * size; now using multiplier constant for easier tuning.
     const LANDING_VECTOR_CAPTURE_FACTOR = 0.30; // was 0.15
     const tolerance = this.currentNavTarget.size * LANDING_VECTOR_CAPTURE_FACTOR; // acceptable distance from line
-    const _forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
+    // const _forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
     if (radialDist < tolerance) {
       // Lock ship
       this.spaceship.lockToStation(station);
@@ -967,24 +970,25 @@ class Game {
     }
 
     const planetName = currentTarget.getName();
-    const _options = [];
+    // const _options = [];
     let nodeId = this.currentConversationNode;
 
     // Get current options from the modal
     const optionElements = this.ui.commsOptions.children;
     if (optionNumber <= optionElements.length) {
       const selectedOption = optionElements[optionNumber - 1];
-      const optionId = selectedOption.dataset.optionId;
+      const optionId = selectedOption.getAttribute('data-option-id') || (/** @type {any} */ (selectedOption).dataset?.optionId);
 
       // Handle special cases
       if (optionId === 'end' || optionId === 'confirm_dock' || optionId === 'confirm_takeoff') {
         // Check if this option has flags to set before closing
-        if (selectedOption.dataset.flags) {
+        const flagsData = selectedOption.getAttribute('data-flags') || (/** @type {any} */ (selectedOption).dataset?.flags);
+        if (flagsData) {
           try {
-            const flags = JSON.parse(selectedOption.dataset.flags);
+            const flags = JSON.parse(flagsData);
             this.processFlags(flags);
           } catch (_e) {
-            if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
+            if (DEBUG) console.warn('Invalid flags data:', flagsData);
           }
         }
         if (optionId === 'confirm_dock') {
@@ -1036,12 +1040,13 @@ class Game {
       }
 
       // Check if this option has flags to set
-      if (selectedOption.dataset.flags) {
+      const flagsData = selectedOption.getAttribute('data-flags') || (/** @type {any} */ (selectedOption).dataset?.flags);
+      if (flagsData) {
         try {
-          const flags = JSON.parse(selectedOption.dataset.flags);
+          const flags = JSON.parse(flagsData);
           this.processFlags(flags);
         } catch (_e) {
-          if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
+          if (DEBUG) console.warn('Invalid flags data:', flagsData);
         }
       }
 
