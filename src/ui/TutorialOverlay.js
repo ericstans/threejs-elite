@@ -22,7 +22,15 @@ export class TutorialOverlay {
       {
         id: 'radar',
         title: 'Radar System',
-        message: 'This is your radar. You can observe the position of planets, spaceships, and other objects in your vicinity. The radar shows their relative positions and helps you navigate through space.',
+        message: 'This is your radar. Red dots are targets such as ships and asteroids. Yellow dots are nav-targets such as planets and space stations.',
+        position: 'radar',
+        showNext: true,
+        revealElement: 'radar'
+      },
+      {
+        id: 'radar2',
+        title: 'Radar System',
+        message: 'You can also use C to communicate with your nav-target, or V to communicate with your target. But not everyone will want to talk, and some planets are empty!',
         position: 'radar',
         showNext: true,
         revealElement: 'radar'
@@ -30,7 +38,7 @@ export class TutorialOverlay {
       {
         id: 'throttle',
         title: 'Throttle Control',
-        message: 'This is your throttle control. Use it to adjust your ship\'s speed. The higher the throttle, the faster you\'ll move, but you\'ll also consume more fuel.',
+        message: 'This is your throttle control. Use X to accelerate and Z to decelerate.',
         position: 'throttle',
         showNext: true,
         revealElement: 'throttle'
@@ -38,7 +46,7 @@ export class TutorialOverlay {
       {
         id: 'targeting',
         title: 'Targeting System',
-        message: 'This is your targeting system. You can select targets for combat (V key) or navigation (C key). The selected target will be highlighted and you can communicate with them.',
+        message: 'This is your targeting system. Press T for targeting and Y for nav-targeting.',
         position: 'targeting',
         showNext: true,
         revealElement: 'targeting'
@@ -46,7 +54,7 @@ export class TutorialOverlay {
       {
         id: 'cargo',
         title: 'Cargo Display',
-        message: 'This shows your current cargo and resources. Keep an eye on your fuel levels and cargo space as you explore the galaxy.',
+        message: 'This is the cargo bay. It\'s empty right now!.',
         position: 'cargo',
         showNext: true,
         revealElement: 'cargo'
@@ -54,7 +62,7 @@ export class TutorialOverlay {
       {
         id: 'controls',
         title: 'Control Instructions',
-        message: 'Use WASD to move, mouse to look around, and the various keys shown on screen for different actions. Press H for help anytime!',
+        message: 'This area shows the controls.',
         position: 'center',
         showEnd: true,
         revealElement: 'controls'
