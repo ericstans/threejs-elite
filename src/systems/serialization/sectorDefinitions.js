@@ -28,6 +28,7 @@ export const sectorDefinitions = {
         type: 'npcShip', 
         name: 'Flea MkII',
         pilotName: 'Narayan',
+        shipType: 'Flea',
         position: { x: -50 + 60, y: 50, z: -650 },
         patrolWaypoints: [
           { x: -50 + 60, y: 50, z: -650 },    // Start position
@@ -38,6 +39,21 @@ export const sectorDefinitions = {
           { x: -50 + 60, y: 50, z: -650 }     // Return to start
         ],
         //conversation: genericProceduralShipConversation
+      },
+      {
+        type: 'npcShip',
+        name: 'Arrow MkI',
+        pilotName: 'Jax',
+        shipType: 'Arrow',
+        position: { x: -50 + 120, y: 50, z: -650 },
+        patrolWaypoints: [
+          { x: -50 + 120, y: 50, z: -650 },
+          { x: -50 + 220, y: 50, z: -650 },
+          { x: -50 + 220, y: 50, z: -750 },
+          { x: -50, y: 50, z: -750 },
+          { x: -50, y: 50, z: -650 },
+          { x: -50 + 120, y: 50, z: -650 }
+        ]
       }
     ],
     asteroidField: { seed: 0x1a2b, destroyedIds: [], center: { x: -50, y: 50, z: -650 }, size: 1200 },

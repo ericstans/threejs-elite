@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-// Import FBXLoader from three/examples/jsm
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { getShipType } from './ShipTypes.js';
 
 const DEBUG = false;
 
 export class NPCShip {
-  constructor(position = new THREE.Vector3(0, 0, 0), name = 'Derelict Cruiser', conversation = null) {
+  constructor(position = new THREE.Vector3(0, 0, 0), name = 'Derelict Cruiser', conversation = null, shipType = 'Flea') {
     this.mesh = new THREE.Group();
     this.position = position.clone();
     this.name = name;
@@ -14,32 +14,29 @@ export class NPCShip {
     this.health = 10;
     this.maxHealth = 10;
     this.destroyed = false;
-    this.size = 1.25; // Default, will be set after model loads (radius of 2.5 unit diameter)
-    
-    // NPC flags for behavior tracking
-    this.npcFlags = {
-      isHostile: false
-    };
-    
-    // Movement properties (similar to player ship)
+    this.size = 1.25;
+    this.npcFlags = { isHostile: false };
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
     this.quaternion = new THREE.Quaternion();
     this.angularVelocity = new THREE.Vector3(0, 0, 0);
-    
-    // Movement parameters
-    this.maxSpeed = 8; // Slightly slower than player
-    this.acceleration = 1.5; // Slightly slower acceleration
-    this.rotationSpeed = 0.8; // Slightly slower rotation
-    
-    // Patrol system
     this.patrolWaypoints = [];
     this.currentWaypointIndex = 0;
-    this.waypointReachedDistance = 50; // Distance to consider waypoint reached
+    this.waypointReachedDistance = 50;
     this.patrolActive = false;
     this.targetPosition = new THREE.Vector3();
     this.targetRotation = new THREE.Euler();
-    
+
+    // --- Ship type config ---
+    this.shipType = shipType;
+    const typeConfig = getShipType(shipType);
+    this.maxSpeed = typeConfig.stats.maxSpeed;
+    this.acceleration = typeConfig.stats.acceleration;
+    this.rotationSpeed = typeConfig.stats.rotationSpeed;
+    this.modelFile = typeConfig.model;
+    this.modelScale = typeConfig.scale;
+    this.exhaustType = typeConfig.exhaust;
+
     this.loadModel();
   }
 
@@ -112,7 +109,7 @@ export class NPCShip {
   loadModel() {
     const loader = new FBXLoader();
     loader.load(
-      new URL('./assets/fbx/ship2.fbx', import.meta.url).href,
+      new URL(`./assets/fbx/${this.modelFile}`, import.meta.url).href,
       (object) => {
         object.traverse(child => {
           if (child.isMesh) {
@@ -132,17 +129,22 @@ export class NPCShip {
         const center = new THREE.Vector3();
         box.getCenter(center);
         object.position.sub(center); // move geometry so origin is at center
-        // Scale so largest dimension matches player ship size (~2-3 units)
+        // Scale using shipType config (or fallback to bounding box)
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 2.5; // Match player ship size
-        const scale = targetSize / maxDim;
+        let scale = this.modelScale;
+        if (!scale || scale === 1.0) {
+          const targetSize = 2.5;
+          scale = targetSize / maxDim;
+          this.size = targetSize / 2;
+        } else {
+          object.scale.setScalar(scale);
+          this.size = maxDim * scale / 2;
+        }
         object.scale.setScalar(scale);
-        this.size = targetSize / 2; // Use radius for collision
-        // Place at intended world position
-        this.mesh.position.copy(this.position);
-        this.mesh.add(object);
+  this.mesh.position.copy(this.position);
+  this.mesh.add(object);
         // ...removed wireframe debug box...
         this.loaded = true;
         // Debug: log bounding box size after scaling

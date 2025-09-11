@@ -1,82 +1,74 @@
-import * as THREE from 'three';
 
+import * as THREE from 'three';
+import { getShipType } from './ShipTypes.js';
 const DEBUG = false;
 
 export class Spaceship {
-  constructor() {
+  constructor(shipType = 'Flea') {
+    this.shipType = shipType;
+    const typeConfig = getShipType(shipType);
     this.mesh = this.createSpaceshipMesh();
-    // Third-person model holder (FBX)
     this.thirdPersonGroup = new THREE.Group();
     this.thirdPersonLoaded = false;
     this.thirdPersonMode = false;
-    this.thirdPersonVisualOffset = null; // local-space offset to align model with logical ship position
+    this.thirdPersonVisualOffset = null;
     this.position = new THREE.Vector3(0, 0, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler(0, 0, 0);
     this.quaternion = new THREE.Quaternion();
     this.angularVelocity = new THREE.Vector3(0, 0, 0);
-
-    // Movement properties
-    this.maxSpeed = 10;
-    this.acceleration = 2;
-    this.rotationSpeed = 1;
+    // Movement properties from type
+    this.maxSpeed = typeConfig.stats.maxSpeed;
+    this.acceleration = typeConfig.stats.acceleration;
+    this.rotationSpeed = typeConfig.stats.rotationSpeed;
     this.throttle = 0;
     this.maxThrottle = 1;
-
     // Docking system
     this.dockingTarget = null;
-    this.dockingProgress = 0; // 0 = not docking, 1 = fully docked
-    this.dockingSpeed = 10; // units per second during docking
+    this.dockingProgress = 0;
+    this.dockingSpeed = 10;
     this.dockingPosition = new THREE.Vector3();
     this.dockingRotation = new THREE.Quaternion();
-
     // Player flags
     this.flags = {
       firingEnabled: true,
       isDocking: false,
       isDocked: false,
-      isInCombat: false,           // true when player is in combat with NPC ship
-      dockingAuthorized: false, // station granted docking
-      landingVectorLocked: false, // player aligned with landing vector
-      landingAlignmentLocked: false, // fully centered on landing vector axis
-      rotationLockAcquired: false, // finished rotating to horizontal slot-facing orientation
+      isInCombat: false,
+      dockingAuthorized: false,
+      landingVectorLocked: false,
+      landingAlignmentLocked: false,
+      rotationLockAcquired: false,
       hasVisitedAridusPrime: false,
       hasVisitedOceanus: false,
-      dockContext: null,           // 'planet' | 'station'
-      docketPlanetId: null,        // planet id when docked to planet (spelling per request)
-      dockedStationId: null       // station id when docked to station
-      // Add more flags as needed
+      dockContext: null,
+      docketPlanetId: null,
+      dockedStationId: null
     };
-
     // Landing vector lock state
-    this.landingVectorStation = null; // reference to station
-    this.landingVectorHoldOffset = 0; // legacy (not used for position now)
-    this.landingVectorLocalOffset = null; // local-space offset from station root when lock engaged
-    this.landingVectorAlongDistance = 0; // stored projection along vector at lock time
-    this.landingVectorAlignRate = 20; // radial converge rate (per second)
-    // Post-alignment rotation (pure roll) parameters
-    this.rotationAlignDelay = 4.0; // seconds after alignment lock before roll begins
-    this.rotationAlignTimer = 0; // time since alignment lock
-    this.rotationTargetQuaternion = null; // final desired orientation (computed once)
-    this.rotationSlerpSpeed = 2.0; // slerp factor per second
-    // Station auto insertion after rotation
-    this.postRotationTimer = 0; // time since rotation lock
-    this.autoInsertionDelay = 2.0; // seconds after rotation lock before moving into slot
+    this.landingVectorStation = null;
+    this.landingVectorHoldOffset = 0;
+    this.landingVectorLocalOffset = null;
+    this.landingVectorAlongDistance = 0;
+    this.landingVectorAlignRate = 20;
+    this.rotationAlignDelay = 4.0;
+    this.rotationAlignTimer = 0;
+    this.rotationTargetQuaternion = null;
+    this.rotationSlerpSpeed = 2.0;
+    this.postRotationTimer = 0;
+    this.autoInsertionDelay = 2.0;
     this.insertionInProgress = false;
-    this.insertionSpeed = 2.0; // units per second toward station center
-    this.insertionTargetLocal = new THREE.Vector3(0, 0, 0); // station center
-    this.insertionTargetAlong = null; // negative along-distance to reach station center
-    // Station final turnaround (face coin slot) after insertion
+    this.insertionSpeed = 2.0;
+    this.insertionTargetLocal = new THREE.Vector3(0, 0, 0);
+    this.insertionTargetAlong = null;
     this.finalTurnInProgress = false;
     this.finalTurnTimer = 0;
-    this.finalTurnDuration = 4.0; // seconds to rotate 180 deg
+    this.finalTurnDuration = 4.0;
     this.finalTurnStartQuat = new THREE.Quaternion();
     this.finalTurnTargetQuat = new THREE.Quaternion();
-    // Station docking pinning
     this.dockedStation = null;
     this.dockedLocalOffset = null;
     this.dockedRelativeQuat = null;
-    // Planet takeoff sequence
     this.takeoffActive = false;
     this.takeoffTimer = 0;
     this.takeoffDuration = 5.0; // seconds
