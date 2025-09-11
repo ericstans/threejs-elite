@@ -119,7 +119,10 @@ export class NavTargetUI {
     this.navTargetPanel.style.display = 'block';
     this.navTargetName.textContent = navTargetInfo.name;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
-    this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
+    
+    // Show distance as 0 when docked with the target
+    const displayDistance = navTargetInfo.isDockedWithTarget ? 0 : navTargetInfo.distance;
+    this.navTargetDistance.textContent = `Distance: ${displayDistance.toFixed(1)}`;
 
     // Show/hide commable indicator
     if (navTargetInfo.isCommable) {
