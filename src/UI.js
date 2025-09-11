@@ -25,7 +25,9 @@ export class UI {
     this._anchors = {
       target: { left: '70.5%', top: '61%' },
       nav: { left: '29.5%', top: '61%' },
-      radar: { left: '50%', top: '70%' }
+      radar: { left: '50%', top: '70%' },
+      throttle: { left: '62.625%', top: '60.5%' },
+      speedometer: { left: '59.875%', top: '55%' },
     };
     // Parallax tuning (motion/rotation driven)
     this._parallaxParams = {
@@ -211,6 +213,28 @@ export class UI {
       p2.fontSize = '12px';
       p2.width = '10%';
       p2.height = '20%';
+    }
+
+    // Move throttle elements into cockpit wrapper for cockpit-relative positioning
+    if (this.throttleUI && this.throttleUI.throttleContainer) {
+      this.cockpitWrapper.appendChild(this.throttleUI.throttleContainer);
+      const p3 = this.throttleUI.throttleContainer.style;
+      p3.position = 'absolute';
+      p3.left = this._anchors.throttle.left;
+      p3.top = this._anchors.throttle.top;
+      p3.right = 'auto';
+      p3.bottom = 'auto';
+      p3.transform = 'translate(-50%, -50%)';
+    }
+    if (this.throttleUI && this.throttleUI.speedDisplay) {
+      this.cockpitWrapper.appendChild(this.throttleUI.speedDisplay);
+      const p4 = this.throttleUI.speedDisplay.style;
+      p4.position = 'absolute';
+      p4.left = this._anchors.speedometer.left;
+      p4.top = this._anchors.speedometer.top;
+      p4.right = 'auto';
+      p4.bottom = 'auto';
+      p4.transform = 'translate(-50%, -50%)';
     }
 
 
@@ -436,6 +460,31 @@ export class UI {
       this.radarWrapper.style.width = '140px';
       this.radarWrapper.style.height = '140px';
     }
+    // Throttle elements: move out of cockpit so they no longer parallax shift
+    if (this.throttleUI?.throttleContainer) {
+      if (this.throttleUI.throttleContainer.parentElement !== this.uiContainer) {
+        this.uiContainer.appendChild(this.throttleUI.throttleContainer);
+      }
+      const p3 = this.throttleUI.throttleContainer.style;
+      p3.position = 'absolute';
+      p3.left = '20px';
+      p3.top = 'auto';
+      p3.right = 'auto';
+      p3.bottom = '20px';
+      p3.transform = 'none';
+    }
+    if (this.throttleUI?.speedDisplay) {
+      if (this.throttleUI.speedDisplay.parentElement !== this.uiContainer) {
+        this.uiContainer.appendChild(this.throttleUI.speedDisplay);
+      }
+      const p4 = this.throttleUI.speedDisplay.style;
+      p4.position = 'absolute';
+      p4.left = '20px';
+      p4.top = 'auto';
+      p4.right = 'auto';
+      p4.bottom = '282px';
+      p4.transform = 'none';
+    }
   }
 
   // Switch back to first-person cockpit overlay layout
@@ -496,6 +545,31 @@ export class UI {
       this.radarWrapper.style.transform = 'translate(-50%, -50%)';
       // Recompute size now that we're back in cockpit context
       this._updateRadarSize();
+    }
+    // Throttle elements: move into cockpit so parallax affects them
+    if (this.throttleUI?.throttleContainer && this.cockpitWrapper && this.throttleUI.throttleContainer.parentElement !== this.cockpitWrapper) {
+      this.cockpitWrapper.appendChild(this.throttleUI.throttleContainer);
+    }
+    if (this.throttleUI?.throttleContainer) {
+      const p3 = this.throttleUI.throttleContainer.style;
+      p3.position = 'absolute';
+      p3.left = this._anchors.throttle.left;
+      p3.top = this._anchors.throttle.top;
+      p3.right = 'auto';
+      p3.bottom = 'auto';
+      p3.transform = 'translate(-50%, -50%)';
+    }
+    if (this.throttleUI?.speedDisplay && this.cockpitWrapper && this.throttleUI.speedDisplay.parentElement !== this.cockpitWrapper) {
+      this.cockpitWrapper.appendChild(this.throttleUI.speedDisplay);
+    }
+    if (this.throttleUI?.speedDisplay) {
+      const p4 = this.throttleUI.speedDisplay.style;
+      p4.position = 'absolute';
+      p4.left = this._anchors.speedometer.left;
+      p4.top = this._anchors.speedometer.top;
+      p4.right = 'auto';
+      p4.bottom = 'auto';
+      p4.transform = 'translate(-50%, -50%)';
     }
   }
 

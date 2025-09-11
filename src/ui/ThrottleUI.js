@@ -54,11 +54,9 @@ export class ThrottleUI {
     // First-person positioning - show throttle bar without container background and label
     if (this.throttleContainer) {
       this.throttleContainer.style.display = 'block';
-      this.throttleContainer.style.bottom = '20.5%';
-      this.throttleContainer.style.left = '61.5%';
-      this.throttleContainer.style.right = 'auto';
+      // Position is now handled by UI.js through cockpit wrapper, so we only set size and styling
       this.throttleContainer.style.width = '2.25%';
-      this.throttleContainer.style.height = '7.75%';
+      this.throttleContainer.style.height = '12%';
       this.throttleBar.style.width = '100%';
       this.throttleBar.style.height = '100%';
       // Remove container background and padding for first-person
@@ -72,12 +70,11 @@ export class ThrottleUI {
       this.throttleLabel.style.display = 'none'; // Hide the "THROTTLE" label
     }
     if (this.speedDisplay) {
-      this.speedDisplay.style.bottom = '27%';
-      this.speedDisplay.style.left = '58.5%';
-      this.speedDisplay.style.right = 'auto';
       this.speedDisplay.style.display = 'block';
       this.speedDisplay.style.border = 'none';
-      this.speedDisplay.style.backgroundColor = 'none';
+      this.speedDisplay.style.background = 'none';
+      this.speedDisplay.style.fontSize = '12px';
+      // Position is now handled by UI.js through cockpit wrapper
     }
   }
 
@@ -85,9 +82,7 @@ export class ThrottleUI {
     // Third-person positioning - show both throttle container and speed display
     if (this.throttleContainer) {
       this.throttleContainer.style.display = 'block';
-      this.throttleContainer.style.bottom = '20px';
-      this.throttleContainer.style.left = '20px';
-      this.throttleContainer.style.right = 'auto';
+      // Position is now handled by UI.js through cockpit wrapper, so we only set size and styling
       this.throttleContainer.style.width = 'auto'; // Reset width to auto
       this.throttleContainer.style.height = 'auto'; // Reset height to auto
       // Restore container background and styling for third-person
@@ -106,13 +101,11 @@ export class ThrottleUI {
       this.throttleLabel.style.display = 'block'; // Show the "THROTTLE" label
     }
     if (this.speedDisplay) {
-      this.speedDisplay.style.bottom = '282px'; // Above the throttle container
-      this.speedDisplay.style.left = '20px';
-      this.speedDisplay.style.right = 'auto';
       this.speedDisplay.style.display = 'block';
       // Restore speed display styling for third-person
       this.speedDisplay.style.border = '1px solid #ffff00';
       this.speedDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      // Position is now handled by UI.js through cockpit wrapper
     }
   }
 
@@ -177,7 +170,7 @@ export class ThrottleUI {
     // Speed display base styling
     if (this.speedDisplay) {
       this.speedDisplay.style.position = 'absolute';
-      this.speedDisplay.style.background = 'rgba(0, 0, 0, 0.7)';
+      //this.speedDisplay.style.background = 'rgba(0, 0, 0, 0.7)';
       this.speedDisplay.style.padding = '5px 10px';
       this.speedDisplay.style.border = '1px solid #ffff00';
       this.speedDisplay.style.fontFamily = 'monospace';
