@@ -7,8 +7,11 @@ export class CommoditiesUI {
     this.sellGridSize = 20; // 4x5 grid
     this.cargoItems = []; // Items from cargo bay
     this.movedItems = []; // Track items moved from cargo to sell grid
+    this.buyQuantities = {}; // Track quantities to buy for each commodity
+    this.currentCash = 0; // Track current cash amount
     this.onCargoUpdate = null; // Callback to update cargo
     this.onCargoAdd = null; // Callback to add items back to cargo
+    this.onBuyItems = null; // Callback to handle buying items
     this.createCommoditiesModal();
   }
 
@@ -146,7 +149,7 @@ export class CommoditiesUI {
       slot.style.position = 'relative';
       slot.style.cursor = 'pointer';
       slot.style.transition = 'all 0.2s ease';
-      slot.dataset.slotIndex = i;
+      slot.dataset.slotIndex = i.toString();
 
       // Add hover effects
       slot.addEventListener('mouseenter', () => {
@@ -184,20 +187,54 @@ export class CommoditiesUI {
     this.bottomPanel.style.paddingTop = '15px';
     this.content.appendChild(this.bottomPanel);
 
+    // Left side - Cash and totals
+    const leftSide = document.createElement('div');
+    leftSide.style.display = 'flex';
+    leftSide.style.flexDirection = 'column';
+    leftSide.style.gap = '5px';
+
     // Cash display
     this.cashDisplay = document.createElement('div');
     this.cashDisplay.style.fontSize = '18px';
     this.cashDisplay.style.fontWeight = 'bold';
     this.cashDisplay.textContent = 'Cash: $0';
-    this.bottomPanel.appendChild(this.cashDisplay);
+    leftSide.appendChild(this.cashDisplay);
+
+    // Buy total
+    this.buyTotal = document.createElement('div');
+    this.buyTotal.style.fontSize = '16px';
+    this.buyTotal.style.fontWeight = 'bold';
+    this.buyTotal.style.color = '#00ff00';
+    this.buyTotal.textContent = 'Buy Total: $0';
+    leftSide.appendChild(this.buyTotal);
 
     // Sell total
     this.sellTotal = document.createElement('div');
-    this.sellTotal.style.fontSize = '18px';
+    this.sellTotal.style.fontSize = '16px';
     this.sellTotal.style.fontWeight = 'bold';
     this.sellTotal.style.color = '#ffff00';
     this.sellTotal.textContent = 'Sell Total: $0';
-    this.bottomPanel.appendChild(this.sellTotal);
+    leftSide.appendChild(this.sellTotal);
+
+    this.bottomPanel.appendChild(leftSide);
+
+    // Right side - Buttons
+    const rightSide = document.createElement('div');
+    rightSide.style.display = 'flex';
+    rightSide.style.gap = '10px';
+
+    // Buy button
+    this.buyButton = document.createElement('button');
+    this.buyButton.textContent = 'BUY ITEMS';
+    this.buyButton.style.background = 'rgba(0, 255, 0, 0.2)';
+    this.buyButton.style.border = '1px solid #00ff00';
+    this.buyButton.style.color = '#00ff00';
+    this.buyButton.style.padding = '10px 20px';
+    this.buyButton.style.cursor = 'pointer';
+    this.buyButton.style.fontFamily = 'PeaberryMono, monospace';
+    this.buyButton.style.fontSize = '16px';
+    this.buyButton.addEventListener('click', () => this.buyItems());
+    rightSide.appendChild(this.buyButton);
 
     // Sell button
     this.sellButton = document.createElement('button');
@@ -210,14 +247,21 @@ export class CommoditiesUI {
     this.sellButton.style.fontFamily = 'PeaberryMono, monospace';
     this.sellButton.style.fontSize = '16px';
     this.sellButton.addEventListener('click', () => this.sellItems());
-    this.bottomPanel.appendChild(this.sellButton);
+    rightSide.appendChild(this.sellButton);
+
+    this.bottomPanel.appendChild(rightSide);
   }
 
   show() {
     this.isVisible = true;
     this.modal.style.display = 'block';
     this.movedItems = []; // Clear moved items when showing
+    this.buyQuantities = {}; // Clear buy quantities when showing
     this.updateCargoDisplay();
+    this.updateCommoditiesList(); // Refresh the list to reset quantities
+    this.updateBuyTotal(); // Reset buy total
+    // Set initial button states after UI is created
+    setTimeout(() => this.updateAllButtonStates(), 0);
   }
 
   hide() {
@@ -244,16 +288,72 @@ export class CommoditiesUI {
       item.style.border = '1px solid #00aa55';
       item.style.borderRadius = '4px';
       item.style.marginBottom = '5px';
-      item.style.cursor = 'pointer';
 
+      // Left side - commodity name
       const name = document.createElement('span');
       name.textContent = commodity.name;
       name.style.fontWeight = 'bold';
+      name.style.flex = '1';
       item.appendChild(name);
 
+      // Middle - quantity controls
+      const quantityContainer = document.createElement('div');
+      quantityContainer.style.display = 'flex';
+      quantityContainer.style.alignItems = 'center';
+      quantityContainer.style.gap = '8px';
+
+      const decreaseBtn = document.createElement('button');
+      decreaseBtn.textContent = '<';
+      decreaseBtn.className = 'decrease-btn';
+      decreaseBtn.style.background = 'rgba(0, 255, 0, 0.2)';
+      decreaseBtn.style.border = '1px solid #00ff00';
+      decreaseBtn.style.color = '#00ff00';
+      decreaseBtn.style.padding = '4px 8px';
+      decreaseBtn.style.cursor = 'pointer';
+      decreaseBtn.style.fontFamily = 'PeaberryMono, monospace';
+      decreaseBtn.style.fontSize = '14px';
+      decreaseBtn.style.transition = 'all 0.2s ease';
+      decreaseBtn.addEventListener('click', (e) => {
+        if (!(e.target instanceof HTMLButtonElement) || !e.target.disabled) {
+          this.decreaseBuyQuantity(commodity.name);
+        }
+      });
+
+      const quantityDisplay = document.createElement('span');
+      quantityDisplay.textContent = this.buyQuantities[commodity.name] || 0;
+      quantityDisplay.style.minWidth = '30px';
+      quantityDisplay.style.textAlign = 'center';
+      quantityDisplay.style.fontWeight = 'bold';
+      quantityDisplay.dataset.commodityName = commodity.name;
+
+      const increaseBtn = document.createElement('button');
+      increaseBtn.textContent = '>';
+      increaseBtn.className = 'increase-btn';
+      increaseBtn.style.background = 'rgba(0, 255, 0, 0.2)';
+      increaseBtn.style.border = '1px solid #00ff00';
+      increaseBtn.style.color = '#00ff00';
+      increaseBtn.style.padding = '4px 8px';
+      increaseBtn.style.cursor = 'pointer';
+      increaseBtn.style.fontFamily = 'PeaberryMono, monospace';
+      increaseBtn.style.fontSize = '14px';
+      increaseBtn.style.transition = 'all 0.2s ease';
+      increaseBtn.addEventListener('click', (e) => {
+        if (!(e.target instanceof HTMLButtonElement) || !e.target.disabled) {
+          this.increaseBuyQuantity(commodity.name);
+        }
+      });
+
+      quantityContainer.appendChild(decreaseBtn);
+      quantityContainer.appendChild(quantityDisplay);
+      quantityContainer.appendChild(increaseBtn);
+      item.appendChild(quantityContainer);
+
+      // Right side - price
       const price = document.createElement('span');
-      price.textContent = `$${commodity.buyPrice.toFixed(0)} / $${commodity.sellPrice.toFixed(0)}`;
+      price.textContent = `$${commodity.buyPrice.toFixed(0)}`;
       price.style.color = '#ffff00';
+      price.style.minWidth = '80px';
+      price.style.textAlign = 'right';
       item.appendChild(price);
 
       this.commoditiesList.appendChild(item);
@@ -261,7 +361,137 @@ export class CommoditiesUI {
   }
 
   updateCash(cashAmount) {
+    this.currentCash = cashAmount;
     this.cashDisplay.textContent = `Cash: $${cashAmount.toLocaleString()}`;
+    // Update button states when cash changes
+    this.updateAllButtonStates();
+  }
+
+  increaseBuyQuantity(commodityName) {
+    const commodity = this.commodities.find(c => c.name === commodityName);
+    if (!commodity) return;
+
+    const currentQuantity = this.buyQuantities[commodityName] || 0;
+    const newQuantity = currentQuantity + 1;
+    const additionalCost = commodity.buyPrice;
+    
+    // Check if we have enough cash
+    const currentBuyTotal = this.calculateBuyTotal();
+    if (currentBuyTotal + additionalCost <= this.currentCash) {
+      this.buyQuantities[commodityName] = newQuantity;
+      this.updateQuantityDisplay(commodityName, newQuantity);
+      this.updateBuyTotal();
+      // Update all button states after a successful purchase
+      this.updateAllButtonStates();
+    } else {
+      console.log('Not enough cash to buy more of this item');
+    }
+  }
+
+  decreaseBuyQuantity(commodityName) {
+    const currentQuantity = this.buyQuantities[commodityName] || 0;
+    if (currentQuantity > 0) {
+      this.buyQuantities[commodityName] = currentQuantity - 1;
+      this.updateQuantityDisplay(commodityName, currentQuantity - 1);
+      this.updateBuyTotal();
+      // Update all button states after a decrease
+      this.updateAllButtonStates();
+    }
+  }
+
+  updateQuantityDisplay(commodityName, quantity) {
+    const quantityDisplay = this.commoditiesList.querySelector(`[data-commodity-name="${commodityName}"]`);
+    if (quantityDisplay) {
+      quantityDisplay.textContent = quantity;
+    }
+    // Update button states after quantity change
+    this.updateButtonStates(commodityName);
+  }
+
+  updateButtonStates(commodityName) {
+    const currentQuantity = this.buyQuantities[commodityName] || 0;
+    const commodity = this.commodities.find(c => c.name === commodityName);
+    if (!commodity) return;
+
+    // Find the commodity item container
+    const commodityItems = this.commoditiesList.querySelectorAll('[data-commodity-name]');
+    let commodityContainer = null;
+    
+    for (let item of commodityItems) {
+      if (item instanceof HTMLElement && item.dataset.commodityName === commodityName) {
+        commodityContainer = item.closest('div[style*="display: flex"]');
+        break;
+      }
+    }
+
+    if (!commodityContainer) return;
+
+    // Get buttons for this commodity using CSS classes
+    const decreaseBtn = commodityContainer.querySelector('.decrease-btn');
+    const increaseBtn = commodityContainer.querySelector('.increase-btn');
+
+    if (decreaseBtn) {
+      // Grey out decrease button if quantity is 0
+      if (currentQuantity <= 0) {
+        this.greyOutButton(decreaseBtn);
+      } else {
+        this.enableButton(decreaseBtn);
+      }
+    }
+
+    if (increaseBtn) {
+      // Check if we can afford another item
+      const currentBuyTotal = this.calculateBuyTotal();
+      const additionalCost = commodity.buyPrice;
+      const canAfford = (currentBuyTotal + additionalCost) <= this.currentCash;
+
+      if (!canAfford) {
+        this.greyOutButton(increaseBtn);
+      } else {
+        this.enableButton(increaseBtn);
+      }
+    }
+  }
+
+  greyOutButton(button) {
+    button.style.background = 'rgba(100, 100, 100, 0.2)';
+    button.style.border = '1px solid #666666';
+    button.style.color = '#666666';
+    button.style.cursor = 'not-allowed';
+    button.disabled = true;
+  }
+
+  enableButton(button) {
+    button.style.background = 'rgba(0, 255, 0, 0.2)';
+    button.style.border = '1px solid #00ff00';
+    button.style.color = '#00ff00';
+    button.style.cursor = 'pointer';
+    button.disabled = false;
+  }
+
+  updateAllButtonStates() {
+    this.commodities.forEach(commodity => {
+      this.updateButtonStates(commodity.name);
+    });
+  }
+
+  calculateBuyTotal() {
+    let total = 0;
+    Object.keys(this.buyQuantities).forEach(commodityName => {
+      const quantity = this.buyQuantities[commodityName];
+      if (quantity > 0) {
+        const commodity = this.commodities.find(c => c.name === commodityName);
+        if (commodity) {
+          total += commodity.buyPrice * quantity;
+        }
+      }
+    });
+    return total;
+  }
+
+  updateBuyTotal() {
+    const buyTotal = this.calculateBuyTotal();
+    this.buyTotal.textContent = `Buy Total: $${buyTotal.toFixed(0)}`;
   }
 
   updateSellTotal() {
@@ -320,6 +550,52 @@ export class CommoditiesUI {
 
     this.updateSellTotal();
     console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
+  }
+
+  buyItems() {
+    const itemsToBuy = [];
+    let totalCost = 0;
+
+    // Collect items to buy
+    Object.keys(this.buyQuantities).forEach(commodityName => {
+      const quantity = this.buyQuantities[commodityName];
+      if (quantity > 0) {
+        const commodity = this.commodities.find(c => c.name === commodityName);
+        if (commodity) {
+          const cost = commodity.buyPrice * quantity;
+          totalCost += cost;
+          itemsToBuy.push({
+            name: commodityName,
+            quantity: quantity,
+            unitPrice: commodity.buyPrice,
+            totalCost: cost
+          });
+        }
+      }
+    });
+
+    if (itemsToBuy.length === 0) {
+      console.log('No items to buy');
+      return;
+    }
+
+    // Check if we have enough cash
+    if (totalCost > this.currentCash) {
+      console.log('Not enough cash to buy these items');
+      return;
+    }
+
+    // Call the buy callback to handle the purchase
+    if (this.onBuyItems) {
+      this.onBuyItems(itemsToBuy, totalCost);
+    }
+
+    // Clear buy quantities and reset display
+    this.buyQuantities = {};
+    this.updateCommoditiesList();
+    this.updateBuyTotal();
+
+    console.log(`Bought ${itemsToBuy.length} different items for $${totalCost.toFixed(0)}`);
   }
 
   // Cargo management methods

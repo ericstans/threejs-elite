@@ -167,6 +167,11 @@ export class UI {
     this.commoditiesUI.onCargoAdd = (item) => {
       this.addItemToCargo(item);
     };
+
+    // Set up commodities buy callback
+    this.commoditiesUI.onBuyItems = (itemsToBuy, totalCost) => {
+      this.handleCommoditiesPurchase(itemsToBuy, totalCost);
+    };
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
@@ -955,6 +960,11 @@ export class UI {
   showCommodities(commodities) {
     if (this.commoditiesUI) {
       this.commoditiesUI.updateCommodities(commodities);
+      // Update cash display in commodities UI
+      if (this.spaceship) {
+        const currentCash = this.spaceship.getCash();
+        this.commoditiesUI.updateCash(currentCash);
+      }
       this.commoditiesUI.show();
       this.debugFlagsUI.minimize();
     }
@@ -1042,6 +1052,74 @@ export class UI {
     }
     
     console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
+  }
+
+  handleCommoditiesPurchase(itemsToBuy, totalCost) {
+    // Deduct cash from spaceship
+    if (this.spaceship) {
+      this.spaceship.removeCash(totalCost);
+    }
+    
+    // Add items to cargo system
+    if (this.cargoSystem) {
+      itemsToBuy.forEach(item => {
+        for (let i = 0; i < item.quantity; i++) {
+          // Check if cargo bay is full
+          if (this.cargoSystem.isFull()) {
+            console.log('Cargo bay is full! Cannot add more items.');
+            return;
+          }
+          
+          // Add item directly to cargo array
+          const cargoItem = {
+            id: `commodity_${Date.now()}_${Math.random()}`,
+            name: item.name,
+            color: this.getCommodityColor(item.name),
+            type: 'commodity',
+            value: item.unitPrice,
+            collectedAt: Date.now()
+          };
+          
+          this.cargoSystem.cargo.push(cargoItem);
+        }
+      });
+      
+      // Update cargo UI to reflect new items
+      this.cargoSystem.updateCargoUI();
+    }
+    
+    // Update cash display
+    if (this.cashUI && this.spaceship) {
+      const currentCash = this.spaceship.getCash();
+      this.cashUI.updateCash(currentCash);
+      // Also update commodities UI cash display
+      if (this.commoditiesUI) {
+        this.commoditiesUI.updateCash(currentCash);
+      }
+    }
+    
+    console.log(`Bought ${itemsToBuy.length} different items for $${totalCost.toFixed(0)}`);
+  }
+
+  // Helper method to get color for commodities
+  getCommodityColor(commodityName) {
+    const colorMap = {
+      'Iron Ore': '#8B4513',
+      'Copper Ore': '#B87333', 
+      'Gold Ore': '#FFD700',
+      'Platinum Ore': '#E5E4E2',
+      'Steel Ingots': '#C0C0C0',
+      'Electronics': '#00FF00',
+      'Advanced Circuits': '#00AA00',
+      'Food Rations': '#FFA500',
+      'Medical Supplies': '#FF69B4',
+      'Luxury Goods': '#FFD700',
+      'Energy Cells': '#00FFFF',
+      'Fuel Rods': '#FF4500',
+      'Data Chips': '#9370DB',
+      'Quantum Processors': '#FF00FF'
+    };
+    return colorMap[commodityName] || '#00FF00'; // Default green color
   }
 
   // Method to get current player cash (placeholder for game integration)
