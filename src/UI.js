@@ -624,6 +624,10 @@ export class UI {
     this.titleOverlay.setOnDismiss(callback);
   }
 
+  setOnTitleStartAudio(callback) {
+    this.titleOverlay.setOnStartAudio(callback);
+  }
+
   isTitleVisible() {
     return this.titleOverlay && this.titleOverlay.isVisible;
   }

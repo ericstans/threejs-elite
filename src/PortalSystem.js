@@ -33,6 +33,9 @@ export class PortalSystem {
     this.isActive = true;
     this.animationTime = 0;
     this.portalSize = 0;
+    this.shipStopping = true;
+    this.shipStoppingTime = 0;
+    this.shipStoppingDuration = 2.0; // 2 seconds to come to a stop
 
     // Pre-cache the destination sector geometry
     this.preCacheSectorGeometry(destinationSectorId);
@@ -44,6 +47,9 @@ export class PortalSystem {
 
     // Position portal in front of ship
     this.positionPortalInFrontOfShip();
+    
+    // Hide portal during ship stopping phase
+    this.portal.visible = false;
   }
 
   createPortalMesh() {
@@ -211,8 +217,12 @@ export class PortalSystem {
       const geometry = new THREE.SphereGeometry(planetDef.radius * 0.5, 8, 6); // Scale down for preview
       const material = new THREE.MeshLambertMaterial({
         color: planetDef.color,
-        flatShading: true
+        flatShading: true,
+        // Add emissive to make colors more vibrant in the portal
+        emissive: new THREE.Color(planetDef.color).multiplyScalar(0.1)
       });
+      
+      console.log('🔍 PortalSystem: Planet color for', planetDef.name, ':', planetDef.color, 'hex:', planetDef.color.toString(16));
       
       const planet = new THREE.Mesh(geometry, material);
       
@@ -435,6 +445,38 @@ export class PortalSystem {
   update(deltaTime) {
     if (!this.isActive || !this.portal) return;
 
+    // Phase 1: Ship stopping
+    if (this.shipStopping) {
+      this.shipStoppingTime += deltaTime;
+      const stoppingProgress = Math.min(this.shipStoppingTime / this.shipStoppingDuration, 1.0);
+      
+      // Gradually reduce ship velocity to zero
+      if (this.spaceship) {
+        const currentVelocity = this.spaceship.velocity.clone();
+        const targetVelocity = new THREE.Vector3(0, 0, 0);
+        const newVelocity = currentVelocity.lerp(targetVelocity, stoppingProgress);
+        this.spaceship.velocity.copy(newVelocity);
+        
+        // Also reduce throttle to zero
+        const currentThrottle = this.spaceship.getThrottle();
+        const newThrottle = currentThrottle * (1 - stoppingProgress);
+        this.spaceship.setThrottle(newThrottle);
+        
+        console.log('🔍 PortalSystem: Ship stopping progress:', (stoppingProgress * 100).toFixed(1) + '%', 'velocity:', this.spaceship.velocity.length().toFixed(2), 'throttle:', this.spaceship.getThrottle().toFixed(2));
+      }
+      
+      // When ship has stopped, start portal animation
+      if (stoppingProgress >= 1.0) {
+        this.shipStopping = false;
+        this.animationTime = 0; // Reset animation time for portal opening
+        this.portal.visible = true; // Make portal visible when animation starts
+        console.log('🔍 PortalSystem: Ship stopped, starting portal animation');
+      }
+      
+      return; // Don't animate portal until ship has stopped
+    }
+
+    // Phase 2: Portal animation
     this.animationTime += deltaTime;
     const progress = Math.min(this.animationTime / this.animationDuration, 1.0);
 

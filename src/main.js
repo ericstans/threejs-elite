@@ -1123,6 +1123,13 @@ game.ui.cockpitWrapper.style.display = 'none';
 // Show title overlay at start
 setTimeout(() => {
   game.ui.showTitle();
+  
+  // Set up audio start callback for clicks
+  game.ui.setOnTitleStartAudio(() => {
+    console.log('Title clicked - starting audio context');
+    game.controls.startMusic();
+  });
+  
   game.ui.setOnTitleDismiss(() => {
     console.log('Title dismissed - game ready');
     // Show UI and cockpit after title is dismissed

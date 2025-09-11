@@ -2,6 +2,7 @@ export class TitleOverlay {
   constructor() {
     this.isVisible = false;
     this.onDismiss = null;
+    this.onStartAudio = null;
 
     this.createTitleOverlay();
   }
@@ -64,7 +65,16 @@ export class TitleOverlay {
     this.overlay.appendChild(this.startText);
     document.body.appendChild(this.overlay);
 
-    // Add click/key handler
+    // Add separate click and key handlers
+    this.clickHandler = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      // Start audio context but don't dismiss title
+      if (this.onStartAudio) {
+        this.onStartAudio();
+      }
+    };
+
     this.keyHandler = (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -76,14 +86,14 @@ export class TitleOverlay {
     this.isVisible = true;
     this.overlay.style.display = 'block';
     document.addEventListener('keydown', this.keyHandler);
-    document.addEventListener('click', this.keyHandler);
+    document.addEventListener('click', this.clickHandler);
   }
 
   hide() {
     this.isVisible = false;
     this.overlay.style.display = 'none';
     document.removeEventListener('keydown', this.keyHandler);
-    document.removeEventListener('click', this.keyHandler);
+    document.removeEventListener('click', this.clickHandler);
 
     if (this.onDismiss) {
       this.onDismiss();
@@ -92,5 +102,9 @@ export class TitleOverlay {
 
   setOnDismiss(callback) {
     this.onDismiss = callback;
+  }
+
+  setOnStartAudio(callback) {
+    this.onStartAudio = callback;
   }
 }
