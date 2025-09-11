@@ -25,6 +25,7 @@ import { EngineParticles } from './EngineParticles.js';
 import { ConversationSystem } from './ConversationSystem.js';
 import { SpaceStation } from './SpaceStation.js';
 import { Laser } from './Laser.js';
+import { PortalSystem } from './PortalSystem.js';
 
 const DEBUG = false;
 
@@ -99,6 +100,10 @@ class Game {
     this.activeSectorEntities = [];
     // Predefine sectors (seeded procedural asteroid fields)
     this.availableSectors = availableSectors;
+    // Portal system for sector transitions (after availableSectors is set)
+    this.portalSystem = new PortalSystem(this.gameEngine.scene, this.gameEngine, this.spaceship);
+    // Set up sector data for portal system
+    this.portalSystem.setSectorData(this.availableSectors, getSectorDefinition);
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
       gameEngine: this.gameEngine,
@@ -526,6 +531,11 @@ class Game {
     // Update third-person camera system
     this.thirdPersonCamera.update(deltaTime);
 
+    // Update portal system
+    if (this.portalSystem) {
+      this.portalSystem.update(deltaTime);
+    }
+
     // Update station orbits
     for (const station of this.environmentSystem.stations) {
       station.update(deltaTime);
@@ -645,7 +655,24 @@ class Game {
   }
 
   switchSector(sectorId) {
+    console.log('🔍 Main: switchSector called with', sectorId);
     if (this.sectorManager.currentSectorId === sectorId) return; // already there
+    
+    // Check if portal system is already active
+    if (this.portalSystem.isActive) {
+      console.log('🔍 Main: Portal system already active, skipping');
+      return;
+    }
+    
+    console.log('🔍 Main: Starting portal animation for sector', sectorId);
+    // Start portal animation
+    this.portalSystem.createPortal(sectorId, () => {
+      console.log('🔍 Main: Portal animation complete, switching sector');
+      this.performSectorSwitch(sectorId);
+    });
+  }
+
+  performSectorSwitch(sectorId) {
     if (this.environmentSystem) {
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
