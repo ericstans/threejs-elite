@@ -63,16 +63,28 @@ export class CombatSystem {
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(spaceshipRot);
 
-    // Auto-aim towards current target within 10 degrees
-    let laserDirection = forward;
+    // Auto-aim towards current target within 10 degrees AND within range
+    let laserDirection = forward.clone(); // Clone to avoid modifying the original
     const currentTarget = this.getCurrentTarget?.();
+    
     if (currentTarget && currentTarget.isAlive()) {
       const targetPos = currentTarget.getPosition();
-      const targetDirection = targetPos.clone().sub(spaceshipPos).normalize();
-      const angle = forward.angleTo(targetDirection);
-      const maxAngle = Math.PI / 18; // 10 degrees
-      if (angle <= maxAngle) {
-        laserDirection = targetDirection;
+      const distance = spaceshipPos.distanceTo(targetPos);
+      const laserRange = 300; // Match the range from TargetUI.js
+      
+      // Only apply auto-aim if target is within range
+      if (distance <= laserRange) {
+        const targetDirection = targetPos.clone().sub(spaceshipPos).normalize();
+        const angle = forward.angleTo(targetDirection);
+        const maxAngle = Math.PI / 18; // 10 degrees
+        if (angle <= maxAngle) {
+          // Use lead targeting for moving targets
+          const leadPos = this.calculateLeadTarget(currentTarget, spaceshipPos);
+          if (leadPos) {
+            const leadDirection = leadPos.clone().sub(spaceshipPos).normalize();
+            laserDirection = leadDirection;
+          }
+        }
       }
     }
 
@@ -247,6 +259,111 @@ export class CombatSystem {
       // Add resource to the game engine
       this.gameEngine.addEntity(resource);
     }
+  }
+
+  // Calculate lead target position for moving targets
+  calculateLeadTarget(target, spaceshipPos) {
+    if (!target || !target.getPosition) {
+      return null;
+    }
+    
+    const targetPos = target.getPosition();
+    
+    // Get target velocity if available (for NPC ships)
+    let targetVelocity = new THREE.Vector3(0, 0, 0);
+    if (target.velocity) {
+      targetVelocity = target.velocity.clone();
+    } else if (target.getVelocity) {
+      targetVelocity = target.getVelocity();
+    }
+    
+    // Get player ship velocity
+    const ship = this.getSpaceship();
+    let playerVelocity = new THREE.Vector3(0, 0, 0);
+    if (ship && ship.velocity) {
+      playerVelocity = ship.velocity.clone();
+    } else if (ship && ship.getVelocity) {
+      playerVelocity = ship.getVelocity();
+    }
+    
+    // If neither target nor player is moving significantly, return current position
+    if (targetVelocity.length() < 0.1 && playerVelocity.length() < 0.1) {
+      return targetPos.clone();
+    }
+    
+    // Calculate relative velocity (target velocity - player velocity)
+    const relativeVelocity = targetVelocity.clone().sub(playerVelocity);
+    
+    // If relative velocity is very small, return current position
+    if (relativeVelocity.length() < 0.1) {
+      return targetPos.clone();
+    }
+    
+    // Solve for intersection time using quadratic formula
+    // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
+    // This simplifies to solving: |relativePos + relativeVel*t| = laserSpeed * t
+    const relativePos = targetPos.clone().sub(spaceshipPos);
+    const laserSpeed = 100; // From Laser.js constructor
+    
+    // Quadratic equation: a*t^2 + b*t + c = 0
+    // where: a = |relativeVel|^2 - laserSpeed^2
+    //        b = 2 * relativePos.dot(relativeVel)
+    //        c = |relativePos|^2
+    const a = relativeVelocity.lengthSq() - laserSpeed * laserSpeed;
+    const b = 2 * relativePos.dot(relativeVelocity);
+    const c = relativePos.lengthSq();
+    
+    let travelTime = 0;
+    
+    if (Math.abs(a) < 0.001) {
+      // Linear case: b*t + c = 0
+      if (Math.abs(b) > 0.001) {
+        travelTime = -c / b;
+      } else {
+        travelTime = relativePos.length() / laserSpeed;
+      }
+    } else {
+      // Quadratic case
+      const discriminant = b * b - 4 * a * c;
+      if (discriminant >= 0) {
+        const sqrtDiscriminant = Math.sqrt(discriminant);
+        const t1 = (-b + sqrtDiscriminant) / (2 * a);
+        const t2 = (-b - sqrtDiscriminant) / (2 * a);
+        
+        // Choose the positive time closest to zero
+        if (t1 > 0 && t2 > 0) {
+          travelTime = Math.min(t1, t2);
+        } else if (t1 > 0) {
+          travelTime = t1;
+        } else if (t2 > 0) {
+          travelTime = t2;
+        } else {
+          // Fallback to simple calculation
+          travelTime = relativePos.length() / laserSpeed;
+        }
+      } else {
+        // No real solution, fallback to simple calculation
+        travelTime = relativePos.length() / laserSpeed;
+      }
+    }
+    
+    // Ensure travel time is positive and reasonable
+    if (travelTime <= 0 || travelTime > 10) { // Max 10 seconds
+      travelTime = relativePos.length() / laserSpeed;
+    }
+    
+    // Predict where target will be when laser arrives
+    const leadPosition = targetPos.clone().add(
+      targetVelocity.clone().multiplyScalar(travelTime)
+    );
+    
+    // Safety check: ensure the lead position is valid
+    if (leadPosition && leadPosition.isVector3 && !isNaN(leadPosition.x) && !isNaN(leadPosition.y) && !isNaN(leadPosition.z)) {
+      return leadPosition;
+    }
+    
+    // Fallback to current target position if lead calculation failed
+    return targetPos.clone();
   }
 
   _hitFeedback() {
