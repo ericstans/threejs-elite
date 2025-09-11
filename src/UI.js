@@ -8,6 +8,7 @@ import { CargoUI } from './ui/CargoUI.js';
 import { CashUI } from './ui/CashUI.js';
 import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
+import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
@@ -994,15 +995,9 @@ export class UI {
   }
 
   getCurrentLocationCommodities() {
-    // This will be implemented to get commodities from the current docked location
-    // For now, return all commodities as a placeholder
-    return [
-      { name: 'Iron Ore', buyPrice: 50, sellPrice: 40 },
-      { name: 'Copper Ore', buyPrice: 75, sellPrice: 60 },
-      { name: 'Gold Ore', buyPrice: 200, sellPrice: 160 },
-      { name: 'Steel Ingots', buyPrice: 120, sellPrice: 96 },
-      { name: 'Electronics', buyPrice: 300, sellPrice: 240 }
-    ];
+    // Get tradeable items from the current docked location
+    // This now returns complete item information including icons and colors
+    return getTradeableItems();
   }
 
   handleCommoditiesSale(itemsToSell, totalValue) {
@@ -1049,6 +1044,10 @@ export class UI {
     if (this.cashUI && this.spaceship) {
       const currentCash = this.spaceship.getCash();
       this.cashUI.updateCash(currentCash);
+      // Also update commodities UI cash display
+      if (this.commoditiesUI) {
+        this.commoditiesUI.updateCash(currentCash);
+      }
     }
     
     console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
@@ -1060,32 +1059,17 @@ export class UI {
       this.spaceship.removeCash(totalCost);
     }
     
-    // Add items to cargo system
+    // Add items to cargo system using unified method
     if (this.cargoSystem) {
       itemsToBuy.forEach(item => {
         for (let i = 0; i < item.quantity; i++) {
-          // Check if cargo bay is full
-          if (this.cargoSystem.isFull()) {
+          const success = this.cargoSystem.addCargoItem(item.name, 'purchased');
+          if (!success) {
             console.log('Cargo bay is full! Cannot add more items.');
             return;
           }
-          
-          // Add item directly to cargo array
-          const cargoItem = {
-            id: `commodity_${Date.now()}_${Math.random()}`,
-            name: item.name,
-            color: this.getCommodityColor(item.name),
-            type: 'commodity',
-            value: item.unitPrice,
-            collectedAt: Date.now()
-          };
-          
-          this.cargoSystem.cargo.push(cargoItem);
         }
       });
-      
-      // Update cargo UI to reflect new items
-      this.cargoSystem.updateCargoUI();
     }
     
     // Update cash display

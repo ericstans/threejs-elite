@@ -1,5 +1,5 @@
 export class TutorialOverlay {
-  constructor() {
+  constructor(startWithCargo) {
     this.isVisible = false;
     this.currentStep = 0;
     this.onComplete = null;
@@ -7,6 +7,7 @@ export class TutorialOverlay {
     this.onPause = null;
     this.onResume = null;
     this.spotlightCutout = null;
+    this.startWithCargo = startWithCargo;
     this.tutorialSteps = [
       {
         id: 'welcome',
@@ -54,7 +55,7 @@ export class TutorialOverlay {
       {
         id: 'cargo',
         title: 'Cargo Display',
-        message: 'This is the cargo bay. It\'s empty right now!.',
+        message: 'This is the cargo bay.', //+ this.startWithCargo() ? 'Oh, you already have cargo? That\'s strange...' : 'It\'s empty right now!',
         position: 'cargo',
         showNext: true,
         revealElement: 'cargo'
@@ -472,5 +473,10 @@ export class TutorialOverlay {
       console.log('Testing controls spotlight...');
     }
     this.updateSpotlight('controls');
+  }
+
+  startWithCargo(){
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('startWithCargo') === '1';
   }
 }

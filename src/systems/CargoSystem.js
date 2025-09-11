@@ -1,4 +1,5 @@
 // import * as THREE from 'three';
+import { createCargoItem } from '../data/CargoItemsData.js';
 
 const DEBUG = false;
 
@@ -69,14 +70,12 @@ export class CargoSystem {
       return;
     }
 
-    // Add to cargo
-    const cargoItem = {
-      id: resource.id,
-      name: resource.elementType.name,
-      color: this.threeColorToHex(resource.elementType.color),
-      elementType: resource.elementType,
-      collectedAt: Date.now()
-    };
+    // Create unified cargo item from resource
+    const cargoItem = createCargoItem(resource.cargoItemData.name, 'mined');
+    if (!cargoItem) {
+      if (DEBUG) console.log('Failed to create cargo item from resource');
+      return;
+    }
 
     this.cargo.push(cargoItem);
 
@@ -110,10 +109,10 @@ export class CargoSystem {
     // Fill slots with collected cargo
     for (let i = 0; i < this.cargo.length && i < this.maxCargoSlots; i++) {
       const item = this.cargo[i];
-      const icon = '●'; // Circle icon
+      const icon = item.icon || '●'; // Use item-specific icon or fallback to circle
       const tooltip = item.name;
 
-      // Create colored circle element
+      // Create colored element with icon
       this.cargoUI.addCargoWithColor(i, icon, tooltip, item.color);
     }
   }
@@ -146,27 +145,46 @@ export class CargoSystem {
     }
   }
 
+  // Add cargo item directly (for purchased items)
+  addCargoItem(itemName, source = 'purchased') {
+    if (this.cargo.length >= this.maxCargoSlots) {
+      if (DEBUG) console.log('Cargo bay is full!');
+      return false;
+    }
+
+    const cargoItem = createCargoItem(itemName, source);
+    if (!cargoItem) {
+      if (DEBUG) console.log('Failed to create cargo item:', itemName);
+      return false;
+    }
+
+    this.cargo.push(cargoItem);
+    this.updateCargoUI();
+    
+    if (DEBUG) console.log(`Added ${cargoItem.name} to cargo bay`);
+    return true;
+  }
+
   // Add test cargo items for debugging
   addTestCargo() {
     const testItems = [
-      { name: 'Iron Ore', color: '#8B4513' },
-      { name: 'Copper Ore', color: '#B87333' },
-      { name: 'Gold Ore', color: '#FFD700' },
-      { name: 'Steel Ingots', color: '#C0C0C0' },
-      { name: 'Electronics', color: '#00FF00' },
-      { name: 'Crystals', color: '#FF00FF' },
-      { name: 'Fuel Cells', color: '#00FFFF' },
-      { name: 'Food Rations', color: '#FFA500' }
+      'Iron Ore',
+      'Copper Ore', 
+      'Gold Ore',
+      'Steel Ingots',
+      'Electronics',
+      'Energy Cells',
+      'Fuel Rods',
+      'Food Rations'
     ];
 
     // Add test items to cargo
-    testItems.forEach(item => {
+    testItems.forEach(itemName => {
       if (this.cargo.length < this.maxCargoSlots) {
-        this.cargo.push(item);
+        this.addCargoItem(itemName, 'test');
       }
     });
 
-    this.updateCargoUI();
     console.log(`Added ${testItems.length} test cargo items`);
   }
 

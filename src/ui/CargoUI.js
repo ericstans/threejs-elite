@@ -62,7 +62,7 @@ export class CargoUI {
       // Add hover effects (only for occupied slots)
       slot.addEventListener('mouseenter', () => {
         // Only apply hover effects to occupied slots
-        if (slot.textContent !== '·') {
+        if (slot.innerHTML !== '·') {
           // Store original colors if not already stored
           if (!slot.dataset.originalBackground) {
             slot.dataset.originalBackground = slot.style.backgroundColor || 'rgba(0, 170, 85, 0.1)';
@@ -91,7 +91,7 @@ export class CargoUI {
 
       slot.addEventListener('mouseleave', () => {
         // Only restore colors for occupied slots
-        if (slot.textContent !== '·') {
+        if (slot.innerHTML !== '·') {
           // Restore original colors
           slot.style.background = slot.dataset.originalBackground || 'rgba(0, 170, 85, 0.1)';
           slot.style.borderColor = slot.dataset.originalBorderColor || '#00aa55';
@@ -100,10 +100,11 @@ export class CargoUI {
 
       // Add click functionality
       slot.addEventListener('click', () => {
-        if (slot.textContent !== '·' && this.onItemClick) {
+        if (slot.innerHTML !== '·' && this.onItemClick) {
           const itemData = {
             name: slot.dataset.itemName || slot.textContent,
             color: slot.dataset.itemColor || '#00ff00',
+            icon: slot.dataset.itemIcon || '●',
             index: i,
             slot: slot
           };
@@ -124,9 +125,26 @@ export class CargoUI {
   addCargo(slotIndex, cargoIcon, cargoName = '') {
     if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
       const slot = this.cargoGrid[slotIndex];
-      slot.textContent = cargoIcon;
-      slot.style.color = '#00ff00';
+      
+      // Clear any existing content
+      slot.innerHTML = '';
+      
+      // Check if it's a FontAwesome icon
+      if (cargoIcon && cargoIcon.startsWith('fa-')) {
+        // Create FontAwesome icon element
+        const iconElement = document.createElement('i');
+        iconElement.className = cargoIcon;
+        iconElement.style.color = '#00ff00';
+        iconElement.style.fontSize = '16px';
+        slot.appendChild(iconElement);
+      } else {
+        // Use as text/emoji
+        slot.textContent = cargoIcon;
+        slot.style.color = '#00ff00';
+      }
+      
       slot.title = cargoName; // Tooltip
+      slot.dataset.itemIcon = cargoIcon; // Store icon in dataset
 
       // Add a small indicator for occupied slots
       slot.style.background = 'rgba(0, 255, 0, 0.1)';
@@ -138,11 +156,28 @@ export class CargoUI {
   addCargoWithColor(slotIndex, cargoIcon, cargoName = '', color = '#00ff00') {
     if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
       const slot = this.cargoGrid[slotIndex];
-      slot.textContent = cargoIcon;
-      slot.style.color = color;
+      
+      // Clear any existing content
+      slot.innerHTML = '';
+      
+      // Check if it's a FontAwesome icon
+      if (cargoIcon && cargoIcon.startsWith('fa-')) {
+        // Create FontAwesome icon element
+        const iconElement = document.createElement('i');
+        iconElement.className = cargoIcon;
+        iconElement.style.color = color;
+        iconElement.style.fontSize = '16px';
+        slot.appendChild(iconElement);
+      } else {
+        // Use as text/emoji
+        slot.textContent = cargoIcon;
+        slot.style.color = color;
+      }
+      
       slot.title = cargoName; // Tooltip
       slot.dataset.itemColor = color; // Store color in dataset
       slot.dataset.itemName = cargoName; // Store name in dataset
+      slot.dataset.itemIcon = cargoIcon; // Store icon in dataset
 
       // Add a small indicator for occupied slots with resource color
       const colorRgb = this.hexToRgb(color);
@@ -172,7 +207,7 @@ export class CargoUI {
   removeCargo(slotIndex) {
     if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
       const slot = this.cargoGrid[slotIndex];
-      slot.textContent = '·';
+      slot.innerHTML = '·';
       slot.style.color = '#006644';
       slot.title = '';
       slot.style.background = 'rgba(0, 170, 85, 0.1)';
@@ -190,7 +225,7 @@ export class CargoUI {
   // Method to get the first empty slot
   getFirstEmptySlot() {
     for (let i = 0; i < this.cargoGrid.length; i++) {
-      if (this.cargoGrid[i].textContent === '·') {
+      if (this.cargoGrid[i].innerHTML === '·') {
         return i;
       }
     }
@@ -200,6 +235,6 @@ export class CargoUI {
   // Method to check if a slot is empty
   isSlotEmpty(slotIndex) {
     return slotIndex >= 0 && slotIndex < this.cargoGrid.length &&
-           this.cargoGrid[slotIndex].textContent === '·';
+           this.cargoGrid[slotIndex].innerHTML === '·';
   }
 }

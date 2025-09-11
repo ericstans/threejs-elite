@@ -151,18 +151,42 @@ export class CommoditiesUI {
       slot.style.transition = 'all 0.2s ease';
       slot.dataset.slotIndex = i.toString();
 
-      // Add hover effects
+      // Add hover effects (only for occupied slots)
       slot.addEventListener('mouseenter', () => {
-        if (slot.textContent === '·') {
-          slot.style.background = 'rgba(0, 170, 85, 0.2)';
-          slot.style.borderColor = '#00ff55';
+        // Only apply hover effects to occupied slots
+        if (slot.innerHTML !== '·') {
+          // Store original colors if not already stored
+          if (!slot.dataset.originalBackground) {
+            slot.dataset.originalBackground = slot.style.backgroundColor || 'rgba(0, 170, 85, 0.1)';
+            slot.dataset.originalBorderColor = slot.style.borderColor || '#00aa55';
+          }
+          // Use brighter version for hover effect
+          const originalBg = slot.dataset.originalBackground;
+          const originalBorder = slot.dataset.originalBorderColor;
+          
+          // Make background slightly brighter (increase alpha)
+          if (originalBg.includes('rgba')) {
+            const match = originalBg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+            if (match) {
+              const [, r, g, b, a] = match;
+              const newAlpha = Math.min(parseFloat(a) * 1.5, 0.3);
+              slot.style.background = `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
+            }
+          } else {
+            slot.style.background = originalBg;
+          }
+          
+          // Make border slightly brighter
+          slot.style.borderColor = originalBorder;
         }
       });
 
       slot.addEventListener('mouseleave', () => {
-        if (slot.textContent === '·') {
-          slot.style.background = 'rgba(0, 170, 85, 0.1)';
-          slot.style.borderColor = '#00aa55';
+        // Only restore colors for occupied slots
+        if (slot.innerHTML !== '·') {
+          // Restore original colors
+          slot.style.background = slot.dataset.originalBackground || 'rgba(0, 170, 85, 0.1)';
+          slot.style.borderColor = slot.dataset.originalBorderColor || '#00aa55';
         }
       });
 
@@ -289,12 +313,37 @@ export class CommoditiesUI {
       item.style.borderRadius = '4px';
       item.style.marginBottom = '5px';
 
-      // Left side - commodity name
+      // Left side - commodity icon and name
+      const nameContainer = document.createElement('div');
+      nameContainer.style.display = 'flex';
+      nameContainer.style.alignItems = 'center';
+      nameContainer.style.gap = '8px';
+      nameContainer.style.flex = '1';
+      
+      // Add icon
+      if (commodity.icon && commodity.icon.startsWith('fa-')) {
+        // Create FontAwesome icon element
+        const iconElement = document.createElement('i');
+        iconElement.className = commodity.icon;
+        iconElement.style.color = commodity.color || '#00ff00';
+        iconElement.style.fontSize = '16px';
+        nameContainer.appendChild(iconElement);
+      } else {
+        // Use as text/emoji or fallback to circle
+        const iconElement = document.createElement('span');
+        iconElement.textContent = commodity.icon || '●';
+        iconElement.style.color = commodity.color || '#00ff00';
+        iconElement.style.fontSize = '16px';
+        nameContainer.appendChild(iconElement);
+      }
+      
+      // Add name
       const name = document.createElement('span');
       name.textContent = commodity.name;
       name.style.fontWeight = 'bold';
-      name.style.flex = '1';
-      item.appendChild(name);
+      nameContainer.appendChild(name);
+      
+      item.appendChild(nameContainer);
 
       // Middle - quantity controls
       const quantityContainer = document.createElement('div');
@@ -539,7 +588,7 @@ export class CommoditiesUI {
 
     // Clear the sell grid and moved items
     this.sellGrid.forEach(slot => {
-      slot.textContent = '·';
+      slot.innerHTML = '·';
       slot.style.color = '#006644';
       slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
       slot.style.borderColor = '#00aa55'; // Reset to default border
@@ -633,7 +682,7 @@ export class CommoditiesUI {
 
       slot.addEventListener('dragleave', (e) => {
         e.preventDefault();
-        if (slot.textContent === '·') {
+        if (slot.innerHTML === '·') {
           slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)';
         }
       });
@@ -658,11 +707,37 @@ export class CommoditiesUI {
   addToSellGrid(slotIndex, cargoItem) {
     if (slotIndex >= 0 && slotIndex < this.sellGridSize) {
       const slot = this.sellGrid[slotIndex];
-      slot.textContent = '●'; // Use circle icon like cargo bay
+      
+      // Clear any existing content
+      slot.innerHTML = '';
+      
+      // Check if it's a FontAwesome icon
+      if (cargoItem.icon && cargoItem.icon.startsWith('fa-')) {
+        // Create FontAwesome icon element
+        const iconElement = document.createElement('i');
+        iconElement.className = cargoItem.icon;
+        iconElement.style.color = cargoItem.color || '#00ff00';
+        iconElement.style.fontSize = '16px';
+        slot.appendChild(iconElement);
+      } else {
+        // Use as text/emoji or fallback to circle
+        slot.textContent = cargoItem.icon || '●';
+        slot.style.color = cargoItem.color || '#00ff00';
+      }
+      
       slot.title = cargoItem.name; // Use item name as tooltip
-      slot.style.setProperty('color', cargoItem.color || '#00ff00', 'important'); // Use item's actual color with !important
-      slot.style.backgroundColor = cargoItem.color ? this.getColorRgba(cargoItem.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
-      slot.style.borderColor = cargoItem.color || '#00ff55'; // Use item's actual color for border
+      
+      // Set background and border colors
+      const backgroundColor = cargoItem.color ? this.getColorRgba(cargoItem.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
+      const borderColor = cargoItem.color || '#00ff55';
+      
+      slot.style.backgroundColor = backgroundColor;
+      slot.style.borderColor = borderColor;
+      
+      // Store original colors for hover effects
+      slot.dataset.originalBackground = backgroundColor;
+      slot.dataset.originalBorderColor = borderColor;
+      
       slot.dataset.commodity = cargoItem.name;
       slot.dataset.cargoIndex = cargoItem.index;
       this.updateSellTotal();
@@ -682,7 +757,7 @@ export class CommoditiesUI {
   removeFromSellGrid(slotIndex) {
     if (slotIndex >= 0 && slotIndex < this.sellGridSize) {
       const slot = this.sellGrid[slotIndex];
-      slot.textContent = '·';
+      slot.innerHTML = '·';
       slot.style.color = '#006644';
       slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
       slot.style.borderColor = '#00aa55'; // Reset to default border
@@ -710,7 +785,7 @@ export class CommoditiesUI {
   // Method to remove item from cargo bay
   removeFromCargoBay(cargoItem) {
     if (cargoItem.slot) {
-      cargoItem.slot.textContent = '·';
+      cargoItem.slot.innerHTML = '·';
       cargoItem.slot.style.color = '#006644';
       cargoItem.slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)';
       cargoItem.slot.style.borderColor = '#00aa55';
@@ -732,16 +807,40 @@ export class CommoditiesUI {
       // Restore items to cargo bay
       this.movedItems.forEach(item => {
         if (item.slot) {
-          item.slot.textContent = '●'; // Use circle icon like cargo bay
+          // Clear any existing content
+          item.slot.innerHTML = '';
+          
+          // Check if it's a FontAwesome icon
+          if (item.icon && item.icon.startsWith('fa-')) {
+            // Create FontAwesome icon element
+            const iconElement = document.createElement('i');
+            iconElement.className = item.icon;
+            iconElement.style.color = item.color || '#00ff00';
+            iconElement.style.fontSize = '16px';
+            item.slot.appendChild(iconElement);
+          } else {
+            // Use as text/emoji or fallback to circle
+            item.slot.textContent = item.icon || '●';
+            item.slot.style.color = item.color || '#00ff00';
+          }
+          
           item.slot.title = item.name; // Use item name as tooltip
-          item.slot.style.setProperty('color', item.color || '#00ff00', 'important');
-          item.slot.style.backgroundColor = item.color ? this.getColorRgba(item.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
-          item.slot.style.borderColor = item.color || '#00ff55';
+          
+          // Set background and border colors
+          const backgroundColor = item.color ? this.getColorRgba(item.color, 0.1) : 'rgba(0, 170, 85, 0.2)';
+          const borderColor = item.color || '#00ff55';
+          
+          item.slot.style.backgroundColor = backgroundColor;
+          item.slot.style.borderColor = borderColor;
+          
+          // Store original colors for hover effects
+          item.slot.dataset.originalBackground = backgroundColor;
+          item.slot.dataset.originalBorderColor = borderColor;
         }
       });
       // Clear the sell grid
       this.sellGrid.forEach(slot => {
-        slot.textContent = '·';
+        slot.innerHTML = '·';
         slot.title = ''; // Clear tooltip
         slot.style.color = '#006644';
         slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background

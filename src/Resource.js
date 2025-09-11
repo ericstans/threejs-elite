@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import { getRandomMineableItem } from './data/CargoItemsData.js';
 
 export class Resource {
-  constructor(position, elementType) {
+  constructor(position, cargoItemData = null) {
     this.position = position.clone();
-    this.elementType = elementType;
+    this.cargoItemData = cargoItemData || getRandomMineableItem();
     this.id = `resource_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.isAlive = () => true; // Resources don't get destroyed by lasers
     this.isCommable = false;
@@ -19,54 +20,18 @@ export class Resource {
     this.setupPhysics();
   }
 
-  static getResourceTypes() {
-    return {
-      // Common elements (80% chance)
-      common: [
-        { name: 'Iron', color: 0x8B4513, rarity: 0.3 },      // Brown
-        { name: 'Carbon', color: 0x2F2F2F, rarity: 0.25 },   // Dark grey
-        { name: 'Silicon', color: 0x708090, rarity: 0.2 },   // Slate grey
-        { name: 'Aluminum', color: 0xC0C0C0, rarity: 0.15 }, // Silver
-        { name: 'Copper', color: 0xB87333, rarity: 0.1 },    // Bronze
-        { name: 'Nickel', color: 0x8B8B8B, rarity: 0.1 },    // Grey
-        { name: 'Titanium', color: 0xE6E6FA, rarity: 0.08 }, // Lavender
-        { name: 'Chromium', color: 0x4682B4, rarity: 0.07 }  // Steel blue
-      ],
-      // Rare elements (20% chance)
-      rare: [
-        { name: 'Platinum', color: 0xE5E4E2, rarity: 0.02 }, // Platinum
-        { name: 'Gold', color: 0xFFD700, rarity: 0.01 }      // Gold
-      ]
-    };
-  }
-
   static getRandomElementType() {
-    const types = Resource.getResourceTypes();
-    const allElements = [...types.common, ...types.rare];
-
-    // Weighted random selection based on rarity
-    const random = Math.random();
-    let cumulative = 0;
-
-    for (const element of allElements) {
-      cumulative += element.rarity;
-      if (random <= cumulative) {
-        return element;
-      }
-    }
-
-    // Fallback to most common element
-    return types.common[0];
+    return getRandomMineableItem();
   }
 
   createMesh() {
     // Create small cylinder for resource
     const geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8);
     const material = new THREE.MeshStandardMaterial({
-      color: this.elementType.color,
+      color: this.cargoItemData.color,
       metalness: 0.7,
       roughness: 0.3,
-      emissive: new THREE.Color(this.elementType.color).multiplyScalar(0.1)
+      emissive: new THREE.Color(this.cargoItemData.color).multiplyScalar(0.1)
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
@@ -108,7 +73,7 @@ export class Resource {
   }
 
   getName() {
-    return `${this.elementType.name} Resource`;
+    return `${this.cargoItemData.name} Resource`;
   }
 
   getType() {

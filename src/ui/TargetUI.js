@@ -158,7 +158,7 @@ export class TargetUI {
     if (targetInfo.__ref && targetInfo.__ref.getType) {
       const type = targetInfo.__ref.getType();
       if (type === 'resource') {
-        displayName = targetInfo.__ref.elementType.name;
+        displayName = targetInfo.__ref.cargoItemData.name;
       } else if (type === 'asteroid') {
         displayName = 'Asteroid';
       } else if (type === 'npcship') {

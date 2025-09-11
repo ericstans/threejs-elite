@@ -1,6 +1,6 @@
 import { aridusPrimeConversation } from '../../conversations/planets/aridusPrime.js';
 import { oceanusConversation } from '../../conversations/planets/oceanus.js';
-import { getAllCommodityNames } from '../../data/CommoditiesData.js';
+import { getTradeableItems } from '../../data/CargoItemsData.js';
 
 // Available sectors configuration for the sector map
 export const availableSectors = [
@@ -17,12 +17,12 @@ export const sectorDefinitions = {
     id: 'sector-1',
     name: 'Aridus Sector',
     planets: [
-      { type: 'planet', name: 'Aridus Prime', radius: 80, color: 0x8B4513, greeting: aridusPrimeConversation.greeting, position: { x: 200, y: 0, z: -500 }, rotationSpeed: 0.05, conversation: aridusPrimeConversation, services: ['refuel+repair', 'shipyard', 'outfitting', 'commodities'], commodities: getAllCommodityNames() },
-      { type: 'planet', name: 'Oceanus', radius: 60, color: 0x4169E1, greeting: oceanusConversation.greeting, position: { x: -300, y: 100, z: -800 }, rotationSpeed: 0.07, conversation: oceanusConversation, services: ['refuel+repair', 'rumors', 'jobs'] },
+      { type: 'planet', name: 'Aridus Prime', radius: 80, color: 0x8B4513, greeting: aridusPrimeConversation.greeting, position: { x: 200, y: 0, z: -500 }, rotationSpeed: 0.05, conversation: aridusPrimeConversation, services: ['refuel+repair', 'shipyard', 'outfitting', 'commodities', 'rumors', 'jobs'], commodities: getTradeableItems().map(item => item.name) },
+      { type: 'planet', name: 'Oceanus', radius: 60, color: 0x4169E1, greeting: oceanusConversation.greeting, position: { x: -300, y: 100, z: -800 }, rotationSpeed: 0.07, conversation: oceanusConversation, services: [] },
       { type: 'planet', name: 'Helia Minor', radius: 45, color: 0xdaa520, greeting: 'Helia Minor control online.', position: { x: 480, y: 60, z: -900 }, rotationSpeed: 0.09, hasMoon: true, services: ['refuel+repair'] }
     ],
     stations: [
-      { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05, services: ['refuel+repair', 'shipyard', 'outfitting', 'commodities', 'rumors', 'jobs'], commodities: getAllCommodityNames() /*conversation: oceanusConversation */ }
+      { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 135, size: 28, orbitSpeed: 0.02, services: ['refuel+repair', 'shipyard', 'outfitting', 'commodities', 'rumors', 'jobs'], commodities: getTradeableItems().map(item => item.name) /*conversation: oceanusConversation */ }
     ],
     npcShips: [
       {
