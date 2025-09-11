@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// import * as THREE from 'three';
 
 /**
  * NavigationSystem handles:
@@ -12,7 +12,7 @@ export class NavigationSystem {
     this.ui = ui;
   }
 
-  update(deltaTime) {
+  update(_deltaTime) {
     this.checkNavTargetProximity();
     this.checkLandingVectorLock();
   }
@@ -25,7 +25,7 @@ export class NavigationSystem {
     const targetPos = navTarget.getPosition();
     const distance = spaceshipPos.distanceTo(targetPos);
     if (distance <= 100) {
-      const camera = ship.gameEngine ? ship.gameEngine.camera : null; // fallback if not passed
+      const _camera = ship.gameEngine ? ship.gameEngine.camera : null; // fallback if not passed
       // We actually need camera externally; assume navTarget has scene camera globally accessible
       // We'll rely on global THREE camera injection from game orchestrator via injected assignCamera()
       if (!this.camera) return; // camera not yet bound

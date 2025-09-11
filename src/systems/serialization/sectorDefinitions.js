@@ -24,8 +24,8 @@ export const sectorDefinitions = {
       { type: 'station', name: 'Oceanus Station', planetName: 'Oceanus', orbitRadius: 120, size: 28, orbitSpeed: 0.05, services: ['refuel+repair', 'shipyard', 'outfitting', 'commodities', 'rumors', 'jobs'] /*conversation: oceanusConversation */ }
     ],
     npcShips: [
-      { 
-        type: 'npcShip', 
+      {
+        type: 'npcShip',
         name: 'Flea MkII',
         pilotName: 'Narayan',
         shipType: 'Flea',
@@ -37,7 +37,7 @@ export const sectorDefinitions = {
           { x: -50 - 100, y: 50, z: -750 },   // Move left
           { x: -50 - 100, y: 50, z: -650 },   // Move back
           { x: -50 + 60, y: 50, z: -650 }     // Return to start
-        ],
+        ]
         //conversation: genericProceduralShipConversation
       },
       {

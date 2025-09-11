@@ -255,7 +255,7 @@ export class GameEngine {
     this.update(deltaTime);
     // UI cockpit parallax (if UI attached by outer Game)
     if (this.ui && this.spaceship) {
-      try { this.ui.updateCockpitParallax(this.spaceship); } catch (_) {}
+      try { this.ui.updateCockpitParallax(this.spaceship); } catch (_) { /* Parallax update failed */ }
     }
     this.render();
     requestAnimationFrame(() => this.animate());

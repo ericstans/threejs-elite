@@ -680,7 +680,7 @@ export class UI {
       const MAX_COCKPIT_ROLL = 12; // degrees
       const rotDeg = THREE.MathUtils.clamp(-(angVel.z * MAX_COCKPIT_ROLL), -8, 8);
       this.cockpitWrapper.style.transform = `translateX(-50%) translate(${this._parallaxState.lastX}px, ${this._parallaxState.lastY}px) rotate(${rotDeg}deg)`;
-    } catch (_) { }
+    } catch (_) { /* Parallax update failed */ }
   }
 
   // --- Responsive anchor utilities ---

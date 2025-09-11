@@ -372,7 +372,7 @@ export class TargetUI {
             lines.quaternion.copy(child.getWorldQuaternion(new THREE.Quaternion()));
             lines.scale.copy(child.getWorldScale(new THREE.Vector3()));
             group.add(lines);
-          } catch (_) {}
+          } catch (_) { /* Line creation failed */ }
         }
       });
       // Recenter & uniformly scale to desired preview size

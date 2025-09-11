@@ -48,18 +48,18 @@ export class ConversationSystem {
     if (planet) {
       return planet.greeting;
     }
-    
+
     // For procedural planets, try to get the actual planet's greeting
     const planetEntity = this._getPlanetEntity?.(planetName);
     if (planetEntity && planetEntity.getGreeting) {
       return planetEntity.getGreeting();
     }
-    
+
     // Check if this is an NPC ship (with or without defined conversation)
     if (planetEntity && planetEntity.getType && planetEntity.getType() === 'npcShip') {
       return genericProceduralShipConversation.greeting;
     }
-    
+
     // Fallback to generic procedural planet template
     return genericProceduralConversation.greeting;
   }
@@ -89,7 +89,7 @@ export class ConversationSystem {
     // Check if this is a ship conversation and handle differently
     const isShipConversation = (planet && planet === genericProceduralShipConversation) ||
                               (this._getPlanetEntity?.(planetName)?.getType?.() === 'npcShip');
-    
+
     if (isShipConversation) {
       // For ship conversations, create ship attributes
       const shipAttributes = { name: planetName };
@@ -233,7 +233,7 @@ export class ConversationSystem {
     let planet = this.conversations[targetName];
     // Dockable detection: we rely on external planet entity lookup via optional hook
     const dockable = this._isPlanetDockable?.(targetName) !== false; // default true if unknown
-    
+
     // If no specific conversation, check if it's an NPC ship
     if (!planet || !planet.conversationTree) {
       const entity = this._getPlanetEntity?.(targetName);

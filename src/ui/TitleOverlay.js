@@ -2,7 +2,7 @@ export class TitleOverlay {
   constructor() {
     this.isVisible = false;
     this.onDismiss = null;
-    
+
     this.createTitleOverlay();
   }
 
@@ -18,7 +18,7 @@ export class TitleOverlay {
     this.overlay.style.display = 'none';
     this.overlay.style.zIndex = '10000';
     this.overlay.style.pointerEvents = 'auto';
-    
+
     // Create title text
     this.titleText = document.createElement('div');
     this.titleText.style.position = 'absolute';
@@ -33,17 +33,17 @@ export class TitleOverlay {
     this.titleText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
     this.titleText.style.userSelect = 'none';
     this.titleText.style.cursor = 'default';
-    
+
     // Set random title
     const titles = [
       ['THE', 'MOURNFUL', 'VOID'],
       ['DARTING', 'TOWARD', 'OBLIVION'],
-      ["SHAPES", "IN THE", "BLACK"]
+      ['SHAPES', 'IN THE', 'BLACK']
     ];
-    
+
     const randomTitle = titles[Math.floor(Math.random() * titles.length)];
     this.titleText.innerHTML = randomTitle.map(line => `<div>${line}</div>`).join('');
-    
+
     // Create "press any key to start" text
     this.startText = document.createElement('div');
     this.startText.style.position = 'absolute';
@@ -59,11 +59,11 @@ export class TitleOverlay {
     this.startText.style.cursor = 'default';
     this.startText.style.opacity = '0.8';
     this.startText.textContent = 'Press any key to start';
-    
+
     this.overlay.appendChild(this.titleText);
     this.overlay.appendChild(this.startText);
     document.body.appendChild(this.overlay);
-    
+
     // Add click/key handler
     this.keyHandler = (event) => {
       event.preventDefault();
@@ -84,7 +84,7 @@ export class TitleOverlay {
     this.overlay.style.display = 'none';
     document.removeEventListener('keydown', this.keyHandler);
     document.removeEventListener('click', this.keyHandler);
-    
+
     if (this.onDismiss) {
       this.onDismiss();
     }

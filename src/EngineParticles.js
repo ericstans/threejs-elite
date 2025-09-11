@@ -402,7 +402,7 @@ export class EngineParticles {
           });
           break;
 
-        case 'array':
+        case 'array': {
           // Material array approach - random materials
           const materials = [
             new THREE.MeshLambertMaterial({ color: 0xff0000, emissive: 0x220000 }), // Red
@@ -413,8 +413,9 @@ export class EngineParticles {
           ];
           child.material = materials[Math.floor(Math.random() * materials.length)];
           break;
+        }
 
-        case 'geometry':
+        case 'geometry': {
           // Geometry-based selection - based on vertex count
           const vertexCount = child.geometry.attributes.position.count;
           if (vertexCount > 1000) {
@@ -429,8 +430,9 @@ export class EngineParticles {
             }); // Small parts (engines, details)
           }
           break;
+        }
 
-        case 'position':
+        case 'position': {
           // Position-based selection - based on Z position
           const position = child.position;
           if (position.z > 0) {
@@ -445,6 +447,7 @@ export class EngineParticles {
             }); // Back parts
           }
           break;
+        }
         }
       }
     });

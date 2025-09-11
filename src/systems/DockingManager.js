@@ -44,7 +44,7 @@ export class DockingManager {
     // console.log('Docking process started with', nav.getName());
   }
 
-  update(deltaTime) {
+  update(_deltaTime) {
     const ship = this.getSpaceship();
     const nav = this.getNavTarget();
     if (!ship) return;

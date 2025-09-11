@@ -283,7 +283,7 @@ export class Controls {
         // Ensure audio context is resumed (user gesture just occurred triggering this call)
         if (this.game.soundManager?.audioContext && this.game.soundManager.audioContext.state === 'suspended') {
           if (DEBUG) console.log('startMusic: Resuming audio context');
-          try { await this.game.soundManager.audioContext.resume(); } catch (_) {}
+          try { await this.game.soundManager.audioContext.resume(); } catch (_) { /* Audio context resume failed */ }
         }
         // Initialize music manager
         if (DEBUG) console.log('startMusic: Initializing music manager');

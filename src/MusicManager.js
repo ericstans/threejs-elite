@@ -101,7 +101,7 @@ function getMidiFilesForSoundtracks(soundtracks) {
   const files = [];
   for (const [path, url] of Object.entries(soundtrackModules)) {
     // Extract folder name from path (e.g., './assets/midi/ambient/file.mid' -> 'ambient')
-    const folderMatch = path.match(/\.\/assets\/midi\/([^\/]+)\//);
+    const folderMatch = path.match(/\.\/assets\/midi\/([^/]+)\//);
     if (folderMatch && soundtracks.includes(folderMatch[1])) {
       files.push(url);
     }
@@ -277,7 +277,7 @@ export class MusicManager {
     this._reverbConvolver = null;  // convolver node
     this.reverbMix = 0.3;          // 0..1
     this._reverbEnabled = true;
-    
+
     // Delay configuration for different soundtrack folders (in milliseconds)
     this._soundtrackDelays = {
       'ambient': 1000,    // 1 second default
@@ -460,7 +460,7 @@ export class MusicManager {
     this._applyReverbMix();
   }
 
-  _attachInstrumentToEffects(inst) {
+  _attachInstrumentToEffects(_inst) {
     // Note: soundfont-player instruments don't have connect methods
     // Individual note nodes are handled in the playback code
     // This method is kept for compatibility but doesn't need to do anything
@@ -473,36 +473,36 @@ export class MusicManager {
       this._currentPlayback.timeoutIds.forEach(id => clearTimeout(id));
       this._currentPlayback = null;
     }
-    this._activeNotes.forEach(stopFn => { try { stopFn(); } catch (_) {} });
+    this._activeNotes.forEach(stopFn => { try { stopFn(); } catch (_) { /* Note stop failed */ } });
     this._activeNotes.clear();
   }
 
   async _playRandomAmbientMidi() {
     if (!this.isPlaying || this.currentTrack !== 'ambient') return;
-    
+
     // Get current soundtracks from globalFlags, default to ['ambient']
     const soundtracks = this.game?.globalFlags?.soundtracks || ['ambient'];
     const availableMidiFiles = getMidiFilesForSoundtracks(soundtracks);
-    
+
     if (availableMidiFiles.length === 0) {
       if (DEBUG) console.warn('No MIDI files found for soundtracks:', soundtracks);
       return;
     }
-    
+
     const src = availableMidiFiles[Math.floor(Math.random() * availableMidiFiles.length)];
-    
+
     // Determine which soundtrack folder this file came from
     let currentSoundtrackFolder = 'default';
     for (const [path, url] of Object.entries(soundtrackModules)) {
       if (url === src) {
-        const folderMatch = path.match(/\.\/assets\/midi\/([^\/]+)\//);
+        const folderMatch = path.match(/\.\/assets\/midi\/([^/]+)\//);
         if (folderMatch) {
           currentSoundtrackFolder = folderMatch[1];
           break;
         }
       }
     }
-    
+
     try {
       const resp = await fetch(src);
       const arrayBuf = await resp.arrayBuffer();
@@ -601,7 +601,7 @@ export class MusicManager {
           await waitOnReady(drumInst);
           this._instrumentsCache.set('percussion', drumInst);
           this._attachInstrumentToEffects(drumInst);
-        } catch (e) {
+        } catch (_e) {
           if (DEBUG) console.warn('MusicManager: percussion kit not found; falling back');
           const synthDrumName = programToInstrument(118);
           if (!this._instrumentsCache.has(synthDrumName)) {
@@ -611,7 +611,7 @@ export class MusicManager {
               await waitOnReady(synthDrumInst);
               this._instrumentsCache.set(synthDrumName, synthDrumInst);
               this._attachInstrumentToEffects(synthDrumInst);
-            } catch {}
+            } catch (_) { /* Instrument load failed */ }
           }
           this._instrumentsCache.set('percussion', this._instrumentsCache.get(synthDrumName) || this._instrumentsCache.get('acoustic_grand_piano'));
         }
@@ -623,8 +623,8 @@ export class MusicManager {
       midi.tracks.forEach(track => {
         const isDrum = track.channel === DRUM_CHANNEL;
         const program = (track.instrument && typeof track.instrument.number === 'number') ? track.instrument.number : 0;
-        const inst = isDrum ? this._instrumentsCache.get('percussion') : instruments[program];
-        if (!inst) return;
+        const _inst = isDrum ? this._instrumentsCache.get('percussion') : instruments[program];
+        if (!_inst) return;
         track.notes.forEach(note => {
           const noteStart = startTime + note.time; // absolute AudioContext time
           const noteDuration = note.duration || 0.3;
@@ -645,10 +645,10 @@ export class MusicManager {
               // Use Web Audio time for precise scheduling
               if (typeof this._audioCtx !== 'undefined' && this._audioCtx) {
                 // Use setTimeout for scheduling stop, but convert to ms
-                setTimeout(() => { try { node.stop(); } catch (_){} }, (stopTime - this._audioCtx.currentTime) * 1000);
+                setTimeout(() => { try { node.stop(); } catch (_) { /* Node stop failed */ } }, (stopTime - this._audioCtx.currentTime) * 1000);
               } else {
                 // Fallback: stop after duration
-                setTimeout(() => { try { node.stop(); } catch (_){} }, noteDuration * 1000);
+                setTimeout(() => { try { node.stop(); } catch (_) { /* Node stop failed */ } }, noteDuration * 1000);
               }
             }
           } catch (err) {
@@ -668,7 +668,7 @@ export class MusicManager {
       this._scheduledNextTimeout = nextId;
       this._currentPlayback = {
         stop: () => {
-          scheduledNodes.forEach(n => { try { n.stop(); } catch (_){} });
+          scheduledNodes.forEach(n => { try { n.stop(); } catch (_) { /* Node stop failed */ } });
         },
         timeoutIds
       };

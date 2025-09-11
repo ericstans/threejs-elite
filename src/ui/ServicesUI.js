@@ -55,7 +55,7 @@ export class ServicesUI {
 
   showServices(services, locationName) {
     this.title.textContent = `SERVICES - ${locationName}`;
-    
+
     // Clear existing services
     this.servicesList.innerHTML = '';
 
@@ -72,7 +72,7 @@ export class ServicesUI {
     // Add each service
     services.forEach(serviceId => {
       const serviceDef = serviceDefinitions[serviceId] || { name: serviceId, description: 'Service available', icon: '❓' };
-      
+
       const serviceItem = document.createElement('div');
       serviceItem.style.display = 'flex';
       serviceItem.style.alignItems = 'center';
@@ -94,7 +94,7 @@ export class ServicesUI {
       // Service info
       const info = document.createElement('div');
       info.style.flex = '1';
-      
+
       const name = document.createElement('div');
       name.style.fontSize = '18px';
       name.style.fontWeight = 'bold';

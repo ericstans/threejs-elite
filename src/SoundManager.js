@@ -335,7 +335,7 @@ export class SoundManager {
           if (layer.source) {
             layer.source.stop();
           }
-        } catch (error) {
+        } catch (_error) {
           // Source might already be stopped
         }
       });

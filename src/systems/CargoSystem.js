@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// import * as THREE from 'three';
 
 const DEBUG = false;
 
@@ -62,7 +62,7 @@ export class CargoSystem {
     resource.mesh.position.add(movement);
   }
 
-  collectResource(resource, resourceIndex) {
+  collectResource(resource, _resourceIndex) {
     // Check if cargo bay is full
     if (this.cargo.length >= this.maxCargoSlots) {
       if (DEBUG) console.log('Cargo bay is full!');

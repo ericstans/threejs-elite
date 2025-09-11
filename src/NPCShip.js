@@ -30,10 +30,10 @@ export class NPCShip {
     // --- Ship type config ---
     this.shipType = shipType;
     const typeConfig = getShipType(shipType);
-  // Apply 0.95 scaling factor to NPC stats
-  this.maxSpeed = typeConfig.stats.maxSpeed * 0.95;
-  this.acceleration = typeConfig.stats.acceleration * 0.95;
-  this.rotationSpeed = typeConfig.stats.rotationSpeed * 0.95;
+    // Apply 0.95 scaling factor to NPC stats
+    this.maxSpeed = typeConfig.stats.maxSpeed * 0.95;
+    this.acceleration = typeConfig.stats.acceleration * 0.95;
+    this.rotationSpeed = typeConfig.stats.rotationSpeed * 0.95;
     this.modelFile = typeConfig.model;
     this.modelScale = typeConfig.scale;
     this.exhaustType = typeConfig.exhaust;
@@ -144,8 +144,8 @@ export class NPCShip {
           this.size = maxDim * scale / 2;
         }
         object.scale.setScalar(scale);
-  this.mesh.position.copy(this.position);
-  this.mesh.add(object);
+        this.mesh.position.copy(this.position);
+        this.mesh.add(object);
         // ...removed wireframe debug box...
         this.loaded = true;
         // Debug: log bounding box size after scaling
@@ -168,27 +168,27 @@ export class NPCShip {
     );
   }
 
-  update(deltaTime) {
+  update(_deltaTime) {
     if (!this.loaded || this.destroyed || !this.patrolActive) {
       return;
     }
-    
-    this.updatePatrol(deltaTime);
-    this.updateMovement(deltaTime);
+
+    this.updatePatrol(_deltaTime);
+    this.updateMovement(_deltaTime);
   }
-  
+
   // Set patrol waypoints
   setPatrolWaypoints(waypoints) {
     this.patrolWaypoints = waypoints.map(wp => new THREE.Vector3(wp.x, wp.y, wp.z));
     this.currentWaypointIndex = 0;
     this.patrolActive = waypoints.length > 0;
-    
+
     if (this.patrolActive) {
       this.targetPosition.copy(this.patrolWaypoints[0]);
       this.updateTargetRotation();
     }
   }
-  
+
   // Start/stop patrol
   startPatrol() {
     this.patrolActive = this.patrolWaypoints.length > 0;
@@ -198,20 +198,20 @@ export class NPCShip {
       this.updateTargetRotation();
     }
   }
-  
+
   stopPatrol() {
     this.patrolActive = false;
     this.velocity.set(0, 0, 0);
     this.angularVelocity.set(0, 0, 0);
   }
-  
+
   // Update patrol behavior
-  updatePatrol(deltaTime) {
+  updatePatrol(_deltaTime) {
     if (!this.patrolActive || this.patrolWaypoints.length === 0) return;
-    
+
     const currentWaypoint = this.patrolWaypoints[this.currentWaypointIndex];
     const distanceToWaypoint = this.position.distanceTo(currentWaypoint);
-    
+
     // Check if we've reached the current waypoint
     if (distanceToWaypoint < this.waypointReachedDistance) {
       // Move to next waypoint (loop back to start)
@@ -220,54 +220,54 @@ export class NPCShip {
       this.updateTargetRotation();
     }
   }
-  
+
   // Update target rotation to face the target position
   updateTargetRotation() {
     const direction = new THREE.Vector3();
     direction.subVectors(this.targetPosition, this.position).normalize();
-    
+
     // Calculate rotation to face the target
     const targetQuaternion = new THREE.Quaternion();
     targetQuaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     this.targetRotation.setFromQuaternion(targetQuaternion);
   }
-  
+
   // Update movement physics (similar to player ship)
   updateMovement(deltaTime) {
     // Calculate direction to target
     const direction = new THREE.Vector3();
     direction.subVectors(this.targetPosition, this.position).normalize();
-    
+
     // Calculate desired velocity
     const desiredVelocity = direction.clone().multiplyScalar(this.maxSpeed);
-    
+
     // Calculate acceleration needed
     const velocityDifference = new THREE.Vector3();
     velocityDifference.subVectors(desiredVelocity, this.velocity);
-    
+
     // Apply acceleration
     const acceleration = velocityDifference.clone().multiplyScalar(this.acceleration * deltaTime);
     this.velocity.add(acceleration);
-    
+
     // Limit velocity to max speed
     if (this.velocity.length() > this.maxSpeed) {
       this.velocity.normalize().multiplyScalar(this.maxSpeed);
     }
-    
+
     // Update position
     this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
-    
+
     // Update rotation to face movement direction
     if (this.velocity.length() > 0.1) {
       const movementDirection = this.velocity.clone().normalize();
       const targetQuaternion = new THREE.Quaternion();
       targetQuaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), movementDirection);
-      
+
       // Smoothly rotate towards target rotation
       this.quaternion.slerp(targetQuaternion, this.rotationSpeed * deltaTime);
       this.rotation.setFromQuaternion(this.quaternion);
     }
-    
+
     // Update mesh position and rotation
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);

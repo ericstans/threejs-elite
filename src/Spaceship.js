@@ -315,7 +315,7 @@ export class Spaceship {
 
         // Get current station position and rotation (accounting for orbital movement)
         const currentStationPos = station.mesh.getWorldPosition(new THREE.Vector3());
-        const currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion());
+        const _currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion());
 
         // Calculate current forward direction from station's current rotation
         // For takeoff, we want to move AWAY from the station (positive landing vector direction)
@@ -713,7 +713,7 @@ export class Spaceship {
   }
 
   hasFlag(flagName) {
-    return this.flags.hasOwnProperty(flagName) && this.flags[flagName];
+    return Object.prototype.hasOwnProperty.call(this.flags, flagName) && this.flags[flagName];
   }
 
   getAllFlags() {
@@ -728,7 +728,7 @@ export class Spaceship {
     this.dockingProgress = 0;
 
     // Calculate landing position on planet surface (near equator)
-    const planetPos = targetPlanet.getPosition();
+    const _planetPos = targetPlanet.getPosition();
     const planetRadius = targetPlanet.radius;
 
     // Choose a random point on the equator

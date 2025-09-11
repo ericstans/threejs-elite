@@ -33,8 +33,6 @@ async function collectInstruments(midiDir){
   if (files.length === 0) return new Set(ALWAYS_INCLUDE);
   let midiMod;
   try {
-    // Prefer require for simpler CJS interop if available
-    // eslint-disable-next-line import/no-dynamic-require
     midiMod = require('@tonejs/midi');
   } catch {
     midiMod = await import('@tonejs/midi');

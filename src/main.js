@@ -5,7 +5,7 @@ import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
 import { Controls } from './Controls.js';
 import { UI } from './UI.js';
-import { Asteroid } from './Asteroid.js';
+// import { Asteroid } from './Asteroid.js';
 import { CombatSystem } from './systems/CombatSystem.js';
 import { TargetingSystem } from './systems/TargetingSystem.js';
 import { NavigationSystem } from './systems/NavigationSystem.js';
@@ -19,7 +19,7 @@ import { registerDefaultSerializers } from './systems/serialization/registerDefa
 import { getSectorDefinition, availableSectors } from './systems/serialization/sectorDefinitions.js';
 import { hashSeed } from './util/seedUtils.js';
 
-import { NPCShip } from './NPCShip.js';
+// import { NPCShip } from './NPCShip.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { EngineParticles } from './EngineParticles.js';
 import { ConversationSystem } from './ConversationSystem.js';
@@ -49,11 +49,11 @@ class Game {
       // Check planets first
       const planet = this.environmentSystem?.planets?.find(p => p.getName && p.getName() === planetName);
       if (planet) return planet;
-      
+
       // Check NPC ships
       const npcShip = this.environmentSystem?.npcShips?.find(npc => npc.getName && npc.getName() === planetName);
       if (npcShip) return npcShip;
-      
+
       return null;
     };
     this.conversationSystem._getStationForPlanet = (planetName) => {
@@ -118,12 +118,12 @@ class Game {
           this.targetingSystem.currentTarget = null;
           this.ui.clearTargetInfo();
         }
-        
+
         // Check if any remaining NPC ships are hostile
-        const hasHostileShips = this.npcShips && this.npcShips.some(npc => 
+        const hasHostileShips = this.npcShips && this.npcShips.some(npc =>
           npc.isAlive && npc.isAlive() && npc.isHostile && npc.isHostile()
         );
-        
+
         // Only clear combat flag if no hostile ships remain
         if (!hasHostileShips) {
           this.spaceship.flags.isInCombat = false;
@@ -309,7 +309,7 @@ class Game {
           this.engineParticles.setSpaceshipModel(object);
         }
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
-        
+
         // Automatically switch to third person when model finishes loading
         this.toggleThirdPerson();
       },
@@ -636,7 +636,7 @@ class Game {
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
 
     // Create new laser with calculated direction
-    const laser = new Laser(laserStartPos, laserDirection);
+    const _laser = new Laser(laserStartPos, laserDirection);
     this.combatSystem.shootLaser();
   }
 
@@ -879,7 +879,7 @@ class Game {
       this.conversationSystem.loadConversationsFromSector(def);
       this.environmentSystem.procedural = false;
       this.environmentSystem.clearPlanetsAndStations();
-      
+
       // Load handcrafted planets
       const loadedPlanets = [];
       for (const p of def.planets) {
@@ -901,7 +901,7 @@ class Game {
           planet.mesh.add(moon);
         }
       }
-      
+
       // Load handcrafted stations
       for (const s of def.stations) {
         const host = loadedPlanets.find(pl => pl.getName() === s.planetName) || loadedPlanets[0];
@@ -912,11 +912,11 @@ class Game {
           this.gameEngine.scene.add(station.mesh);
         }
       }
-      
+
       // Load handcrafted NPC ships
       this.environmentSystem.createNPCShipsFromDefinition(def.npcShips);
       this.npcShips = this.environmentSystem.npcShips;
-      
+
       // Add procedural extras if specified
       if (def.hybridProceduralExtras) {
         const extrasCfg = def.hybridProceduralExtras;
@@ -961,7 +961,7 @@ class Game {
     }
     // Clear combat flag when switching sectors
     this.spaceship.flags.isInCombat = false;
-    
+
     // Set soundtracks from sector definition if provided, otherwise use default
     if (def && def.soundtracks) {
       this.globalFlags.soundtracks = def.soundtracks;
@@ -969,10 +969,10 @@ class Game {
       // Default soundtracks for sectors without explicit definitions
       this.globalFlags.soundtracks = ['ambient'];
     }
-    
+
     // Note: Sector soundtrack changes wait for current track to finish naturally
     // The MusicManager will pick up the new soundtracks on the next track
-    
+
     // Move player near new sector center for immediate feedback
     const activeSector = this.availableSectors.find(s => s.id === sectorId);
     if (activeSector && activeSector.center) {
@@ -1089,7 +1089,7 @@ class Game {
   }
 
   hasGlobalFlag(flagName) {
-    return this.globalFlags.hasOwnProperty(flagName) && this.globalFlags[flagName];
+    return Object.prototype.hasOwnProperty.call(this.globalFlags, flagName) && this.globalFlags[flagName];
   }
 
   getAllGlobalFlags() {
@@ -1146,7 +1146,7 @@ class Game {
     // Previously 0.15 * size; now using multiplier constant for easier tuning.
     const LANDING_VECTOR_CAPTURE_FACTOR = 0.30; // was 0.15
     const tolerance = this.currentNavTarget.size * LANDING_VECTOR_CAPTURE_FACTOR; // acceptable distance from line
-    const forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
+    const _forwardVelocity = this.spaceship.velocity.dot(dir); // toward slot if negative? depends on dir (dir is up). Allow near-zero
     if (radialDist < tolerance) {
       // Lock ship
       this.spaceship.lockToStation(station);
@@ -1192,13 +1192,13 @@ class Game {
       // Fallback to old logic if modal type is not set
       currentTarget = this.currentNavTarget || this.currentTarget;
     }
-    
+
     if (!currentTarget) {
       return;
     }
 
     const planetName = currentTarget.getName();
-    const options = [];
+    const _options = [];
     let nodeId = this.currentConversationNode;
 
     // Get current options from the modal
@@ -1214,7 +1214,7 @@ class Game {
           try {
             const flags = JSON.parse(selectedOption.dataset.flags);
             this.processFlags(flags);
-          } catch (e) {
+          } catch (_e) {
             if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
           }
         }
@@ -1271,7 +1271,7 @@ class Game {
         try {
           const flags = JSON.parse(selectedOption.dataset.flags);
           this.processFlags(flags);
-        } catch (e) {
+        } catch (_e) {
           if (DEBUG) console.warn('Invalid flags data:', selectedOption.dataset.flags);
         }
       }
@@ -1324,33 +1324,33 @@ setTimeout(() => {
     // Show UI and cockpit after title is dismissed
     game.ui.uiContainer.style.display = 'block';
     game.ui.cockpitWrapper.style.display = 'block';
-    
+
     // Recalculate radar size now that cockpit is visible
     setTimeout(() => {
       if (game.ui._updateRadarSize) {
         game.ui._updateRadarSize();
       }
     }, 100);
-    
+
     // Setup tutorial callbacks
     game.ui.setOnTutorialPause(() => {
       game.paused = true;
       console.log('Game paused for tutorial');
     });
-    
+
     game.ui.setOnTutorialResume(() => {
       game.paused = false;
       console.log('Game resumed after tutorial');
     });
-    
+
     game.ui.setOnTutorialComplete(() => {
       console.log('Tutorial completed');
     });
-    
+
     game.ui.setOnTutorialSkip(() => {
       console.log('Tutorial skipped');
     });
-    
+
     // Start tutorial after 3 seconds
     setTimeout(() => {
       game.ui.showTutorial();

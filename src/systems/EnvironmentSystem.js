@@ -134,19 +134,19 @@ export class EnvironmentSystem {
 
   createNPCShipsFromDefinition(npcShipDefinitions) {
     this.clearNPCShips();
-    
+
     for (const npcDef of npcShipDefinitions) {
       const position = new THREE.Vector3(npcDef.position.x, npcDef.position.y, npcDef.position.z);
       const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
-      
+
       // Set patrol waypoints if provided
       if (npcDef.patrolWaypoints && npcDef.patrolWaypoints.length > 0) {
         npcShip.setPatrolWaypoints(npcDef.patrolWaypoints);
         npcShip.startPatrol();
       }
-      
+
       this.npcShips.push(npcShip);
-      
+
       // Wait for FBX to load, then add to scene and game engine
       const addNPC = () => {
         if (npcShip.loaded && npcShip.mesh.children.length > 0) {
@@ -157,7 +157,7 @@ export class EnvironmentSystem {
         }
       };
       addNPC();
-      
+
       // Create stardust around the NPC ship
       this.createDerelictStardustField(position);
     }

@@ -7,7 +7,6 @@ export class TutorialOverlay {
     this.onPause = null;
     this.onResume = null;
     this.spotlightCutout = null;
-    
     this.tutorialSteps = [
       {
         id: 'welcome',
@@ -61,7 +60,7 @@ export class TutorialOverlay {
         revealElement: 'controls'
       }
     ];
-    
+
     this.createTutorialOverlay();
   }
 
@@ -77,54 +76,53 @@ export class TutorialOverlay {
     this.overlay.style.display = 'none';
     this.overlay.style.zIndex = '10001';
     this.overlay.style.pointerEvents = 'auto';
-    
 
-  // Create cowboy man character
-  this.cowboy = document.createElement('div');
-  this.cowboy.style.position = 'absolute';
-  this.cowboy.style.fontSize = '64px';
-  this.cowboy.style.userSelect = 'none';
-  this.cowboy.style.cursor = 'default';
-  this.cowboy.style.zIndex = '10003';
-  this.cowboy.textContent = '🤠';
+    // Create cowboy man character
+    this.cowboy = document.createElement('div');
+    this.cowboy.style.position = 'absolute';
+    this.cowboy.style.fontSize = '64px';
+    this.cowboy.style.userSelect = 'none';
+    this.cowboy.style.cursor = 'default';
+    this.cowboy.style.zIndex = '10003';
+    this.cowboy.textContent = '🤠';
 
-  // Create speech bubble
-  this.speechBubble = document.createElement('div');
-  this.speechBubble.style.position = 'absolute';
-  this.speechBubble.style.background = '#ffffcc';
-  this.speechBubble.style.border = '2px solid #000000';
-  this.speechBubble.style.borderRadius = '15px';
-  this.speechBubble.style.padding = '15px 20px';
-  this.speechBubble.style.maxWidth = '320px';
-  this.speechBubble.style.fontFamily = 'monospace';
-  this.speechBubble.style.fontSize = '15px';
-  this.speechBubble.style.color = '#000000';
-  this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
-  this.speechBubble.style.userSelect = 'none';
-  this.speechBubble.style.cursor = 'default';
-  this.speechBubble.style.zIndex = '10002';
+    // Create speech bubble
+    this.speechBubble = document.createElement('div');
+    this.speechBubble.style.position = 'absolute';
+    this.speechBubble.style.background = '#ffffcc';
+    this.speechBubble.style.border = '2px solid #000000';
+    this.speechBubble.style.borderRadius = '15px';
+    this.speechBubble.style.padding = '15px 20px';
+    this.speechBubble.style.maxWidth = '320px';
+    this.speechBubble.style.fontFamily = 'monospace';
+    this.speechBubble.style.fontSize = '15px';
+    this.speechBubble.style.color = '#000000';
+    this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
+    this.speechBubble.style.userSelect = 'none';
+    this.speechBubble.style.cursor = 'default';
+    this.speechBubble.style.zIndex = '10002';
 
-  // Create speech bubble tail (pointer)
-  this.speechTail = document.createElement('div');
-  this.speechTail.style.position = 'absolute';
-  this.speechTail.style.width = '0';
-  this.speechTail.style.height = '0';
-  this.speechTail.style.borderLeft = '18px solid transparent';
-  this.speechTail.style.borderRight = '18px solid transparent';
-  this.speechTail.style.borderTop = '28px solid #ffffcc';
-  this.speechTail.style.zIndex = '10001';
-    
+    // Create speech bubble tail (pointer)
+    this.speechTail = document.createElement('div');
+    this.speechTail.style.position = 'absolute';
+    this.speechTail.style.width = '0';
+    this.speechTail.style.height = '0';
+    this.speechTail.style.borderLeft = '18px solid transparent';
+    this.speechTail.style.borderRight = '18px solid transparent';
+    this.speechTail.style.borderTop = '28px solid #ffffcc';
+    this.speechTail.style.zIndex = '10001';
+
     // Create content area
     this.content = document.createElement('div');
     this.speechBubble.appendChild(this.content);
-    
-  this.overlay.appendChild(this.cowboy);
+
+    this.overlay.appendChild(this.cowboy);
     this.overlay.appendChild(this.speechBubble);
     this.overlay.appendChild(this.speechTail);
-    
+
     // Create spotlight cutout container
     this.createSpotlightCutoutContainer();
-    
+
     document.body.appendChild(this.overlay);
   }
 
@@ -146,7 +144,7 @@ export class TutorialOverlay {
     this.currentStep = 0;
     this.overlay.style.display = 'block';
     this.updateTutorialStep();
-    
+
     // Pause the game
     if (this.onPause) {
       this.onPause();
@@ -156,7 +154,7 @@ export class TutorialOverlay {
   hide() {
     this.isVisible = false;
     this.overlay.style.display = 'none';
-    
+
     // Resume the game
     if (this.onResume) {
       this.onResume();
@@ -169,7 +167,7 @@ export class TutorialOverlay {
 
     // Update content
     this.content.innerHTML = '';
-    
+
     // Add title
     const title = document.createElement('div');
     title.style.fontWeight = 'bold';
@@ -177,14 +175,14 @@ export class TutorialOverlay {
     title.style.fontSize = '16px';
     title.textContent = step.title;
     this.content.appendChild(title);
-    
+
     // Add message
     const message = document.createElement('div');
     message.style.marginBottom = '15px';
     message.style.lineHeight = '1.4';
     message.textContent = step.message;
     this.content.appendChild(message);
-    
+
     // Add options or buttons
     if (step.showOptions) {
       step.options.forEach(option => {
@@ -232,15 +230,15 @@ export class TutorialOverlay {
       endButton.onclick = () => this.completeTutorial();
       this.content.appendChild(endButton);
     }
-    
+
     // Position Clippy and speech bubble
     this.positionElements(step.position);
-    
+
     // Handle spotlight for revealed elements
     this.updateSpotlight(step.revealElement);
   }
 
-  positionElements(position) {
+  positionElements(_position) {
     // Position speech bubble as before
     let bubbleLeft = '60%';
     let bubbleTop = '60%';
@@ -265,7 +263,7 @@ export class TutorialOverlay {
       // Pointer: start at bottom-right of bubble, point to cowboy
       const tailWidth = 32;
       const tailHeight = Math.max(48, cowboyY - bubbleRect.bottom);
-      this.speechTail.style.left = (bubbleRect.right - tailWidth/2) + 'px';
+      this.speechTail.style.left = (bubbleRect.right - tailWidth / 2) + 'px';
       this.speechTail.style.top = (bubbleRect.bottom - 8) + 'px';
       this.speechTail.style.transform = 'none';
       this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';
@@ -277,13 +275,13 @@ export class TutorialOverlay {
 
   updateSpotlight(revealElement) {
     if (!this.spotlightCutout) return;
-    
+
     if (!revealElement) {
       // No element to reveal, clear cutouts and use normal background
       this.clearSpotlightCutout();
       return;
     }
-    
+
     // Create cutout for the specified element
     this.createSpotlightCutout(revealElement);
   }
@@ -291,36 +289,36 @@ export class TutorialOverlay {
   createSpotlightCutout(elementId) {
     // Clear any existing cutouts
     this.spotlightCutout.innerHTML = '';
-    
+
     // Find the target element
     const targetElement = this.findUIElement(elementId);
     if (!targetElement) {
-      console.warn(`Tutorial spotlight: Could not find element with id '${elementId}'`);
+      if (typeof DEBUG !== 'undefined' && DEBUG) {
+        console.warn(`Tutorial spotlight: Could not find element with id '${elementId}'`);
+      }
       return;
     }
-    
+
     // Special handling for targeting panel - temporarily show it if hidden
-    let wasHidden = false;
     if (elementId === 'targeting' && targetElement.style.display === 'none') {
       targetElement.style.display = 'block';
-      wasHidden = true;
       // Store reference to restore later
       this._temporarilyShownElement = { element: targetElement, wasHidden: true };
     }
-    
+
     // Get element position and size
     const rect = targetElement.getBoundingClientRect();
     const padding = 20; // Extra padding around the element
-    
+
     // Create cutout using CSS clip-path
     const cutoutLeft = Math.max(0, rect.left - padding);
     const cutoutTop = Math.max(0, rect.top - padding);
     const cutoutRight = Math.min(window.innerWidth, rect.right + padding);
     const cutoutBottom = Math.min(window.innerHeight, rect.bottom + padding);
-    
+
     const cutoutWidth = cutoutRight - cutoutLeft;
     const cutoutHeight = cutoutBottom - cutoutTop;
-    
+
     // Create the spotlight effect using CSS clip-path on the main overlay
     this.applySpotlightClipPath(cutoutLeft, cutoutTop, cutoutWidth, cutoutHeight);
   }
@@ -329,10 +327,12 @@ export class TutorialOverlay {
     // Use stored UI instance or try to get from global scope
     const uiInstance = this.uiInstance || window.game?.ui || window.ui;
     if (!uiInstance) {
-      console.warn('Tutorial spotlight: Could not find UI instance');
+      if (typeof DEBUG !== 'undefined' && DEBUG) {
+        console.warn('Tutorial spotlight: Could not find UI instance');
+      }
       return null;
     }
-    
+
     // Map element IDs to UI instance properties
     const elementMap = {
       'radar': uiInstance.radarWrapper,
@@ -341,33 +341,37 @@ export class TutorialOverlay {
       'cargo': uiInstance.cargoUI?.cargoPanel,
       'controls': uiInstance.controlsUI?.controlsHelp
     };
-    
+
     const element = elementMap[elementId];
     if (element) {
-      console.log(`Tutorial spotlight: Found element '${elementId}':`, element);
+      if (typeof DEBUG !== 'undefined' && DEBUG) {
+        console.log(`Tutorial spotlight: Found element '${elementId}':`, element);
+      }
       return element;
     }
-    
-    console.warn(`Tutorial spotlight: Could not find element '${elementId}' in UI instance`);
-    console.log('Available UI elements:', Object.keys(uiInstance).filter(key => key.includes('UI') || key.includes('Wrapper')));
+
+    if (typeof DEBUG !== 'undefined' && DEBUG) {
+      console.warn(`Tutorial spotlight: Could not find element '${elementId}' in UI instance`);
+      console.log('Available UI elements:', Object.keys(uiInstance).filter(key => key.includes('UI') || key.includes('Wrapper')));
+    }
     return null;
   }
 
   applySpotlightClipPath(cutoutLeft, cutoutTop, cutoutWidth, cutoutHeight) {
     // Create a clip-path that cuts out a rectangular hole in the main overlay
     const clipPath = `polygon(
-      0% 0%, 
-      0% 100%, 
-      ${cutoutLeft}px 100%, 
-      ${cutoutLeft}px ${cutoutTop}px, 
-      ${cutoutLeft + cutoutWidth}px ${cutoutTop}px, 
-      ${cutoutLeft + cutoutWidth}px ${cutoutTop + cutoutHeight}px, 
-      ${cutoutLeft}px ${cutoutTop + cutoutHeight}px, 
-      ${cutoutLeft}px 100%, 
-      100% 100%, 
+      0% 0%,
+      0% 100%,
+      ${cutoutLeft}px 100%,
+      ${cutoutLeft}px ${cutoutTop}px,
+      ${cutoutLeft + cutoutWidth}px ${cutoutTop}px,
+      ${cutoutLeft + cutoutWidth}px ${cutoutTop + cutoutHeight}px,
+      ${cutoutLeft}px ${cutoutTop + cutoutHeight}px,
+      ${cutoutLeft}px 100%,
+      100% 100%,
       100% 0%
     )`;
-    
+
     // Apply the clip-path to the main overlay
     this.overlay.style.clipPath = clipPath;
   }
@@ -376,7 +380,7 @@ export class TutorialOverlay {
     // Remove clip-path to show normal full overlay
     this.overlay.style.clipPath = 'none';
     this.spotlightCutout.innerHTML = '';
-    
+
     // Restore temporarily shown element if any
     if (this._temporarilyShownElement) {
       this._temporarilyShownElement.element.style.display = 'none';
@@ -447,13 +451,17 @@ export class TutorialOverlay {
 
   // Method to test targeting specifically
   testTargetingSpotlight() {
-    console.log('Testing targeting spotlight...');
+    if (typeof DEBUG !== 'undefined' && DEBUG) {
+      console.log('Testing targeting spotlight...');
+    }
     this.updateSpotlight('targeting');
   }
 
-  // Method to test controls specifically  
+  // Method to test controls specifically
   testControlsSpotlight() {
-    console.log('Testing controls spotlight...');
+    if (typeof DEBUG !== 'undefined' && DEBUG) {
+      console.log('Testing controls spotlight...');
+    }
     this.updateSpotlight('controls');
   }
 }

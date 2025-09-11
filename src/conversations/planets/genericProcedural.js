@@ -38,7 +38,7 @@ export const genericProceduralConversation = {
       ]
     },
     information: {
-      response: (playerFlags, planet, planetEntity, station, stationEntity) => {
+      response: (playerFlags, planet, planetEntity, station, _stationEntity) => {
         let base = 'Surface telemetry nominal.';
         if (planet.hasRings) base += ' Orbital ring debris monitoring active.';
         if (planet.hasMoon) base += ' Auxiliary lunar relay synchronized.';
