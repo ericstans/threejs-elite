@@ -16,7 +16,7 @@ export class GameEngine {
 
     this.clock = new THREE.Clock();
     this.entities = [];
-    
+
     // External references (set by Game class)
     /** @type {any} */
     this.spaceship = null;

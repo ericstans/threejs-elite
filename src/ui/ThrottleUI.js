@@ -113,7 +113,7 @@ export class ThrottleUI {
   updatePositioning() {
     // Apply base styling to all elements
     this.applyBaseStyling();
-    
+
     // Apply view-specific positioning
     if (this.isFirstPerson) {
       this.setFirstPersonPositioning();

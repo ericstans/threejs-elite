@@ -27,7 +27,7 @@ export class UI {
       nav: { left: '29.5%', top: '61%' },
       radar: { left: '50%', top: '70%' },
       throttle: { left: '62.625%', top: '60.5%' },
-      speedometer: { left: '59.875%', top: '55%' },
+      speedometer: { left: '59.875%', top: '55%' }
     };
     // Parallax tuning (motion/rotation driven)
     this._parallaxParams = {
@@ -150,7 +150,7 @@ export class UI {
     this.cashUI = new CashUI(this.uiContainer);
     this.commoditiesUI = new CommoditiesUI(this.uiContainer, this.cargoSystem);
     this.servicesUI = new ServicesUI(this.uiContainer);
-    
+
     // Set up commodities callback
     this.servicesUI.onCommoditiesClick = () => {
       this.showCommoditiesFromCurrentLocation();
@@ -408,7 +408,7 @@ export class UI {
   applyThirdPersonLayout() {
     if (!this.firstPersonMode) return; // already third-person
     this.firstPersonMode = false;
-    
+
     // Update ThrottleUI positioning for third-person view
     if (this.throttleUI) {
       this.throttleUI.setViewMode(false);
@@ -496,7 +496,7 @@ export class UI {
   applyFirstPersonLayout() {
     if (this.firstPersonMode) return; // already first-person
     this.firstPersonMode = true;
-    
+
     // Update ThrottleUI positioning for first-person view
     if (this.throttleUI) {
       this.throttleUI.setViewMode(true);
@@ -1086,16 +1086,16 @@ export class UI {
 
   handleCommoditiesSale(itemsToSell, totalValue) {
     console.log(`Commodities sale: ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
-    
+
     // Add cash to spaceship
     if (this.spaceship) {
       this.spaceship.addCash(totalValue);
     }
-    
+
     // Items are already removed from cargo system when using > buttons or clicking cargo
     // Just update the commodities UI to reflect current cargo state
     this.updateCommoditiesCargoItems();
-    
+
     // Update cash display
     if (this.cashUI && this.spaceship) {
       const currentCash = this.spaceship.getCash();
@@ -1111,7 +1111,7 @@ export class UI {
     // Only handle clicks when commodities UI is visible
     if (this.isCommoditiesVisible()) {
       console.log('Cargo item clicked:', itemData);
-      
+
       // Add to sell quantities - this will handle cargo removal
       this.commoditiesUI.increaseSellQuantity(itemData.name);
     }
@@ -1155,18 +1155,18 @@ export class UI {
     if (this.cargoSystem) {
       const currentCargoCount = this.cargoSystem.getCargoCount();
       const totalItemsToAdd = itemsToBuy.reduce((total, item) => total + item.quantity, 0);
-      
+
       if (currentCargoCount + totalItemsToAdd > this.cargoSystem.maxCargoSlots) {
         console.log(`Purchase would exceed cargo capacity! Current: ${currentCargoCount}, Trying to add: ${totalItemsToAdd}, Max: ${this.cargoSystem.maxCargoSlots}`);
         return;
       }
     }
-    
+
     // Deduct cash from spaceship
     if (this.spaceship) {
       this.spaceship.removeCash(totalCost);
     }
-    
+
     // Add items to cargo system using unified method
     if (this.cargoSystem) {
       itemsToBuy.forEach(item => {
@@ -1179,10 +1179,10 @@ export class UI {
         }
       });
     }
-    
+
     // Update commodities UI with new cargo items
     this.updateCommoditiesCargoItems();
-    
+
     // Update cash display
     if (this.cashUI && this.spaceship) {
       const currentCash = this.spaceship.getCash();
@@ -1192,7 +1192,7 @@ export class UI {
         this.commoditiesUI.updateCash(currentCash);
       }
     }
-    
+
     console.log(`Bought ${itemsToBuy.length} different items for $${totalCost.toFixed(0)}`);
   }
 
@@ -1200,7 +1200,7 @@ export class UI {
   getCommodityColor(commodityName) {
     const colorMap = {
       'Iron Ore': '#8B4513',
-      'Copper Ore': '#B87333', 
+      'Copper Ore': '#B87333',
       'Gold Ore': '#FFD700',
       'Platinum Ore': '#E5E4E2',
       'Steel Ingots': '#C0C0C0',

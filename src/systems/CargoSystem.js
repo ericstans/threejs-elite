@@ -160,7 +160,7 @@ export class CargoSystem {
 
     this.cargo.push(cargoItem);
     this.updateCargoUI();
-    
+
     if (DEBUG) console.log(`Added ${cargoItem.name} to cargo bay`);
     return true;
   }
@@ -169,7 +169,7 @@ export class CargoSystem {
   addTestCargo() {
     const testItems = [
       'Iron Ore',
-      'Copper Ore', 
+      'Copper Ore',
       'Gold Ore',
       'Steel Ingots',
       'Electronics',

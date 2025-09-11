@@ -424,7 +424,7 @@ class Game {
       if (this.spaceship.flags.isDocked) {
         return;
       }
-      
+
       if (this.ui.mapModal.style.display === 'block') {
         this.ui.hideMapModal();
       } else {
@@ -536,12 +536,12 @@ class Game {
     const targetSpeed = this.spaceship.getThrottle() * this.spaceship.maxSpeed;
     let currentSpeed = this.spaceship.getSpeed();
     const maxSpeed = this.spaceship.maxSpeed;
-    
+
     // If docking, show docking speed instead of 0
     if (this.spaceship.flags.isDocking && currentSpeed < 0.1) {
       currentSpeed = this.spaceship.dockingSpeed;
     }
-    
+
     this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);
 
     // Update debug flags display (only in dev mode)
@@ -1073,7 +1073,7 @@ class Game {
   async start() {
     // Initialize audio systems
     await this.audioManager.initialize();
-    
+
     // Override the game engine's update to include our custom update
     const originalUpdate = this.gameEngine.update.bind(this.gameEngine);
     this.gameEngine.update = (deltaTime) => {
@@ -1132,13 +1132,13 @@ setTimeout(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const skipTutorial = urlParams.get('skiptutorial') === '1';
     const startWithCargo = urlParams.get('startWithCargo') === '1';
-    
+
     // Add test cargo if requested
     if (startWithCargo) {
       game.cargoSystem.addTestCargo();
       console.log('Test cargo added via URL parameter');
     }
-    
+
     // Start tutorial after 3 seconds (unless skipped)
     if (!skipTutorial) {
       setTimeout(() => {

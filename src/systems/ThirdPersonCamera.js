@@ -14,7 +14,7 @@ export class ThirdPersonCamera {
     this.spaceship = spaceship;
     this.ui = ui;
     this.engineParticles = engineParticles;
-    
+
     // Third-person orbit parameters
     this.thirdPersonOrbitYaw = 0; // radians
     this.thirdPersonOrbitPitch = 0; // radians
@@ -23,16 +23,16 @@ export class ThirdPersonCamera {
     this._orbitDragging = false;
     this._lastMouseX = 0;
     this._lastMouseY = 0;
-    
+
     // Orbit idle auto-exit
     this.thirdPersonOrbitIdleSeconds = 0;
     this.thirdPersonOrbitIdleThreshold = 3; // seconds
-    
+
     // Camera offset and positioning
     this.thirdPersonCameraOffset = new THREE.Vector3(0, 0, 55);
     this.lastFirstPersonCameraPos = new THREE.Vector3();
     this.thirdPersonInitialized = false;
-    
+
     this._initOrbitEventHandlers();
   }
 

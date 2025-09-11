@@ -8,7 +8,7 @@ export class ConversationSystem {
     // Station detection and docking hooks
     this._isStation = null;
     this._isStationDockable = null;
-    
+
     // Planet detection and entity hooks
     this._isPlanetDockable = null;
     this._getPlanetEntity = null;

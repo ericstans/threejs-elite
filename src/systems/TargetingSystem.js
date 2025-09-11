@@ -154,11 +154,11 @@ export class TargetingSystem {
     const toTarget = targetPos.clone().sub(spaceshipPos).normalize();
     const angle = forward.angleTo(toTarget);
     const maxAngle = Math.PI / 18;
-    
+
     // Check if target is within angle AND within laser range (300 units)
     const distance = spaceshipPos.distanceTo(targetPos);
     const laserRange = 300;
-    
+
     return angle <= maxAngle && distance <= laserRange;
   }
 
@@ -220,7 +220,7 @@ export class TargetingSystem {
       const spaceshipPos = ship.getPosition();
       const targetPos = this.currentNavTarget.getPosition();
       const rawDistance = spaceshipPos.distanceTo(targetPos);
-      
+
       // Calculate surface distance for planets (distance - radius) and stations (distance - size)
       let distance = rawDistance;
       if (this.currentNavTarget.getType && this.currentNavTarget.getType() === 'planet') {
@@ -230,7 +230,7 @@ export class TargetingSystem {
         // For stations, subtract size to get distance to surface
         distance = Math.max(0, rawDistance - (this.currentNavTarget.size || 0));
       }
-      
+
       // Check if player is docked with the nav target
       const isDockedWithTarget = ship.flags.isDocked &&
         ((ship.flags.dockContext === 'planet' && ship.flags.docketPlanetId === this.currentNavTarget.getId()) ||
@@ -417,11 +417,11 @@ export class TargetingSystem {
   // Calculate lead target position for moving targets
   calculateLeadTarget() {
     if (!(this.currentTarget && this.currentTarget.isAlive())) return null;
-    
+
     const ship = this.getSpaceship();
     const spaceshipPos = ship.getPosition();
     const targetPos = this.currentTarget.getPosition();
-    
+
     // Get target velocity if available (for NPC ships)
     let targetVelocity = new THREE.Vector3(0, 0, 0);
     if (this.currentTarget.velocity) {
@@ -429,7 +429,7 @@ export class TargetingSystem {
     } else if (this.currentTarget.getVelocity) {
       targetVelocity = this.currentTarget.getVelocity();
     }
-    
+
     // Get player ship velocity
     let playerVelocity = new THREE.Vector3(0, 0, 0);
     if (ship && ship.velocity) {
@@ -437,26 +437,26 @@ export class TargetingSystem {
     } else if (ship && ship.getVelocity) {
       playerVelocity = ship.getVelocity();
     }
-    
+
     // If neither target nor player is moving significantly, return current position
     if (targetVelocity.length() < 0.1 && playerVelocity.length() < 0.1) {
       return targetPos.clone();
     }
-    
+
     // Calculate relative velocity (target velocity - player velocity)
     const relativeVelocity = targetVelocity.clone().sub(playerVelocity);
-    
+
     // If relative velocity is very small, return current position
     if (relativeVelocity.length() < 0.1) {
       return targetPos.clone();
     }
-    
+
     // Solve for intersection time using quadratic formula
     // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
     // This simplifies to solving: |relativePos + relativeVel*t| = laserSpeed * t
     const relativePos = targetPos.clone().sub(spaceshipPos);
     const laserSpeed = 100; // From Laser.js constructor
-    
+
     // Quadratic equation: a*t^2 + b*t + c = 0
     // where: a = |relativeVel|^2 - laserSpeed^2
     //        b = 2 * relativePos.dot(relativeVel)
@@ -464,9 +464,9 @@ export class TargetingSystem {
     const a = relativeVelocity.lengthSq() - laserSpeed * laserSpeed;
     const b = 2 * relativePos.dot(relativeVelocity);
     const c = relativePos.lengthSq();
-    
+
     let travelTime = 0;
-    
+
     if (Math.abs(a) < 0.001) {
       // Linear case: b*t + c = 0
       if (Math.abs(b) > 0.001) {
@@ -481,7 +481,7 @@ export class TargetingSystem {
         const sqrtDiscriminant = Math.sqrt(discriminant);
         const t1 = (-b + sqrtDiscriminant) / (2 * a);
         const t2 = (-b - sqrtDiscriminant) / (2 * a);
-        
+
         // Choose the positive time closest to zero
         if (t1 > 0 && t2 > 0) {
           travelTime = Math.min(t1, t2);
@@ -498,22 +498,22 @@ export class TargetingSystem {
         travelTime = relativePos.length() / laserSpeed;
       }
     }
-    
+
     // Ensure travel time is positive and reasonable
     if (travelTime <= 0 || travelTime > 10) { // Max 10 seconds
       travelTime = relativePos.length() / laserSpeed;
     }
-    
+
     // Predict where target will be when laser arrives
     const leadPosition = targetPos.clone().add(
       targetVelocity.clone().multiplyScalar(travelTime)
     );
-    
+
     // Safety check: ensure the lead position is valid
     if (leadPosition && leadPosition.isVector3 && !isNaN(leadPosition.x) && !isNaN(leadPosition.y) && !isNaN(leadPosition.z)) {
       return leadPosition;
     }
-    
+
     // Fallback to current target position if lead calculation failed
     return targetPos.clone();
   }

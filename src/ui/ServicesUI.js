@@ -54,13 +54,13 @@ export class ServicesUI {
     this.instructions.style.color = '#888';
     this.instructions.innerHTML = 'Press <strong>1-9</strong> to select services or <strong>ESC</strong> to close';
     this.servicesModal.appendChild(this.instructions);
-    
+
   }
 
   setupKeyboardHandlers() {
     this.keyHandler = (event) => {
       if (!this.isVisible) return;
-      
+
       // Handle number keys 1-9
       if (event.code >= 'Digit1' && event.code <= 'Digit9') {
         event.preventDefault();
@@ -68,7 +68,7 @@ export class ServicesUI {
         this.selectServiceByIndex(serviceIndex);
       }
     };
-    
+
     document.addEventListener('keydown', this.keyHandler);
   }
 
@@ -176,12 +176,12 @@ export class ServicesUI {
       serviceItem.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        
+
         if (!isImplemented) {
           console.log(`Service not implemented: ${serviceId}`);
           return;
         }
-        
+
         console.log(`Service clicked: ${serviceId}`);
         if (serviceId === 'commodities' && this.onCommoditiesClick) {
           console.log('Calling commodities callback');
@@ -191,7 +191,7 @@ export class ServicesUI {
           // TODO: Implement other service functionality
         }
       };
-      
+
       // Also add a mousedown event to test
       serviceItem.addEventListener('mousedown', (event) => {
         if (!isImplemented) {

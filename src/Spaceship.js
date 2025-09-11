@@ -29,7 +29,7 @@ export class Spaceship {
     this.dockingSpeed = this.maxSpeed * 0.9; // 90% of max speed
     this.dockingPosition = new THREE.Vector3();
     this.dockingRotation = new THREE.Quaternion();
-    
+
     // Enhanced landing animation state
     this.landingPhase = 'approach'; // 'approach', 'descent'
     this.landingStartTime = 0;
@@ -45,7 +45,7 @@ export class Spaceship {
     this.isParentedToPlanet = false;
     // Player cash
     this.cash = 0;
-    
+
     // Player flags
     this.flags = {
       firingEnabled: true,
@@ -748,7 +748,7 @@ export class Spaceship {
     this.landingPhase = 'approach';
     this.landingStartTime = Date.now() / 1000;
     this.isParentedToPlanet = false;
-    
+
     // Store current position and rotation as starting points
     this.landingStartPosition.copy(this.position);
     this.landingStartRotation.copy(this.quaternion);
@@ -817,46 +817,46 @@ export class Spaceship {
         // Reached close enough to planet - start descent phase
         this.landingPhase = 'descent';
         this.descentStartTime = currentTime;
-        
+
         // Parent ship to planet mesh at the start of descent
         if (!this.isParentedToPlanet) {
           // Store the current world position and rotation
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
-          
+
           // Calculate where the ship should be relative to the planet
           // Position it at a safe distance from the planet surface
           const directionFromPlanet = worldPos.clone().sub(planetPos).normalize();
           const distanceFromSurface = worldPos.distanceTo(planetPos) - this.dockingTarget.radius;
           const safeDistance = Math.max(distanceFromSurface, this.dockingTarget.radius * 0.5);
           const localPos = directionFromPlanet.clone().multiplyScalar(this.dockingTarget.radius + safeDistance);
-          
+
           // Calculate the rotation that maintains the ship's current orientation
           // relative to the planet's surface at the landing point
           const directionToPlanet = this.dockingPosition.clone().normalize().negate();
           const targetRotation = new THREE.Quaternion();
           targetRotation.setFromUnitVectors(new THREE.Vector3(0, -1, 0), directionToPlanet);
-          
+
           // Remove from current parent and add to planet
           if (this.mesh.parent) {
             this.mesh.parent.remove(this.mesh);
           }
           this.dockingTarget.mesh.add(this.mesh);
-          
+
           // Set the local position and rotation
           this.mesh.position.copy(localPos);
           this.mesh.quaternion.copy(targetRotation);
           this.mesh.rotation.setFromQuaternion(targetRotation);
-          
+
           // Update the logical position and rotation
           this.position.copy(this.dockingTarget.mesh.localToWorld(localPos));
           this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(targetRotation));
           this.rotation.setFromQuaternion(this.quaternion);
-          
+
           // Store the starting local position for interpolation
           this.landingStartLocalPosition = localPos.clone();
           this.landingStartLocalRotation = targetRotation.clone();
-          
+
           this.isParentedToPlanet = true;
           if (DEBUG) console.log('Ship parented to planet for landing animation');
         }
@@ -868,28 +868,28 @@ export class Spaceship {
     if (this.landingPhase === 'descent') {
       const descentElapsed = currentTime - this.descentStartTime;
       const descentProgress = Math.min(descentElapsed / this.descentDuration, 1.0);
-      
+
       // Use smooth easing for descent
       const easeProgress = 1 - Math.pow(1 - descentProgress, 3); // easeOutCubic
-      
+
       // Work entirely in local space since ship is parented to planet
       const startLocalPos = this.landingStartLocalPosition;
       const targetLocalPos = this.dockingPosition.clone();
-      
+
       // Interpolate position in local space
       const currentLocalPos = startLocalPos.clone().lerp(targetLocalPos, easeProgress);
       this.mesh.position.copy(currentLocalPos);
-      
+
       // Interpolate rotation in local space
       const currentRotation = this.landingStartLocalRotation.clone().slerp(this.landingTargetRotation, easeProgress);
       this.mesh.quaternion.copy(currentRotation);
       this.mesh.rotation.setFromQuaternion(currentRotation);
-      
+
       // Update logical position and rotation by converting from local to world
       this.position.copy(this.dockingTarget.mesh.localToWorld(currentLocalPos));
       this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(currentRotation));
       this.rotation.setFromQuaternion(this.quaternion);
-      
+
       // Check for collision with planet surface (prevent penetration)
       const distanceFromCenter = currentLocalPos.length();
       if (distanceFromCenter < planetRadius) {
@@ -898,25 +898,25 @@ export class Spaceship {
         this.mesh.position.copy(surfacePos);
         this.position.copy(this.dockingTarget.mesh.localToWorld(surfacePos));
       }
-      
+
       // Check if descent is complete
       if (descentProgress >= 1.0) {
         // Ensure we're exactly at the target position
         this.mesh.position.copy(targetLocalPos);
         this.mesh.quaternion.copy(this.landingTargetRotation);
         this.mesh.rotation.setFromQuaternion(this.landingTargetRotation);
-        
+
         // Update logical position and rotation
         this.position.copy(this.dockingTarget.mesh.localToWorld(targetLocalPos));
         this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(this.landingTargetRotation));
         this.rotation.setFromQuaternion(this.quaternion);
-        
+
         // Complete docking immediately
         this.flags.isDocking = false;
         this.flags.isDocked = true;
         this.dockingProgress = 1;
         this.landingPhase = 'approach'; // Reset for next time
-        
+
         if (DEBUG) console.log('Landing completed!');
       }
     }
@@ -928,11 +928,11 @@ export class Spaceship {
 
   startPlanetTakeoff(planet, scene) {
     if (!this.flags.isDocked || this.flags.stationDocked) return;
-    
+
     // Reset landing animation state
     this.landingPhase = 'approach';
     this.isParentedToPlanet = false;
-    
+
     // Keep parented initially; store parent for later reattachment if needed
     this.takeoffSceneParent = planet.mesh.parent || scene;
     const local = this.dockingPosition.clone(); // starting local position relative to planet center

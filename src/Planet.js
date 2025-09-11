@@ -21,7 +21,7 @@ export class Planet {
 
     this.mesh = this.createPlanetMesh();
     this.mesh.position.copy(this.position);
-    
+
     // Add custom properties to mesh for navigation targeting
     this.mesh.getId = () => this.getId();
     this.mesh.getName = () => this.getName();

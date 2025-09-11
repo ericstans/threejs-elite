@@ -119,7 +119,7 @@ export class NavTargetUI {
     this.navTargetPanel.style.display = 'block';
     this.navTargetName.textContent = navTargetInfo.name;
     this.navTargetMass.textContent = `Mass: ${navTargetInfo.mass.toFixed(0)}`;
-    
+
     // Distance is now calculated as surface distance (distance - radius/size)
     this.navTargetDistance.textContent = `Distance: ${navTargetInfo.distance.toFixed(1)}`;
 

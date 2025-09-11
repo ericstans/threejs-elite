@@ -36,9 +36,9 @@ export class TitleOverlay {
 
     // Set random title
     const titles = [
-      ['THE', 'MOURNFUL', 'VOID'],
-      ['DARTING', 'TOWARD', 'OBLIVION'],
-      ['SHAPES', 'IN THE', 'BLACK']
+      ['THE', 'MOURNFUL', 'VOID']
+      //['DARTING', 'TOWARD', 'OBLIVION'],
+      //['SHAPES', 'IN THE', 'BLACK']
     ];
 
     const randomTitle = titles[Math.floor(Math.random() * titles.length)];

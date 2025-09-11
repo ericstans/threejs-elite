@@ -13,12 +13,12 @@ export class AudioManager {
     this._soundManager = new SoundManager();
     this._musicManager = new MusicManager(game, spaceship, gameStateManager);
     this.gameStateManager = gameStateManager;
-    
+
     // Update MusicManager with GameStateManager reference if it was provided later
     if (this.gameStateManager) {
       this._musicManager.gameStateManager = this.gameStateManager;
     }
-    
+
     // Audio state tracking
     this.musicStarted = false;
     this._lastEngineDocked = false;
@@ -28,11 +28,11 @@ export class AudioManager {
   async initialize() {
     this.musicStarted = false;
     this._lastEngineDocked = false;
-    
+
     // Initialize the music manager
     if (this._musicManager && this._musicManager.init) {
       await this._musicManager.init();
-      
+
       // Start playing ambient music
       if (this._musicManager.playTrack) {
         this._musicManager.playTrack('ambient');
@@ -98,7 +98,7 @@ export class AudioManager {
       // Default soundtracks for sectors without explicit definitions
       this.gameStateManager.setSoundtracks(['ambient']);
     }
-    
+
     // Note: Sector soundtrack changes wait for current track to finish naturally
     // The MusicManager will pick up the new soundtracks on the next track
   }

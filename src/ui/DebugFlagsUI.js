@@ -102,7 +102,7 @@ export class DebugFlagsUI {
     this.playerFlagsContent.style.display = 'none';
     this.globalFlagsTitle.style.display = 'none';
     this.globalFlagsContent.style.display = 'none';
-    
+
     // Adjust the container size
     this.flagsDisplay.style.maxWidth = '120px';
     this.flagsDisplay.style.padding = '5px 10px';
@@ -118,7 +118,7 @@ export class DebugFlagsUI {
     this.playerFlagsContent.style.display = 'block';
     this.globalFlagsTitle.style.display = 'block';
     this.globalFlagsContent.style.display = 'block';
-    
+
     // Restore the container size
     this.flagsDisplay.style.maxWidth = '300px';
     this.flagsDisplay.style.padding = '10px';

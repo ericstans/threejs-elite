@@ -413,14 +413,14 @@ export class MusicManager {
   // Immediate soundtrack switch (stops current track and starts new one immediately)
   switchSoundtracksImmediate(soundtracks) {
     if (DEBUG) console.log('MusicManager: switchSoundtracksImmediate called with:', soundtracks);
-    
+
     if (this.gameStateManager) {
       this.gameStateManager.setSoundtracks(Array.isArray(soundtracks) ? soundtracks : [soundtracks]);
       if (DEBUG) console.log('MusicManager: Switched soundtracks to:', this.gameStateManager.getCurrentSoundtracks());
     } else {
       if (DEBUG) console.warn('MusicManager: gameStateManager is null!');
     }
-    
+
     if (this.isPlaying) {
       this.stopTrack();
       // Always play 'ambient' - the _playRandomAmbientMidi method will read the current soundtracks
@@ -433,37 +433,37 @@ export class MusicManager {
 
   update() {
     if (!this.spaceship) return;
-    
+
     // Only check combat state every frame as it can change frequently
     const isInCombat = this.spaceship.flags.isInCombat;
-    
+
     // Only check docking state if we haven't checked recently (throttle to 100ms)
-    const shouldCheckDocking = !this._lastDockingCheckTime || 
+    const shouldCheckDocking = !this._lastDockingCheckTime ||
                               (Date.now() - this._lastDockingCheckTime) > 100; // Check at most every 100ms
-    
+
     let isDocking, isDocked, landingVectorLocked, shouldPlayDocking, stateChanged;
-    
+
     if (shouldCheckDocking) {
       isDocking = this.spaceship.flags.isDocking;
       isDocked = this.spaceship.flags.isDocked;
       landingVectorLocked = this.spaceship.flags.landingVectorLocked;
-      
+
       // Check if we should switch to docking soundtrack
       shouldPlayDocking = (isDocking || landingVectorLocked) && !isDocked;
-      
+
       // Debug logging for docking state
       if (DEBUG && (isDocking || landingVectorLocked || isDocked)) {
         console.log('MusicManager: Docking state - isDocking:', isDocking, 'landingVectorLocked:', landingVectorLocked, 'isDocked:', isDocked, 'shouldPlayDocking:', shouldPlayDocking);
       }
-      
+
       // Only process soundtrack changes when state actually changes
       const currentDockingState = shouldPlayDocking;
       stateChanged = currentDockingState !== this._lastDockingState;
-      
+
       if (DEBUG && stateChanged) {
         console.log('MusicManager: Docking state changed - previous:', this._lastDockingState, 'current:', currentDockingState);
       }
-      
+
       this._lastDockingCheckTime = Date.now();
     } else {
       // Use cached values if we're not checking this frame
@@ -471,15 +471,15 @@ export class MusicManager {
       stateChanged = false;
       isDocked = this._lastIsDocked;
     }
-    
+
     if (stateChanged) {
       this._lastDockingState = shouldPlayDocking;
       this._lastIsDocked = isDocked;
-      
+
       if (DEBUG) {
         console.log('MusicManager: Processing state change - isInCombat:', isInCombat, 'shouldPlayDocking:', shouldPlayDocking, 'isDocked:', isDocked, 'wasInDocking:', this._wasInDocking);
       }
-      
+
       if (isInCombat) {
         // Combat takes priority - switch to combat soundtrack
         if (DEBUG) console.log('MusicManager: Switching to combat soundtrack');

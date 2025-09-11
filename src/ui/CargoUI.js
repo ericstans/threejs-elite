@@ -71,7 +71,7 @@ export class CargoUI {
           // Use brighter version for hover effect
           const originalBg = slot.dataset.originalBackground;
           const originalBorder = slot.dataset.originalBorderColor;
-          
+
           // Make background slightly brighter (increase alpha)
           if (originalBg.includes('rgba')) {
             const match = originalBg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
@@ -83,7 +83,7 @@ export class CargoUI {
           } else {
             slot.style.background = originalBg;
           }
-          
+
           // Make border slightly brighter
           slot.style.borderColor = originalBorder;
         }
@@ -125,10 +125,10 @@ export class CargoUI {
   addCargo(slotIndex, cargoIcon, cargoName = '') {
     if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
       const slot = this.cargoGrid[slotIndex];
-      
+
       // Clear any existing content
       slot.innerHTML = '';
-      
+
       // Check if it's a FontAwesome icon
       if (cargoIcon && cargoIcon.startsWith('fa-')) {
         // Create FontAwesome icon element
@@ -142,7 +142,7 @@ export class CargoUI {
         slot.textContent = cargoIcon;
         slot.style.color = '#00ff00';
       }
-      
+
       slot.title = cargoName; // Tooltip
       slot.dataset.itemIcon = cargoIcon; // Store icon in dataset
 
@@ -156,10 +156,10 @@ export class CargoUI {
   addCargoWithColor(slotIndex, cargoIcon, cargoName = '', color = '#00ff00') {
     if (slotIndex >= 0 && slotIndex < this.cargoGrid.length) {
       const slot = this.cargoGrid[slotIndex];
-      
+
       // Clear any existing content
       slot.innerHTML = '';
-      
+
       // Check if it's a FontAwesome icon
       if (cargoIcon && cargoIcon.startsWith('fa-')) {
         // Create FontAwesome icon element
@@ -173,7 +173,7 @@ export class CargoUI {
         slot.textContent = cargoIcon;
         slot.style.color = color;
       }
-      
+
       slot.title = cargoName; // Tooltip
       slot.dataset.itemColor = color; // Store color in dataset
       slot.dataset.itemName = cargoName; // Store name in dataset
@@ -183,10 +183,10 @@ export class CargoUI {
       const colorRgb = this.hexToRgb(color);
       const backgroundColor = `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.1)`;
       const borderColor = color;
-      
+
       slot.style.background = backgroundColor;
       slot.style.borderColor = borderColor;
-      
+
       // Store original colors for hover effects
       slot.dataset.originalBackground = backgroundColor;
       slot.dataset.originalBorderColor = borderColor;

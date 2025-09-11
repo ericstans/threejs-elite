@@ -9,11 +9,11 @@ export class GameStateManager {
   constructor(musicManager, soundManager) {
     this.musicManager = musicManager;
     this.soundManager = soundManager;
-    
+
     // Game state
     this.paused = false;
     this.isPaused = false; // Legacy compatibility
-    
+
     // Global flags for game state tracking
     this.globalFlags = {
       gameStarted: false,
