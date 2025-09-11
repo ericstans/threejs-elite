@@ -8,6 +8,7 @@ export class CommoditiesUI {
     this.cargoItems = []; // Items from cargo bay
     this.movedItems = []; // Track items moved from cargo to sell grid
     this.buyQuantities = {}; // Track quantities to buy for each commodity
+    this.sellQuantities = {}; // Track quantities to sell for each commodity
     this.currentCash = 0; // Track current cash amount
     this.onCargoUpdate = null; // Callback to update cargo
     this.onCargoAdd = null; // Callback to add items back to cargo
@@ -126,16 +127,18 @@ export class CommoditiesUI {
     this.sellTitle.style.fontSize = '18px';
     this.sellPanel.appendChild(this.sellTitle);
 
-    // Sell grid container
+    // Sell commodities list container
+    this.sellCommoditiesList = document.createElement('div');
+    this.sellCommoditiesList.style.maxHeight = '80%';
+    this.sellCommoditiesList.style.overflowY = 'auto';
+    this.sellPanel.appendChild(this.sellCommoditiesList);
+
+    // Keep the old sell grid for backward compatibility but hide it
     this.sellGridContainer = document.createElement('div');
-    this.sellGridContainer.style.display = 'grid';
-    this.sellGridContainer.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    this.sellGridContainer.style.gridTemplateRows = 'repeat(5, 1fr)';
-    this.sellGridContainer.style.gap = '4px';
-    this.sellGridContainer.style.height = '300px';
+    this.sellGridContainer.style.display = 'none'; // Hide the old grid
     this.sellPanel.appendChild(this.sellGridContainer);
 
-    // Create sell grid slots
+    // Create sell grid slots (keeping for backward compatibility)
     for (let i = 0; i < this.sellGridSize; i++) {
       const slot = document.createElement('div');
       slot.style.border = '1px solid #00aa55';
@@ -281,9 +284,12 @@ export class CommoditiesUI {
     this.modal.style.display = 'block';
     this.movedItems = []; // Clear moved items when showing
     this.buyQuantities = {}; // Clear buy quantities when showing
+    this.sellQuantities = {}; // Clear sell quantities when showing
     this.updateCargoDisplay();
     this.updateCommoditiesList(); // Refresh the list to reset quantities
+    this.updateSellCommoditiesList(); // Refresh the sell list
     this.updateBuyTotal(); // Reset buy total
+    this.updateSellTotal(); // Reset sell total
     // Set initial button states after UI is created
     setTimeout(() => this.updateAllButtonStates(), 0);
   }
@@ -298,6 +304,7 @@ export class CommoditiesUI {
   updateCommodities(commodities) {
     this.commodities = commodities;
     this.updateCommoditiesList();
+    this.updateSellCommoditiesList();
   }
 
   updateCommoditiesList() {
@@ -406,6 +413,127 @@ export class CommoditiesUI {
       item.appendChild(price);
 
       this.commoditiesList.appendChild(item);
+    });
+  }
+
+  updateSellCommoditiesList() {
+    this.sellCommoditiesList.innerHTML = '';
+    
+    this.commodities.forEach(commodity => {
+      const item = document.createElement('div');
+      item.style.display = 'flex';
+      item.style.justifyContent = 'space-between';
+      item.style.alignItems = 'center';
+      item.style.padding = '8px';
+      item.style.border = '1px solid #00aa55';
+      item.style.borderRadius = '4px';
+      item.style.marginBottom = '5px';
+
+      // Left side - commodity icon and name
+      const nameContainer = document.createElement('div');
+      nameContainer.style.display = 'flex';
+      nameContainer.style.alignItems = 'center';
+      nameContainer.style.gap = '8px';
+      nameContainer.style.flex = '1';
+      
+      // Add icon
+      if (commodity.icon && commodity.icon.startsWith('fa-')) {
+        // Create FontAwesome icon element
+        const iconElement = document.createElement('i');
+        iconElement.className = commodity.icon;
+        iconElement.style.color = commodity.color || '#00ff00';
+        iconElement.style.fontSize = '16px';
+        nameContainer.appendChild(iconElement);
+      } else {
+        // Use as text/emoji or fallback to circle
+        const iconElement = document.createElement('span');
+        iconElement.textContent = commodity.icon || '●';
+        iconElement.style.color = commodity.color || '#00ff00';
+        iconElement.style.fontSize = '16px';
+        nameContainer.appendChild(iconElement);
+      }
+      
+      // Add name
+      const name = document.createElement('span');
+      name.textContent = commodity.name;
+      name.style.fontWeight = 'bold';
+      nameContainer.appendChild(name);
+      
+      item.appendChild(nameContainer);
+
+      // Middle - quantity controls (only show if item is in cargo)
+      const quantityContainer = document.createElement('div');
+      quantityContainer.style.display = 'flex';
+      quantityContainer.style.alignItems = 'center';
+      quantityContainer.style.gap = '8px';
+
+      // Check if this commodity exists in cargo
+      const cargoQuantity = this.getCargoQuantity(commodity.name);
+      const hasInCargo = cargoQuantity > 0;
+
+      const decreaseBtn = document.createElement('button');
+      decreaseBtn.textContent = '<';
+      decreaseBtn.className = 'sell-decrease-btn';
+      decreaseBtn.style.background = 'rgba(0, 255, 0, 0.2)';
+      decreaseBtn.style.border = '1px solid #00ff00';
+      decreaseBtn.style.color = '#00ff00';
+      decreaseBtn.style.padding = '4px 8px';
+      decreaseBtn.style.cursor = 'pointer';
+      decreaseBtn.style.fontFamily = 'PeaberryMono, monospace';
+      decreaseBtn.style.fontSize = '14px';
+      decreaseBtn.style.transition = 'all 0.2s ease';
+      decreaseBtn.disabled = !hasInCargo;
+      decreaseBtn.addEventListener('click', (e) => {
+        if (!(e.target instanceof HTMLButtonElement) || !e.target.disabled) {
+          this.decreaseSellQuantity(commodity.name);
+        }
+      });
+
+      const quantityDisplay = document.createElement('span');
+      quantityDisplay.textContent = this.sellQuantities[commodity.name] || 0;
+      quantityDisplay.style.minWidth = '30px';
+      quantityDisplay.style.textAlign = 'center';
+      quantityDisplay.style.fontWeight = 'bold';
+      quantityDisplay.dataset.commodityName = commodity.name;
+
+      const increaseBtn = document.createElement('button');
+      increaseBtn.textContent = '>';
+      increaseBtn.className = 'sell-increase-btn';
+      increaseBtn.style.background = 'rgba(0, 255, 0, 0.2)';
+      increaseBtn.style.border = '1px solid #00ff00';
+      increaseBtn.style.color = '#00ff00';
+      increaseBtn.style.padding = '4px 8px';
+      increaseBtn.style.cursor = 'pointer';
+      increaseBtn.style.fontFamily = 'PeaberryMono, monospace';
+      increaseBtn.style.fontSize = '14px';
+      increaseBtn.style.transition = 'all 0.2s ease';
+      increaseBtn.disabled = !hasInCargo;
+      increaseBtn.addEventListener('click', (e) => {
+        if (!(e.target instanceof HTMLButtonElement) || !e.target.disabled) {
+          this.increaseSellQuantity(commodity.name);
+        }
+      });
+
+      // Style disabled buttons
+      if (!hasInCargo) {
+        this.greyOutButton(decreaseBtn);
+        this.greyOutButton(increaseBtn);
+      }
+
+      quantityContainer.appendChild(decreaseBtn);
+      quantityContainer.appendChild(quantityDisplay);
+      quantityContainer.appendChild(increaseBtn);
+      item.appendChild(quantityContainer);
+
+      // Right side - sell price
+      const price = document.createElement('span');
+      price.textContent = `$${commodity.sellPrice.toFixed(0)}`;
+      price.style.color = '#ffff00';
+      price.style.minWidth = '80px';
+      price.style.textAlign = 'right';
+      item.appendChild(price);
+
+      this.sellCommoditiesList.appendChild(item);
     });
   }
 
@@ -545,32 +673,76 @@ export class CommoditiesUI {
 
   updateSellTotal() {
     let total = 0;
-    this.sellGrid.forEach(slot => {
-      if (slot.dataset.commodity) {
-        const commodity = this.commodities.find(c => c.name === slot.dataset.commodity);
+    // Calculate from sell quantities
+    Object.keys(this.sellQuantities).forEach(commodityName => {
+      const quantity = this.sellQuantities[commodityName];
+      if (quantity > 0) {
+        const commodity = this.commodities.find(c => c.name === commodityName);
         if (commodity) {
-          total += commodity.sellPrice;
+          total += commodity.sellPrice * quantity;
         }
       }
     });
     this.sellTotal.textContent = `Sell Total: $${total.toFixed(0)}`;
   }
 
+  // Get quantity of a commodity in cargo
+  getCargoQuantity(commodityName) {
+    return this.cargoItems.filter(item => item.name === commodityName).length;
+  }
+
+  // Increase sell quantity
+  increaseSellQuantity(commodityName) {
+    const cargoQuantity = this.getCargoQuantity(commodityName);
+    const currentSellQuantity = this.sellQuantities[commodityName] || 0;
+    
+    if (currentSellQuantity < cargoQuantity) {
+      this.sellQuantities[commodityName] = currentSellQuantity + 1;
+      this.updateSellQuantityDisplay(commodityName, currentSellQuantity + 1);
+      this.updateSellTotal();
+    }
+  }
+
+  // Decrease sell quantity
+  decreaseSellQuantity(commodityName) {
+    const currentSellQuantity = this.sellQuantities[commodityName] || 0;
+    
+    if (currentSellQuantity > 0) {
+      this.sellQuantities[commodityName] = currentSellQuantity - 1;
+      this.updateSellQuantityDisplay(commodityName, currentSellQuantity - 1);
+      this.updateSellTotal();
+    }
+  }
+
+  // Update sell quantity display
+  updateSellQuantityDisplay(commodityName, quantity) {
+    const quantityDisplay = this.sellCommoditiesList.querySelector(`[data-commodity-name="${commodityName}"]`);
+    if (quantityDisplay) {
+      quantityDisplay.textContent = quantity;
+    }
+  }
+
   sellItems() {
     let totalValue = 0;
     const itemsToSell = [];
 
-    // Calculate total value and collect items to sell
-    this.sellGrid.forEach((slot, index) => {
-      if (slot.dataset.commodity && slot.dataset.cargoIndex !== undefined) {
-        const commodity = this.commodities.find(c => c.name === slot.dataset.commodity);
+    // Calculate total value and collect items to sell from sell quantities
+    Object.keys(this.sellQuantities).forEach(commodityName => {
+      const quantity = this.sellQuantities[commodityName];
+      if (quantity > 0) {
+        const commodity = this.commodities.find(c => c.name === commodityName);
         if (commodity) {
-          totalValue += commodity.sellPrice;
-          itemsToSell.push({
-            slotIndex: index,
-            cargoIndex: parseInt(slot.dataset.cargoIndex),
-            commodity: commodity,
-            value: commodity.sellPrice
+          const value = commodity.sellPrice * quantity;
+          totalValue += value;
+          
+          // Find items in cargo to remove
+          const cargoItemsToRemove = this.cargoItems.filter(item => item.name === commodityName).slice(0, quantity);
+          cargoItemsToRemove.forEach(item => {
+            itemsToSell.push({
+              commodity: commodity,
+              value: commodity.sellPrice,
+              cargoItem: item
+            });
           });
         }
       }
@@ -586,18 +758,12 @@ export class CommoditiesUI {
       this.onCargoUpdate(itemsToSell, totalValue);
     }
 
-    // Clear the sell grid and moved items
-    this.sellGrid.forEach(slot => {
-      slot.innerHTML = '·';
-      slot.style.color = '#006644';
-      slot.style.backgroundColor = 'rgba(0, 170, 85, 0.1)'; // Reset to default background
-      slot.style.borderColor = '#00aa55'; // Reset to default border
-      delete slot.dataset.commodity;
-      delete slot.dataset.cargoIndex;
-    });
-    this.movedItems = []; // Clear moved items after selling
-
+    // Clear sell quantities and update displays
+    this.sellQuantities = {};
+    this.updateSellCommoditiesList();
     this.updateSellTotal();
+    this.updateCargoDisplay();
+    
     console.log(`Sold ${itemsToSell.length} items for $${totalValue.toFixed(0)}`);
   }
 
@@ -651,6 +817,7 @@ export class CommoditiesUI {
   updateCargoItems(cargoItems) {
     this.cargoItems = cargoItems;
     this.updateCargoDisplay();
+    this.updateSellCommoditiesList(); // Update sell list when cargo changes
   }
 
   updateCargoDisplay() {

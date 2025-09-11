@@ -961,6 +961,11 @@ export class UI {
   showCommodities(commodities) {
     if (this.commoditiesUI) {
       this.commoditiesUI.updateCommodities(commodities);
+      // Update cargo items in commodities UI
+      if (this.cargoSystem) {
+        const cargoItems = this.cargoSystem.getCargo();
+        this.commoditiesUI.updateCargoItems(cargoItems);
+      }
       // Update cash display in commodities UI
       if (this.spaceship) {
         const currentCash = this.spaceship.getCash();
@@ -1015,11 +1020,15 @@ export class UI {
     // Only handle clicks when commodities UI is visible
     if (this.isCommoditiesVisible()) {
       console.log('Cargo item clicked:', itemData);
-      this.commoditiesUI.moveItemToSellGrid(itemData);
       
-      // Remove item from cargo system immediately to prevent it from being restored
+      // Add to sell quantities instead of moving to grid
+      this.commoditiesUI.increaseSellQuantity(itemData.name);
+      
+      // Remove item from cargo system immediately
       if (this.cargoSystem && itemData.index !== undefined) {
         this.cargoSystem.removeCargo(itemData.index);
+        // Update commodities UI with new cargo items
+        this.updateCommoditiesCargoItems();
       }
     }
   }
@@ -1027,7 +1036,17 @@ export class UI {
   addItemToCargo(item) {
     // Add item back to cargo system
     if (this.cargoSystem) {
-      this.cargoSystem.addCargo(item);
+      this.cargoSystem.addCargoItem(item.name, 'restored');
+      // Update commodities UI with new cargo items
+      this.updateCommoditiesCargoItems();
+    }
+  }
+
+  updateCommoditiesCargoItems() {
+    // Update cargo items in commodities UI if it's visible
+    if (this.commoditiesUI && this.commoditiesUI.isVisible && this.cargoSystem) {
+      const cargoItems = this.cargoSystem.getCargo();
+      this.commoditiesUI.updateCargoItems(cargoItems);
     }
   }
 
