@@ -18,7 +18,7 @@ export class GameStateManager {
     this.globalFlags = {
       gameStarted: false,
       firstDocking: false,
-      soundtracks: ['ambient'] // Default soundtracks
+      soundtracks: ['title'] // Default soundtracks
     };
   }
 
