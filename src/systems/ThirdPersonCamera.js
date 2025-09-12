@@ -115,6 +115,9 @@ export class ThirdPersonCamera {
           this.engineParticles.setSpaceshipModel(object);
         }
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
+
+        // Calibrate camera now that we have the actual model size
+        this.calibrateThirdPersonCamera();
       },
       undefined,
       (err) => {
@@ -160,8 +163,10 @@ export class ThirdPersonCamera {
       if (this.engineParticles) {
         this.engineParticles.setActive(true);
       }
-      // Calibrate camera offset automatically from model size (or fallback defaults)
-      this.calibrateThirdPersonCamera();
+      // Calibrate camera if model is already loaded, otherwise it will calibrate when model loads
+      if (this.spaceship.thirdPersonLoaded) {
+        this.calibrateThirdPersonCamera();
+      }
       // Switch UI to third-person layout
       this.ui.applyThirdPersonLayout && this.ui.applyThirdPersonLayout();
       // Ensure 3D model visible & centered exactly where first-person camera was
