@@ -89,18 +89,6 @@ export class ThirdPersonCamera {
         // Replace Cockpit materials with glassy blue appearance
         replaceCockpitMaterials(object);
         
-        object.traverse(child => {
-          if (child.isMesh) {
-            child.castShadow = false;
-            child.receiveShadow = false;
-            if (!child.material || (Array.isArray(child.material) && child.material.length === 0)) {
-              child.material = new THREE.MeshStandardMaterial({ color: 0xccccff, emissive: 0x222244 });
-            }
-            child.material.transparent = false;
-            child.material.opacity = 1.0;
-            child.material.visible = true;
-          }
-        });
         // Center & scale similar to NPCShip
         const box = new THREE.Box3().setFromObject(object);
         const center = new THREE.Vector3();
@@ -127,9 +115,6 @@ export class ThirdPersonCamera {
           this.engineParticles.setSpaceshipModel(object);
         }
         this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
-
-        // Automatically switch to third person when model finishes loading
-        this.toggleThirdPerson();
       },
       undefined,
       (err) => {
@@ -167,15 +152,9 @@ export class ThirdPersonCamera {
       if (!this.lastFirstPersonCameraPos) this.lastFirstPersonCameraPos = new THREE.Vector3();
       this.lastFirstPersonCameraPos.copy(this.gameEngine.camera.position);
     }
-    this.spaceship.toggleThirdPerson();
+    this.spaceship.thirdPersonMode = !this.spaceship.thirdPersonMode;
     if (switchingToThird) {
-      // Activating third person: ensure group in scene & hide cockpit mesh
-      if (!this.spaceship.thirdPersonLoaded) {
-        // model still loading or not yet loaded
-      }
-      if (!this.spaceship.thirdPersonGroup.parent) {
-        this.gameEngine.scene.add(this.spaceship.thirdPersonGroup);
-      }
+      // Activating third person: hide cockpit mesh and show third person model
       this.spaceship.mesh.visible = false;
       // Show engine particles in third person view
       if (this.engineParticles) {
@@ -186,20 +165,11 @@ export class ThirdPersonCamera {
       // Switch UI to third-person layout
       this.ui.applyThirdPersonLayout && this.ui.applyThirdPersonLayout();
       // Ensure 3D model visible & centered exactly where first-person camera was
-      this.spaceship.thirdPersonGroup.visible = true;
       const spawnPos = (this.lastFirstPersonCameraPos) ? this.lastFirstPersonCameraPos : this.spaceship.getPosition();
-      this.spaceship.thirdPersonGroup.position.copy(spawnPos);
       // Also keep internal ship logical position at that point to avoid jump
       this.spaceship.position.copy(spawnPos);
-      const shipQuat = this.spaceship.quaternion.clone();
-      this.spaceship.thirdPersonGroup.quaternion.copy(shipQuat);
-      // Initialize orbit distance & angles from current offset vector
-      this.thirdPersonCameraDistance = this.thirdPersonCameraOffset.length();
-      this.thirdPersonOrbitYaw = 0; // forward
-      // derive pitch from existing offset
-      const off = this.thirdPersonCameraOffset;
-      this.thirdPersonOrbitPitch = Math.asin(off.y / off.length());
-      this.thirdPersonOrbitActive = false;
+      // Let Spaceship handle the group positioning through syncThirdPerson()
+      this.spaceship.syncThirdPerson();
     } else {
       // Return to cockpit
       this.spaceship.mesh.visible = false; // still hidden because cockpit view uses camera at ship pos
@@ -210,7 +180,7 @@ export class ThirdPersonCamera {
       // camera will be reset each frame in update
       this.ui.applyFirstPersonLayout && this.ui.applyFirstPersonLayout();
       // Hide third-person visual representation
-      this.spaceship.thirdPersonGroup.visible = false;
+      this.spaceship.syncThirdPerson();
       this.thirdPersonOrbitActive = false;
     }
   }
@@ -230,7 +200,6 @@ export class ThirdPersonCamera {
 
     // Update camera position for third-person mode
     const spaceshipPos = this.spaceship.getPosition();
-    const spaceshipRot = this.spaceship.getRotation();
     if (this.spaceship.thirdPersonMode && this.thirdPersonCameraOffset) {
       if (this.thirdPersonOrbitActive) {
         // Orbit mode: compute offset in world space using spherical angles independent of ship roll

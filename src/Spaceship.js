@@ -100,12 +100,10 @@ export class Spaceship {
     // Update mesh position
     this.mesh.position.copy(this.position);
     this.mesh.rotation.copy(this.rotation);
+    // Sync third person group if in third person mode
     if (this.thirdPersonMode) {
-      this.thirdPersonGroup.position.copy(this.position);
-      this.thirdPersonGroup.rotation.copy(this.rotation);
+      this.syncThirdPerson();
     }
-    this.thirdPersonGroup.position.copy(this.position);
-    this.thirdPersonGroup.rotation.copy(this.rotation);
   }
 
   enableThirdPerson(modelRoot) {
@@ -121,9 +119,6 @@ export class Spaceship {
     this.thirdPersonMode = false;
   }
 
-  toggleThirdPerson() {
-    this.thirdPersonMode = !this.thirdPersonMode;
-  }
 
   syncThirdPerson() {
     if (this.thirdPersonMode) {
@@ -136,6 +131,9 @@ export class Spaceship {
       }
       this.thirdPersonGroup.position.copy(basePos);
       this.thirdPersonGroup.quaternion.copy(this.quaternion);
+      this.thirdPersonGroup.visible = true;
+    } else {
+      this.thirdPersonGroup.visible = false;
     }
   }
 

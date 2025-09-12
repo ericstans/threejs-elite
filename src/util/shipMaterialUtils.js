@@ -14,7 +14,7 @@ export function createGlassyCockpitMaterial() {
     metalness: 0.1,         // Slight metallic look
     roughness: 0.1,         // Very smooth/glossy
     transmission: 0.8,      // High transparency
-    opacity: 0.3,           // Semi-transparent
+    opacity: 0.8,           // Semi-transparent
     transparent: true,
     clearcoat: 1.0,         // Clear coat for extra shine
     clearcoatRoughness: 0.0, // Perfectly smooth clear coat
@@ -47,7 +47,7 @@ export function createShipBodyMaterial() {
  */
 export function replaceCockpitMaterials(model) {
   model.traverse((child) => {
-    if (child.isMesh) {
+    if (child instanceof THREE.Mesh) {
       // Handle array of materials
       if (Array.isArray(child.material)) {
         child.material.forEach((material, index) => {
