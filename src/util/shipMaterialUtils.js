@@ -42,7 +42,41 @@ export function createShipBodyMaterial() {
 }
 
 /**
- * Replaces materials named "Cockpit" with glassy blue material and "Shipbody" with standard material
+ * Creates a shiny metallic material for cannon parts
+ * @returns {THREE.Material} Shiny metallic material
+ */
+export function createCannonMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: 0x888888,        // Medium gray
+    metalness: 0.9,         // Very metallic
+    roughness: 0.1,         // Very smooth/shiny
+    emissive: 0x000000,     // No glow
+    transparent: false,
+    opacity: 1.0,
+    side: THREE.DoubleSide,
+    envMapIntensity: 1.0    // Full environment map reflection
+  });
+}
+
+/**
+ * Creates a darker metallic material for engine parts
+ * @returns {THREE.Material} Dark metallic material
+ */
+export function createEngineMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: 0x444444,        // Dark gray
+    metalness: 0.8,         // High metallic look
+    roughness: 0.3,         // Moderate roughness
+    emissive: 0x111111,     // Slight glow
+    transparent: false,
+    opacity: 1.0,
+    side: THREE.DoubleSide,
+    envMapIntensity: 0.8    // High environment map reflection
+  });
+}
+
+/**
+ * Replaces materials with custom materials based on their names
  * @param {THREE.Object3D} model - The 3D model to process
  */
 export function replaceCockpitMaterials(model) {
@@ -51,23 +85,39 @@ export function replaceCockpitMaterials(model) {
       // Handle array of materials
       if (Array.isArray(child.material)) {
         child.material.forEach((material, index) => {
+          console.log(`Found material: "${material.name}" at index ${index}`);
+          
           if (material.name === 'Cockpit') {
             child.material[index] = createGlassyCockpitMaterial();
             console.log(`Replaced Cockpit material at index ${index} with glassy blue material`);
           } else if (material.name === 'Shipbody') {
             child.material[index] = createShipBodyMaterial();
             console.log(`Replaced Shipbody material at index ${index} with standard material`);
+          } else if (material.name === 'Cannon') {
+            child.material[index] = createCannonMaterial();
+            console.log(`Replaced Cannon material at index ${index} with shiny metallic material`);
+          } else if (material.name === 'Engine') {
+            child.material[index] = createEngineMaterial();
+            console.log(`Replaced Engine material at index ${index} with dark metallic material`);
           }
         });
       } 
       // Handle single material
       else if (child.material) {
+        console.log(`Found single material: "${child.material.name}"`);
+        
         if (child.material.name === 'Cockpit') {
           child.material = createGlassyCockpitMaterial();
           console.log('Replaced single Cockpit material with glassy blue material');
         } else if (child.material.name === 'Shipbody') {
           child.material = createShipBodyMaterial();
           console.log('Replaced single Shipbody material with standard material');
+        } else if (child.material.name === 'Cannon') {
+          child.material = createCannonMaterial();
+          console.log('Replaced single Cannon material with shiny metallic material');
+        } else if (child.material.name === 'Engine') {
+          child.material = createEngineMaterial();
+          console.log('Replaced single Engine material with dark metallic material');
         }
       }
     }
