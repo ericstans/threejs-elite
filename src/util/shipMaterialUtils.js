@@ -27,11 +27,20 @@ export function createGlassyCockpitMaterial() {
 
 /**
  * Creates a standard opaque material for ship body parts
+ * @param {THREE.Color|number|string} color - Optional color for the material. If not provided, generates a random color.
  * @returns {THREE.Material} Standard ship material
  */
-export function createShipBodyMaterial() {
+export function createShipBodyMaterial(color = null) {
+  // Generate random color if none provided
+  if (!color) {
+    const randomHue = Math.random() * 360; // Random hue from 0-360
+    const saturation = 0.6; // Moderate saturation for good visibility
+    const lightness = 0.5;  // Moderate lightness for good contrast
+    color = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
+  }
+  
   return new THREE.MeshStandardMaterial({
-    color: 0xcccccc,        // Light gray
+    color: color,           // Random or provided color
     metalness: 0.3,         // Moderate metallic look
     roughness: 0.4,         // Moderate roughness
     emissive: 0x111111,     // Slight glow
@@ -80,6 +89,12 @@ export function createEngineMaterial() {
  * @param {THREE.Object3D} model - The 3D model to process
  */
 export function replaceCockpitMaterials(model) {
+  // Generate a unique random color for this ship
+  const randomHue = Math.random() * 360; // Random hue from 0-360
+  const saturation = 0.6; // Moderate saturation for good visibility
+  const lightness = 0.5;  // Moderate lightness for good contrast
+  const shipColor = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
+  
   model.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       // Handle array of materials
@@ -91,8 +106,8 @@ export function replaceCockpitMaterials(model) {
             child.material[index] = createGlassyCockpitMaterial();
             console.log(`Replaced Cockpit material at index ${index} with glassy blue material`);
           } else if (material.name === 'Shipbody') {
-            child.material[index] = createShipBodyMaterial();
-            console.log(`Replaced Shipbody material at index ${index} with standard material`);
+            child.material[index] = createShipBodyMaterial(shipColor);
+            console.log(`Replaced Shipbody material at index ${index} with random color material`);
           } else if (material.name === 'Cannon') {
             child.material[index] = createCannonMaterial();
             console.log(`Replaced Cannon material at index ${index} with shiny metallic material`);
@@ -110,8 +125,8 @@ export function replaceCockpitMaterials(model) {
           child.material = createGlassyCockpitMaterial();
           console.log('Replaced single Cockpit material with glassy blue material');
         } else if (child.material.name === 'Shipbody') {
-          child.material = createShipBodyMaterial();
-          console.log('Replaced single Shipbody material with standard material');
+          child.material = createShipBodyMaterial(shipColor);
+          console.log('Replaced single Shipbody material with random color material');
         } else if (child.material.name === 'Cannon') {
           child.material = createCannonMaterial();
           console.log('Replaced single Cannon material with shiny metallic material');
