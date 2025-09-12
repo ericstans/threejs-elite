@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { getShipType } from './ShipTypes.js';
+import { replaceCockpitMaterials } from './util/shipMaterialUtils.js';
 
 const DEBUG = false;
 
@@ -112,6 +113,11 @@ export class NPCShip {
     loader.load(
       new URL(`./assets/fbx/${this.modelFile}`, import.meta.url).href,
       (object) => {
+        // Replace Cockpit materials with glassy blue appearance for ship2.fbx (Flea type)
+        if (this.modelFile === 'ship2.fbx') {
+          replaceCockpitMaterials(object);
+        }
+        
         object.traverse(child => {
           if (child.isMesh) {
             child.castShadow = false;

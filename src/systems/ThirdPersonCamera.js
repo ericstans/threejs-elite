@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { replaceCockpitMaterials } from '../util/shipMaterialUtils.js';
 
 /**
  * ThirdPersonCamera handles all third-person camera functionality including:
@@ -85,6 +86,9 @@ export class ThirdPersonCamera {
     loader.load(
       new URL('../assets/fbx/ship2.fbx', import.meta.url).href,
       (object) => {
+        // Replace Cockpit materials with glassy blue appearance
+        replaceCockpitMaterials(object);
+        
         object.traverse(child => {
           if (child.isMesh) {
             child.castShadow = false;
