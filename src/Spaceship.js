@@ -5,6 +5,7 @@ const DEBUG = false;
 
 export class Spaceship {
   constructor(shipType = 'Flea') {
+    this._controlsDisabled = false;
     this.shipType = shipType;
     const typeConfig = getShipType(shipType);
     this.mesh = this.createSpaceshipMesh();
@@ -211,6 +212,17 @@ export class Spaceship {
   }
 
   update(deltaTime) {
+    // Block all movement and control if destroyed
+    if (this._controlsDisabled) {
+      this.velocity.set(0, 0, 0);
+      this.angularVelocity.set(0, 0, 0);
+      if (typeof this.setThrottle === 'function') this.setThrottle(0);
+      this.mesh.position.copy(this.position);
+      this.mesh.rotation.copy(this.rotation);
+      this.mesh.quaternion.copy(this.quaternion);
+      this.syncThirdPerson();
+      return;
+    }
     // Debug: Check if ship gets detached unexpectedly
     if (this.flags.isDocked && this.flags.stationDocked && this.mesh.parent === null) {
       if (DEBUG) console.log('WARNING: Ship detached from station unexpectedly!');

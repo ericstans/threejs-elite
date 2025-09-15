@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Explosion } from './Explosion.js';
 import { generateStarfieldEquirectTexture } from './util/generateStarfieldTexture.js';
 
 const DRAW_DISTANCE = 8000;
@@ -226,6 +227,153 @@ export class GameEngine {
   }
 
   update(deltaTime) {
+    // --- Ship destruction sequence ---
+    if (this.spaceship && typeof this.spaceship.hullStrength === 'number' && this.spaceship.hullStrength <= 0 && !this.spaceship._destroyed) {
+      this.spaceship._destroyed = true;
+      // Stop ship movement
+      this.spaceship.velocity.set(0, 0, 0);
+      this.spaceship.angularVelocity.set(0, 0, 0);
+      // Disable controls and forcibly set speed/throttle to zero
+      this.spaceship._controlsDisabled = true;
+      this.spaceship.velocity.set(0, 0, 0);
+      this.spaceship.angularVelocity.set(0, 0, 0);
+      if (typeof this.spaceship.setThrottle === 'function') {
+        this.spaceship.setThrottle(0);
+      }
+      // Overlay animated spiderweb crack effect on main canvas
+      try {
+        let crack = document.getElementById('canopy-crack-overlay');
+        if (!crack) {
+          crack = document.createElement('canvas');
+          crack.id = 'canopy-crack-overlay';
+          crack.style.position = 'fixed';
+          crack.style.left = '0';
+          crack.style.top = '0';
+          crack.style.width = '100vw';
+          crack.style.height = '100vh';
+          crack.style.pointerEvents = 'none';
+          crack.style.zIndex = '99999';
+          document.body.appendChild(crack);
+        }
+        // Animate spiderweb cracks
+        const canvas = crack instanceof HTMLCanvasElement ? crack : null;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // Draw animated cracks (simple radial lines)
+          const centerX = canvas.width/2, centerY = canvas.height/2;
+          for (let i=0; i<16; i++) {
+            const angle = (Math.PI*2) * (i/16) + Math.random()*0.2;
+            const len = 180 + Math.random()*120;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(len, 0);
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(255,255,255,0.5)';
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      } catch(e) {}
+      // Overlay cracks on Nav Target, Target, Radar UI (use actual panel elements)
+      const crackOverlay = () => {
+        const panels = [];
+        if (this.ui && this.ui.navTargetUI && this.ui.navTargetUI.navTargetPanel) panels.push(this.ui.navTargetUI.navTargetPanel);
+        if (this.ui && this.ui.targetUI && this.ui.targetUI.targetPanel) panels.push(this.ui.targetUI.targetPanel);
+        if (this.ui && this.ui.radarUI && this.ui.radarUI.radarPanel) panels.push(this.ui.radarUI.radarPanel);
+        panels.forEach(el => {
+          if (el && !el.querySelector('.crack-svg')) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+            svg.classList.add('crack-svg');
+            svg.setAttribute('width','100%');
+            svg.setAttribute('height','100%');
+            svg.style.position = 'absolute';
+            svg.style.left = '0';
+            svg.style.top = '0';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '9999';
+            for (let i=0; i<8; i++) {
+              const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
+              const x2 = 60+Math.cos(angle)*40;
+              const y2 = 30+Math.sin(angle)*20;
+              const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+              line.setAttribute('x1','60');
+              line.setAttribute('y1','30');
+              line.setAttribute('x2',String(x2));
+              line.setAttribute('y2',String(y2));
+              line.setAttribute('stroke','white');
+              line.setAttribute('stroke-width','2');
+              svg.appendChild(line);
+            }
+            el.appendChild(svg);
+          }
+        });
+      };
+      crackOverlay.call(this);
+      // Play cracking sound
+      try {
+        const ctx = window.AudioContext ? new window.AudioContext() : null;
+        if (ctx) {
+          const osc = ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.value = 80 + Math.random()*40;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.5;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          gain.gain.setValueAtTime(0.5, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+          osc.stop(ctx.currentTime + 0.6);
+          osc.onended = () => ctx.close();
+        }
+      } catch(e){}
+      // Show 3D explosions (asteroid style) at ship position for 3 seconds
+      if (!this._shipExplosionLoopActive) {
+        this._shipExplosionLoopActive = true;
+        let loopTime = 0;
+        const spawnExplosion = () => {
+          if (this.spaceship && loopTime < 3.0) {
+            const pos = this.spaceship.getPosition();
+            const size = 1.2 + Math.random()*0.7;
+            const exp = new Explosion(pos.clone(), size, 0.5 + Math.random()*0.3);
+            console.log('DEBUG: About to create explosion at', pos.toArray());
+            this.entities.push(exp);
+            console.log('DEBUG: Explosion object pushed to entities', exp);
+            // Play explosion sound (much quieter)
+            try {
+              const ctx = window.AudioContext ? new window.AudioContext() : null;
+              if (ctx) {
+                const osc = ctx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.value = 180 + Math.random()*60;
+                const gain = ctx.createGain();
+                gain.gain.value = 0.08;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+                osc.stop(ctx.currentTime + 0.3);
+                osc.onended = () => ctx.close();
+              }
+            } catch(e){}
+            loopTime += 0.18;
+            setTimeout(spawnExplosion, 180);
+          } else {
+            this._shipExplosionLoopActive = false;
+          }
+        };
+        spawnExplosion();
+      }
+    }
     this.entities.forEach(entity => {
       if (entity.update) {
         entity.update(deltaTime);
