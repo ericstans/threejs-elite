@@ -146,7 +146,13 @@ export class Controls {
     }
 
     // Navigation targeting: tap Y to cycle nav targets, hold Y to clear nav target
-    if (this.keys['KeyY']) {
+    // Disable nav targeting during landing sequence and while docked
+    const isLandingOrDocked = this.spaceship.flags.isDocked || 
+                             this.spaceship.flags.isDocking ||
+                             this.spaceship.flags.landingVectorLocked || 
+                             this.spaceship.flags.landingAlignmentLocked;
+    
+    if (this.keys['KeyY'] && !isLandingOrDocked) {
       if (!this._yKeyHeld) {
         this._yKeyHeld = { start: performance.now(), cleared: false };
       }
