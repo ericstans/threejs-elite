@@ -13,6 +13,7 @@ import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
+import { ShipHealthUI } from './ui/ShipHealthUI.js';
 
 export class UI {
   constructor(conversationSystem = null) {
@@ -141,6 +142,8 @@ export class UI {
 
     // Initialize UI components
     this.throttleUI = new ThrottleUI(this.uiContainer);
+    this.shipHealthUI = new ShipHealthUI(this.game, this.spaceship);
+    this.shipHealthUI.attach(this.uiContainer);
     this.debugFlagsUI = new DebugFlagsUI();
     this.controlsUI = new ControlsUI(this.uiContainer);
     this.targetUI = new TargetUI(this.uiContainer);

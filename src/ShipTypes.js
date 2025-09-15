@@ -7,6 +7,7 @@ export const ShipTypes = {
     model: 'ship2.fbx',
     scale: 1.0, // can be adjusted if needed
     exhaust: 'default', // placeholder for exhaust config
+    hullStrength: 100,
     stats: {
       maxSpeed: 10,
       acceleration: 2,
