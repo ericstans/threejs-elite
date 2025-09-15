@@ -394,7 +394,9 @@ export class GameEngine {
         const planetPos = planet.getPosition();
         const r = planet.radius;
         const dist = shipPos.distanceTo(planetPos);
-        if (dist < r + 1.5 && this.spaceship._planetBounceCooldown <= 0) { // 1.5 = ship radius fudge
+        // Prevent bounce/collision if ship is in landing animation phase
+        const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
+        if (dist < r + 1.5 && this.spaceship._planetBounceCooldown <= 0 && !isLanding) { // 1.5 = ship radius fudge
           // Collision! Bounce off
           const normal = shipPos.clone().sub(planetPos).normalize();
           // Move ship just outside planet
