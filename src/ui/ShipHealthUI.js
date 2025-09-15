@@ -62,7 +62,10 @@ export class ShipHealthUI {
   }
 
   getHull() {
-    // Use ship.hullStrength if available, else fallback
+    // Always use live ship.hullStrength, initialize if missing
+    if (this.ship && typeof this.ship.hullStrength !== 'number') {
+      this.ship.hullStrength = 100;
+    }
     return this.ship?.hullStrength ?? 100;
   }
 

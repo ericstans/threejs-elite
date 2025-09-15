@@ -231,6 +231,94 @@ export class GameEngine {
         entity.update(deltaTime);
       }
     });
+
+    // --- Planet collision and bounce for player ship ---
+    if (this.spaceship) {
+      // Simple bounce cooldown (prevents multiple bounces per frame)
+      if (!this.spaceship._planetBounceCooldown) this.spaceship._planetBounceCooldown = 0;
+      if (this.spaceship._planetBounceCooldown > 0) {
+        this.spaceship._planetBounceCooldown -= deltaTime;
+      }
+      // Find all planets
+      const planets = this.entities.filter(e => e.getType && e.getType() === 'planet');
+      const shipPos = this.spaceship.getPosition();
+      for (const planet of planets) {
+        const planetPos = planet.getPosition();
+        const r = planet.radius;
+        const dist = shipPos.distanceTo(planetPos);
+        if (dist < r + 1.5 && this.spaceship._planetBounceCooldown <= 0) { // 1.5 = ship radius fudge
+          // Collision! Bounce off
+          const normal = shipPos.clone().sub(planetPos).normalize();
+          // Move ship just outside planet
+          const bouncePos = planetPos.clone().add(normal.multiplyScalar(r + 2.0));
+          this.spaceship.position.copy(bouncePos);
+          this.spaceship.mesh.position.copy(bouncePos);
+          // Bounce: reflect velocity, preserve speed
+          const v = this.spaceship.velocity;
+          const vDotN = v.dot(normal);
+          const speed = v.length();
+          this.spaceship.velocity.sub(normal.clone().multiplyScalar(2 * vDotN));
+          this.spaceship.velocity.setLength(speed);
+
+          // Hull damage
+          let hullDamage = Math.floor(10 + Math.random() * 15);
+          if (typeof this.spaceship.hullStrength === 'number') {
+            this.spaceship.hullStrength = Math.max(0, this.spaceship.hullStrength - hullDamage);
+          }
+          // If UI exists, update ShipHealthUI
+          if (this.ui && this.ui.shipHealthUI) {
+            this.ui.shipHealthUI.update(this.spaceship);
+          }
+
+          // --- Synthesized crunch/bump sound ---
+          try {
+            const ctx = window.AudioContext ? new window.AudioContext() : null;
+            if (ctx) {
+              const osc = ctx.createOscillator();
+              osc.type = 'square';
+              osc.frequency.value = 120 + Math.random() * 40;
+              const gain = ctx.createGain();
+              gain.gain.value = 0.3;
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              gain.gain.setValueAtTime(0.3, ctx.currentTime);
+              gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.18);
+              osc.stop(ctx.currentTime + 0.2);
+              osc.onended = () => ctx.close();
+            }
+          } catch (e) { /* ignore audio errors */ }
+
+          // --- Flash screen red ---
+          try {
+            let flash = document.getElementById('planet-crunch-flash');
+            if (!flash) {
+              flash = document.createElement('div');
+              flash.id = 'planet-crunch-flash';
+              flash.style.position = 'fixed';
+              flash.style.left = '0';
+              flash.style.top = '0';
+              flash.style.width = '100vw';
+              flash.style.height = '100vh';
+              flash.style.background = 'rgba(255,0,0,0.35)';
+              flash.style.zIndex = '99999';
+              flash.style.pointerEvents = 'none';
+              flash.style.transition = 'opacity 0.2s';
+              flash.style.opacity = '1';
+              document.body.appendChild(flash);
+            } else {
+              flash.style.opacity = '1';
+            }
+            setTimeout(() => {
+              if (flash) flash.style.opacity = '0';
+            }, 180);
+          } catch (e) { /* ignore flash errors */ }
+          // Set bounce cooldown (0.3s)
+          this.spaceship._planetBounceCooldown = 0.3;
+          // Optionally: play sound, show effect, etc.
+        }
+      }
+    }
   }
 
   getResources() {
