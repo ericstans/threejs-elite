@@ -896,36 +896,24 @@ export class Spaceship {
       this.mesh.rotation.setFromQuaternion(currentRotation);
 
       // Update logical position and rotation by converting from local to world
-      this.position.copy(this.dockingTarget.mesh.localToWorld(currentLocalPos));
-      this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(currentRotation));
-      this.rotation.setFromQuaternion(this.quaternion);
+      // this.position.copy(this.dockingTarget.mesh.localToWorld(currentLocalPos));
+      // this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(currentRotation));
+      // this.rotation.setFromQuaternion(this.quaternion);
 
       // Check for collision with planet surface (prevent penetration)
       const distanceFromCenter = currentLocalPos.length();
+      let forceComplete = false;
       if (distanceFromCenter < planetRadius) {
         // Ship is inside planet - push it back to surface
-        const surfacePos = currentLocalPos.clone().normalize().multiplyScalar(planetRadius);
-        this.mesh.position.copy(surfacePos);
-        this.position.copy(this.dockingTarget.mesh.localToWorld(surfacePos));
+        console.log('Ship inside planet - end landing');
+        forceComplete = true
       }
 
       // Check if descent is complete
-      if (descentProgress >= 1.0) {
-        // Ensure we're exactly at the target position
-        this.mesh.position.copy(targetLocalPos);
-        this.mesh.quaternion.copy(this.landingTargetRotation);
-        this.mesh.rotation.setFromQuaternion(this.landingTargetRotation);
-
-        // Update logical position and rotation
-        this.position.copy(this.dockingTarget.mesh.localToWorld(targetLocalPos));
-        this.quaternion.copy(this.dockingTarget.mesh.getWorldQuaternion(new THREE.Quaternion()).multiply(this.landingTargetRotation));
-        this.rotation.setFromQuaternion(this.quaternion);
-
-        // Complete docking immediately
+      if (forceComplete || descentProgress >= 1.0) {
         this.flags.isDocking = false;
         this.flags.isDocked = true;
         this.dockingProgress = 1;
-        this.landingPhase = 'approach'; // Reset for next time
 
         if (DEBUG) console.log('Landing completed!');
       }
@@ -1022,6 +1010,7 @@ export class Spaceship {
     this.flags.isDocking = false;
     this.flags.isDocked = false;
     this.flags.firingEnabled = true;
+    this.landingPhase = null; 
   }
 
   // Cash management methods
