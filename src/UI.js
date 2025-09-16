@@ -245,6 +245,17 @@ export class UI {
       p4.transform = 'translate(-50%, -50%)';
     }
 
+    // Place ShipHealthUI according to current mode
+    if (this.shipHealthUI?.container) {
+      if (this.firstPersonMode && this.cockpitWrapper) {
+        this.cockpitWrapper.appendChild(this.shipHealthUI.container);
+        this.shipHealthUI.setViewMode(true);
+      } else if (this.uiContainer) {
+        this.uiContainer.appendChild(this.shipHealthUI.container);
+        this.shipHealthUI.setViewMode(false);
+      }
+    }
+
 
 
     // Crosshair
@@ -416,6 +427,14 @@ export class UI {
     if (this.throttleUI) {
       this.throttleUI.setViewMode(false);
     }
+    // Update ShipHealthUI layout for third-person (reparent to uiContainer)
+    if (this.shipHealthUI?.container && this.uiContainer) {
+      if (this.shipHealthUI.container.parentElement !== this.uiContainer) {
+        this.uiContainer.appendChild(this.shipHealthUI.container);
+      }
+      // Keep same styling for now
+      this.shipHealthUI.setViewMode(false);
+    }
     // Hide cockpit image
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'none';
     // Reparent target & nav panels back to uiContainer
@@ -503,6 +522,13 @@ export class UI {
     // Update ThrottleUI positioning for first-person view
     if (this.throttleUI) {
       this.throttleUI.setViewMode(true);
+    }
+    // Update ShipHealthUI layout for first-person (reparent under cockpit)
+    if (this.shipHealthUI?.container && this.cockpitWrapper) {
+      if (this.shipHealthUI.container.parentElement !== this.cockpitWrapper) {
+        this.cockpitWrapper.appendChild(this.shipHealthUI.container);
+      }
+      this.shipHealthUI.setViewMode(true);
     }
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'block';
     // Reparent panels into cockpit wrapper with overlay positioning

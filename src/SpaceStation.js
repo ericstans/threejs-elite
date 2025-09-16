@@ -97,8 +97,7 @@ export class SpaceStation {
   }
 
   createLandingVector() {
-  // Creates a bold red dotted line extending upward from the coin slot toward space.
-    // The dots animate moving TOWARD the slot to guide approach.
+    // Creates a bold red dotted line extending upward from the coin slot toward space.
     const group = new THREE.Group();
     const dotColor = 0xff2020;
     const dir = new THREE.Vector3(0, 1, 0); // Upward direction along cylinder axis
@@ -107,9 +106,9 @@ export class SpaceStation {
     const start = new THREE.Vector3(0, slotTopY + 0.01, 0); // slight lift above surface
     const length = this.size * 2.2; // how far the guidance extends
     this.landingVectorLength = length;
-    const dots = 8; // fewer dots -> much larger spacing
+    const dots = 8; // fewer dots -> larger spacing
     this.landingVectorDotSpacing = length / dots;
-    this.landingVectorSpeed = length * 0.05; // much slower travel speed
+    this.landingVectorSpeed = length * 0.05;
 
     const dotRadius = this.size * 0.04; // bold size relative to station
     const geom = new THREE.SphereGeometry(dotRadius, 10, 10);

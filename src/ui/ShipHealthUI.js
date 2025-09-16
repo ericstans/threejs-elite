@@ -5,6 +5,7 @@ export class ShipHealthUI {
   constructor(game, ship) {
     this.game = game;
     this.ship = ship;
+    this.isFirstPerson = true; // default to cockpit mode
     this.container = document.createElement('div');
   this.container.className = 'ship-health-ui';
   this.container.style.position = 'absolute';
@@ -83,5 +84,13 @@ export class ShipHealthUI {
     if (this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+  }
+
+  // Switch between first-person (cockpit overlay) and third-person (legacy) layouts.
+  // For now, we keep identical styling in both modes; this method exists to mirror
+  // the pattern used by other UI components and to allow future divergence.
+  setViewMode(isFirstPerson) {
+    this.isFirstPerson = !!isFirstPerson;
+    // Intentionally no style changes yet; reserved for future variant styling.
   }
 }
