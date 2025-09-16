@@ -32,7 +32,7 @@ export class Spaceship {
     this.dockingRotation = new THREE.Quaternion();
 
     // Enhanced landing animation state
-    this.landingPhase = 'approach'; // 'approach', 'descent'
+    this.landingPhase = null; // 'approach', 'descent'
     this.landingStartTime = 0;
     this.landingDuration = 3.0; // Total landing duration in seconds
     this.descentStartTime = 0;
