@@ -73,6 +73,12 @@ export class Spaceship {
     this.rotationAlignTimer = 0;
     this.rotationTargetQuaternion = null;
     this.rotationSlerpSpeed = 2.0;
+  // Smooth rotation lock tween (between ALIGNMENT and ROTATION lock)
+  this.rotationLockTweenInProgress = false;
+  this.rotationLockTweenTimer = 0;
+  this.rotationLockTweenDuration = 2; // seconds
+  this.rotationLockStartQuat = new THREE.Quaternion();
+  this.rotationLockTargetQuat = new THREE.Quaternion();
     this.postRotationTimer = 0;
     this.autoInsertionDelay = 2.0;
     this.insertionInProgress = false;
@@ -345,7 +351,7 @@ export class Spaceship {
 
         // Get current station position and rotation (accounting for orbital movement)
         const currentStationPos = station.mesh.getWorldPosition(new THREE.Vector3());
-        const _currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion());
+  // const _currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion()); // unused
 
         // Calculate current forward direction from station's current rotation
         // For takeoff, we want to move AWAY from the station (positive landing vector direction)
@@ -531,41 +537,54 @@ export class Spaceship {
           this.finalTurnInProgress = false;
         }
       }
-      if (this.flags.landingAlignmentLocked && !this.flags.rotationLockAcquired && this.rotationAlignTimer >= this.rotationAlignDelay) {
-        // Step 1: align forward to slot.
+      // Start rotation lock tween once alignment delay has elapsed
+      if (this.flags.landingAlignmentLocked && !this.flags.rotationLockAcquired && !this.rotationLockTweenInProgress && this.rotationAlignTimer >= this.rotationAlignDelay) {
+        // Compute target orientation (forward align + minimal roll) without snapping
         const currentForward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
-        const alignQ2 = new THREE.Quaternion().setFromUnitVectors(currentForward, slotForward.clone());
-        this.quaternion.premultiply(alignQ2);
-
-        // Step 2: compute minimal roll so station's horizontal reference appears level.
-        // Use station local X axis as horizontal reference.
-        const stationRightWorld = new THREE.Vector3(1, 0, 0).applyQuaternion(this.landingVectorStation.mesh.quaternion).normalize();
         const fwd = slotForward.clone().normalize();
-        // Project both currentRight and desiredRight onto plane perpendicular to forward
-        const currentRight = new THREE.Vector3(1, 0, 0).applyQuaternion(this.quaternion);
+        // Snap-free construction of target quaternion
+        const alignQ2 = new THREE.Quaternion().setFromUnitVectors(currentForward, fwd);
+        const tempQuat = this.quaternion.clone().premultiply(alignQ2);
+        // Desired right vector is station's right projected onto plane perpendicular to forward
+        const stationRightWorld = new THREE.Vector3(1, 0, 0).applyQuaternion(this.landingVectorStation.mesh.quaternion).normalize();
+        const currentRight = new THREE.Vector3(1, 0, 0).applyQuaternion(tempQuat);
         currentRight.sub(fwd.clone().multiplyScalar(currentRight.dot(fwd))).normalize();
         let desiredRight = stationRightWorld.clone();
         desiredRight.sub(fwd.clone().multiplyScalar(desiredRight.dot(fwd)));
         if (desiredRight.lengthSq() < 1e-8) {
-          // Fallback: use station local Z
           desiredRight = new THREE.Vector3(0, 0, 1).applyQuaternion(this.landingVectorStation.mesh.quaternion);
           desiredRight.sub(fwd.clone().multiplyScalar(desiredRight.dot(fwd)));
         }
+        let targetQuat = tempQuat.clone();
         if (desiredRight.lengthSq() > 1e-8) {
           desiredRight.normalize();
-          // Angle between current and desired rights
           let angle = Math.acos(Math.min(1, Math.max(-1, currentRight.dot(desiredRight))));
           if (angle > 1e-4) {
-            // Determine rotation direction using cross product sign along forward
             const cross = new THREE.Vector3().crossVectors(currentRight, desiredRight);
             const sign = Math.sign(cross.dot(fwd));
             angle *= sign;
             const rollQ = new THREE.Quaternion().setFromAxisAngle(fwd, angle);
-            this.quaternion.premultiply(rollQ);
+            targetQuat = tempQuat.clone().premultiply(rollQ);
           }
         }
-        this.flags.rotationLockAcquired = true; // rotation phase complete; insertion timer begins
-      } else if (!this.flags.rotationLockAcquired) {
+        // Kick off tween
+        this.rotationLockTweenInProgress = true;
+        this.rotationLockTweenTimer = 0;
+        this.rotationLockStartQuat.copy(this.quaternion);
+        this.rotationLockTargetQuat.copy(targetQuat);
+      } else if (!this.flags.rotationLockAcquired && this.rotationLockTweenInProgress) {
+        // Progress the tween using smoothstep easing
+        this.rotationLockTweenTimer += deltaTime;
+        const tRot = Math.min(1, this.rotationLockTweenTimer / this.rotationLockTweenDuration);
+        const ease = tRot * tRot * (3 - 2 * tRot);
+        const q = this.rotationLockStartQuat.clone();
+        q.slerp(this.rotationLockTargetQuat, ease);
+        this.quaternion.copy(q);
+        if (tRot >= 1) {
+          this.rotationLockTweenInProgress = false;
+          this.flags.rotationLockAcquired = true; // completed tween
+        }
+      } else if (!this.flags.rotationLockAcquired && !this.rotationLockTweenInProgress) {
         // Before roll phase: keep forward pointed at slot only (remove lateral drift)
         const currentForward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
         const alignQ = new THREE.Quaternion().setFromUnitVectors(currentForward, slotForward.clone());
@@ -796,8 +815,7 @@ export class Spaceship {
       return;
     }
 
-    const currentTime = Date.now() / 1000;
-    const elapsedTime = currentTime - this.landingStartTime;
+  const currentTime = Date.now() / 1000;
     const planetPos = this.dockingTarget.getPosition();
     const planetRadius = this.dockingTarget.radius;
 
