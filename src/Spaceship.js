@@ -107,13 +107,16 @@ export class Spaceship {
     }
   }
 
-  enableThirdPerson(modelRoot) {
+  enableThirdPerson(modelRoot, activate = true) {
     // Attach loaded model root into thirdPersonGroup
     if (modelRoot && !this.thirdPersonLoaded) {
       this.thirdPersonGroup.add(modelRoot);
       this.thirdPersonLoaded = true;
     }
-    this.thirdPersonMode = true;
+    // Allow preloading without activating third-person mode
+    this.thirdPersonMode = !!activate;
+    // Ensure visibility/transform reflects the chosen mode immediately
+    this.syncThirdPerson();
   }
 
   disableThirdPerson() {

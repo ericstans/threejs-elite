@@ -107,8 +107,9 @@ export class ThirdPersonCamera {
         this.spaceship.thirdPersonModelSize = scaledSize.clone();
         // Default: no manual visual offset; keep logical position at model center
         this.spaceship.thirdPersonVisualOffset = new THREE.Vector3(0, 0, 0);
-        // Add group to scene and to spaceship
-        this.spaceship.enableThirdPerson(object);
+        // Attach model to spaceship but do NOT force activation; respect current mode
+        // If user toggled before load completes, keep it active; otherwise keep hidden
+        this.spaceship.enableThirdPerson(object, this.spaceship.thirdPersonMode);
 
         // Pass the model to EngineParticles for material control
         if (this.engineParticles) {

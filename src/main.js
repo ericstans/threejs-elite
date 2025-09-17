@@ -155,6 +155,10 @@ class Game {
     // Initialize OptionsUI with game reference
     this.ui.setGame(this);
 
+    // Preload third-person assets at startup but keep them hidden
+    // This loads the FBX model and prepares camera calibration without switching view
+    this.initThirdPerson();
+
     this.start().catch(console.error);
   }
 
