@@ -9,7 +9,8 @@ export class SoundManager {
     this._engine = {
       started: false,
       layers: [], // each: { source, gain, filter, phaseOffset }
-      currentThrottle: 0
+      // Use sentinel so first update applies idle gain even at 0 throttle
+      currentThrottle: -1
     };
 
     this.initAudioContext();

@@ -296,28 +296,29 @@ export class Controls {
 
       try {
         // Ensure audio context is resumed (user gesture just occurred triggering this call)
-        if (this.game.soundManager?.audioContext && this.game.soundManager.audioContext.state === 'suspended') {
+        const sm = this.game.audioManager?.soundManager;
+        if (sm?.audioContext && sm.audioContext.state === 'suspended') {
           if (DEBUG) console.log('startMusic: Resuming audio context');
-          try { await this.game.soundManager.audioContext.resume(); } catch (_) { /* Audio context resume failed */ }
+          try { await sm.audioContext.resume(); } catch (_) { /* Audio context resume failed */ }
         }
         // Initialize music manager
         if (DEBUG) console.log('startMusic: Initializing music manager');
-        await this.game.musicManager.init();
+        await this.game.audioManager?.musicManager?.init();
         if (DEBUG) console.log('startMusic: Music manager initialized successfully');
 
         // Start with title soundtrack
         if (DEBUG) console.log('startMusic: Playing title track');
-        this.game.musicManager.switchSoundtracksImmediate(['title']);
-        this.game.musicManager.playTrack('ambient');
+  this.game.audioManager?.musicManager?.switchSoundtracksImmediate(['title']);
+  this.game.audioManager?.musicManager?.playTrack('ambient');
         if (DEBUG) console.log('startMusic: Starting fade in');
-        this.game.musicManager.fadeIn(3000); // 3 second fade in
+  this.game.audioManager?.musicManager?.fadeIn(3000); // 3 second fade in
         if (DEBUG) console.log('startMusic: Music system started successfully');
 
         // Immediately kick engine rumble so it starts exactly with the music
-        if (this.game.soundManager && this.game.spaceship) {
+        if (sm && this.spaceship) {
           const throttle = this.spaceship?.getThrottle ? this.spaceship.getThrottle() : 0;
           // Provide one immediate update so engine starts without waiting for next frame
-          this.game.soundManager.updateEngineRumble(throttle, false);
+          sm.updateEngineRumble(throttle, false);
         }
       } catch (error) {
         if (DEBUG) console.error('startMusic: Failed to start music system:', error);
