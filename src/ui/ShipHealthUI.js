@@ -18,12 +18,12 @@ export class ShipHealthUI {
   this.container.style.textAlign = 'left';
   this.container.style.fontFamily = 'PeaberryMono, monospace';
   this.container.style.setProperty('font-family', 'PeaberryMono, monospace', 'important');
-  this.container.style.fontSize = '16px';
+  this.container.style.fontSize = '12px';
   this.container.style.color = '#00ff00';
-  this.container.style.background = 'rgba(0,32,0,0.85)';
-  this.container.style.border = '2px solid #00ff00';
-  this.container.style.borderRadius = '12px';
-  this.container.style.boxShadow = '0 0 12px #003300';
+  //this.container.style.background = 'rgba(0,32,0,0.85)';
+  //this.container.style.border = '2px solid #00ff00';
+  //this.container.style.borderRadius = '12px';
+  //this.container.style.boxShadow = '0 0 12px #003300';
   this.container.style.padding = '15px';
   this.container.style.userSelect = 'none';
 
@@ -31,7 +31,7 @@ export class ShipHealthUI {
   this.panel = document.createElement('div');
   this.panel.style.display = 'grid';
   this.panel.style.gridTemplateColumns = '1fr 1fr';
-  this.panel.style.columnGap = '18px';
+  this.panel.style.columnGap = '8px';
   this.panel.style.rowGap = '8px';
 
   // Left column: labels (right-justified)

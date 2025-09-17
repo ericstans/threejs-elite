@@ -28,7 +28,8 @@ export class UI {
       nav: { left: '29.5%', top: '61%' },
       radar: { left: '50%', top: '70%' },
       throttle: { left: '62.625%', top: '60.5%' },
-      speedometer: { left: '59.875%', top: '55%' }
+      speedometer: { left: '59.875%', top: '55%' },
+      shipHealth: { left: '49.75%', top: '93%' } // pinned near bottom center
     };
     // Parallax tuning (motion/rotation driven)
     this._parallaxParams = {
@@ -250,6 +251,15 @@ export class UI {
       if (this.firstPersonMode && this.cockpitWrapper) {
         this.cockpitWrapper.appendChild(this.shipHealthUI.container);
         this.shipHealthUI.setViewMode(true);
+        // Pin in cockpit coordinates similar to other panels
+        const sh = this.shipHealthUI.container.style;
+        sh.position = 'absolute';
+        sh.left = this._anchors.shipHealth.left;
+        sh.top = this._anchors.shipHealth.top;
+        sh.right = 'auto';
+        sh.bottom = 'auto';
+        sh.transform = 'translate(-50%, -50%)';
+        // Keep existing styling as-is (identical between modes for now)
       } else if (this.uiContainer) {
         this.uiContainer.appendChild(this.shipHealthUI.container);
         this.shipHealthUI.setViewMode(false);
@@ -432,8 +442,14 @@ export class UI {
       if (this.shipHealthUI.container.parentElement !== this.uiContainer) {
         this.uiContainer.appendChild(this.shipHealthUI.container);
       }
-      // Keep same styling for now
       this.shipHealthUI.setViewMode(false);
+      // Allow free-floating positioning (center-bottom by default from component)
+      const sh = this.shipHealthUI.container.style;
+      sh.left = '50%';
+      sh.right = 'auto';
+      sh.top = 'auto';
+      sh.bottom = '20px';
+      sh.transform = 'translateX(-50%)';
     }
     // Hide cockpit image
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'none';
@@ -529,6 +545,14 @@ export class UI {
         this.cockpitWrapper.appendChild(this.shipHealthUI.container);
       }
       this.shipHealthUI.setViewMode(true);
+      // Pin to cockpit anchor
+      const sh = this.shipHealthUI.container.style;
+      sh.position = 'absolute';
+      sh.left = this._anchors.shipHealth.left;
+      sh.top = this._anchors.shipHealth.top;
+      sh.right = 'auto';
+      sh.bottom = 'auto';
+      sh.transform = 'translate(-50%, -50%)';
     }
     if (this.cockpitWrapper) this.cockpitWrapper.style.display = 'block';
     // Reparent panels into cockpit wrapper with overlay positioning
