@@ -728,7 +728,8 @@ export class CommoditiesUI {
 
   // Get quantity of a commodity in cargo
   getCargoQuantity(commodityName) {
-    return this.cargoItems.filter(item => item.name === commodityName).length;
+    // Exclude items reserved for active jobs (job-tagged cargo cannot be sold)
+    return this.cargoItems.filter(item => item.name === commodityName && !item.jobId).length;
   }
 
   // Increase sell quantity

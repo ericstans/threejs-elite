@@ -5,6 +5,7 @@ export class ServicesUI {
     this.isVisible = false;
     this.onCommoditiesClick = null; // Callback for commodities service
     this.onRefuelRepairClick = null; // Callback for refuel & repair service
+    this.onJobsClick = null; // Callback for jobs service
     this.availableServices = []; // Track available services for number key mapping
     this.createServicesModal();
     this.setupKeyboardHandlers();
@@ -104,7 +105,7 @@ export class ServicesUI {
       'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️', implemented: false },
       'commodities': { name: 'Commodities', description: 'Buy and sell trade goods', icon: '📦', implemented: true },
       'rumors': { name: 'Rumors', description: 'Gather information and rumors', icon: '💬', implemented: false },
-      'jobs': { name: 'Jobs', description: 'Find work and missions', icon: '📋', implemented: false }
+      'jobs': { name: 'Jobs', description: 'Find work and missions', icon: '📋', implemented: true }
     };
 
     // Add each service
@@ -199,6 +200,10 @@ export class ServicesUI {
           console.log('Calling refuel+repair callback');
           this.hideServices();
           this.onRefuelRepairClick();
+        } else if (serviceId === 'jobs' && this.onJobsClick) {
+          console.log('Calling jobs callback');
+          this.hideServices();
+          this.onJobsClick();
         } else {
           console.log(`Selected service: ${serviceId}`);
           // TODO: Implement other service functionality
@@ -232,6 +237,10 @@ export class ServicesUI {
 
   setOnRefuelRepairClick(callback) {
     this.onRefuelRepairClick = callback;
+  }
+
+  setOnJobsClick(callback) {
+    this.onJobsClick = callback;
   }
 
   // Cleanup method to remove event listeners

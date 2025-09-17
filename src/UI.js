@@ -9,6 +9,7 @@ import { CashUI } from './ui/CashUI.js';
 import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
+import { JobsUI } from './ui/JobsUI.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -155,7 +156,12 @@ export class UI {
     this.cashUI = new CashUI(this.uiContainer);
     this.commoditiesUI = new CommoditiesUI(this.uiContainer, this.cargoSystem);
     this.servicesUI = new ServicesUI(this.uiContainer);
-  this.refuelRepairUI = new RefuelRepairUI(this.uiContainer);
+    this.refuelRepairUI = new RefuelRepairUI(this.uiContainer);
+    this.jobsUI = new JobsUI(this.uiContainer);
+
+    // Jobs state (simple in-memory store for now)
+    this._jobsAvailable = [];
+    this._jobsInProgress = [];
 
     // Set up commodities callback
     this.servicesUI.onCommoditiesClick = () => {
@@ -164,6 +170,10 @@ export class UI {
     // Set up refuel & repair callback
     this.servicesUI.onRefuelRepairClick = () => {
       this.showRefuelRepair();
+    };
+    // Set up jobs callback
+    this.servicesUI.onJobsClick = () => {
+      this.showJobs();
     };
 
     // Wire refuel/repair UI callbacks
@@ -683,6 +693,154 @@ export class UI {
 
   isServicesVisible() {
     return this.servicesUI.isServicesVisible();
+  }
+
+  // --- Jobs UI methods ---
+  showJobs() {
+    // Ensure we have some available jobs for the current location
+    const ctx = this._getCurrentDockContext();
+    if (this._jobsAvailable.length === 0) {
+      this._generateJobsForLocation(ctx);
+    }
+    if (this.jobsUI) {
+      this.jobsUI.onAcceptJob = (job) => this._acceptJob(job);
+      this.jobsUI.onCompleteJob = (job) => this._completeJob(job);
+      this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+      this.debugFlagsUI.minimize();
+    }
+  }
+
+  hideJobs() {
+    if (!this.jobsUI) return;
+    this.jobsUI.hide();
+    this.debugFlagsUI.restore();
+  }
+
+  updateJobsContext() {
+    if (!this.jobsUI?.isVisible) return;
+    const ctx = this._getCurrentDockContext();
+    this.jobsUI.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+  }
+
+  _getCurrentDockContext() {
+    // Sector id from SectorManager; location name from docking flags
+    const sectorId = this?.game?.sectorManager?.currentSectorId || null;
+    let locationName = null;
+    const ship = this.spaceship;
+    if (ship?.flags?.isDocked) {
+      if (ship.flags.dockContext === 'planet') {
+        const planet = this.game?.environmentSystem?.planets?.find(p => p.id === ship.flags.docketPlanetId);
+        locationName = planet?.getName ? planet.getName() : null;
+      } else if (ship.flags.dockContext === 'station') {
+        const station = this.game?.environmentSystem?.stations?.find(s => s.id === ship.flags.dockedStationId);
+        locationName = station?.getName ? station.getName() : null;
+      }
+    }
+    return { sectorId, locationName, sectorName: this._getSectorName(sectorId) };
+  }
+
+  _getSectorName(id) {
+    if (!id) return 'Unknown';
+    const def = this.game ? this.game.availableSectors?.find(s => s.id === id) : null;
+    return def?.name || id;
+  }
+
+  _generateJobsForLocation(ctx) {
+    // Simple random generator: 3 cargo jobs
+    const options = [
+      'Iron Ore', 'Copper Ore', 'Gold Ore', 'Steel Ingots', 'Electronics', 'Energy Cells', 'Fuel Rods',
+      'Food Rations', 'Medical Supplies', 'Data Chips'
+    ];
+    const pick = () => options[Math.floor(Math.random() * options.length)];
+    const jobs = [];
+    const sectors = this.game?.availableSectors || [];
+    for (let i = 0; i < 3; i++) {
+      const cargoName = pick();
+      const cargoAmount = 3 + Math.floor(Math.random() * 5); // 3-7 units
+      // pick random destination sector different from current
+      const destSector = sectors.length ? sectors[Math.floor(Math.random() * sectors.length)] : { id: ctx.sectorId, name: ctx.sectorName };
+      const destSectorId = destSector?.id || ctx.sectorId;
+      const destSectorName = destSector?.name || ctx.sectorName || 'Unknown Sector';
+      const destLocationName = ctx.locationName === 'Oceanus Station' ? 'Aridus Prime' : 'Oceanus Station'; // cheap alt for now
+      const reward = 100 + Math.floor(Math.random() * 400) + cargoAmount * 20;
+      jobs.push({
+        id: `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        type: 'cargo',
+        cargoName,
+        cargoAmount,
+        reward,
+        origin: { sectorId: ctx.sectorId, sectorName: ctx.sectorName, locationName: ctx.locationName },
+        destination: { sectorId: destSectorId, sectorName: destSectorName, locationName: destLocationName }
+      });
+    }
+    this._jobsAvailable = jobs;
+  }
+
+  _annotateJobFit(jobs) {
+    // mark jobs with canFit based on remaining cargo slots
+    if (!this.cargoSystem) return jobs;
+    const freeSlots = Math.max(0, (this.cargoSystem.maxCargoSlots || 0) - (this.cargoSystem.getCargoCount?.() || 0));
+    return (jobs || []).map(j => ({ ...j, canFit: freeSlots >= j.cargoAmount }));
+  }
+
+  _acceptJob(job) {
+    if (!job || !this.cargoSystem) return;
+    // Capacity check
+    const freeSlots = Math.max(0, (this.cargoSystem.maxCargoSlots || 0) - (this.cargoSystem.getCargoCount?.() || 0));
+    if (freeSlots < job.cargoAmount) {
+      // refresh UI state
+      this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
+      return;
+    }
+    // Add cargo items tagged with jobId
+    for (let i = 0; i < job.cargoAmount; i++) {
+      const added = this.cargoSystem.addCargoItem(job.cargoName, 'job');
+      if (!added) break;
+      const last = this.cargoSystem.cargo[this.cargoSystem.cargo.length - 1];
+      if (last) last.jobId = job.id;
+    }
+    // move job to in-progress
+    this._jobsAvailable = this._jobsAvailable.filter(j => j.id !== job.id);
+    this._jobsInProgress.push(job);
+    this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
+    // Also prevent sale in commodities UI by refreshing its cargo items (will filter later when we add restriction)
+    this.updateCommoditiesCargoItems?.();
+  }
+
+  _completeJob(job) {
+    if (!job || !this.cargoSystem) return;
+    // Must be at destination and have required cargo items with jobId
+    const ctx = this._getCurrentDockContext();
+    const atDest = job.destination && job.destination.sectorId === ctx.sectorId && job.destination.locationName === ctx.locationName;
+    if (!atDest) {
+      this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+      return;
+    }
+    // Remove job-tagged cargo
+    let removed = 0;
+    for (let i = this.cargoSystem.cargo.length - 1; i >= 0 && removed < job.cargoAmount; i--) {
+      const it = this.cargoSystem.cargo[i];
+      if (it && it.jobId === job.id && it.name === job.cargoName) {
+        this.cargoSystem.removeCargo(i);
+        removed++;
+      }
+    }
+    if (removed < job.cargoAmount) {
+      // Not enough cargo to complete
+      this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+      return;
+    }
+    // Pay reward
+    if (this.spaceship?.addCash) {
+      this.spaceship.addCash(job.reward);
+      this.cashUI?.updateCash(this.spaceship.getCash());
+    }
+    // Remove job from in-progress
+    this._jobsInProgress = this._jobsInProgress.filter(j => j.id !== job.id);
+    // Refresh UI
+    this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+    // Update commodities cargo list
+    this.updateCommoditiesCargoItems?.();
   }
 
   // Refuel & Repair UI methods
@@ -1265,7 +1423,8 @@ export class UI {
     if (this.cargoSystem) {
       for (let i = 0; i < quantity; i++) {
         const cargoItems = this.cargoSystem.getCargo();
-        const itemIndex = cargoItems.findIndex(item => item.name === commodityName);
+        // Only remove items not reserved for jobs
+        const itemIndex = cargoItems.findIndex(item => item.name === commodityName && !item.jobId);
         if (itemIndex !== -1) {
           this.cargoSystem.removeCargo(itemIndex);
         }
@@ -1406,6 +1565,8 @@ export class UI {
           this.hideCommodities();
         } else if (this.refuelRepairUI?.isVisible) {
           this.hideRefuelRepair();
+        } else if (this.jobsUI?.isVisible) {
+          this.hideJobs();
         }
       }
     };
