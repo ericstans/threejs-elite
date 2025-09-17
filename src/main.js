@@ -798,9 +798,24 @@ class Game {
       this.spaceship.position.set(activeSector.center.x, activeSector.center.y, activeSector.center.z + 150); // offset slightly in front
       this.gameEngine.camera.position.copy(this.spaceship.position);
     }
+
+    // After portal travel, reset ship rotation back to default and clear any residual motion
+    if (this.spaceship) {
+      // Stop any residual motion
+      this.spaceship.angularVelocity.set(0, 0, 0);
+      this.spaceship.velocity.set(0, 0, 0);
+      // Reset orientation to identity (forward -Z, up +Y)
+      this.spaceship.quaternion.identity();
+      this.spaceship.rotation.set(0, 0, 0);
+      // Sync mesh and any third-person visuals
+      this.spaceship.mesh.quaternion.copy(this.spaceship.quaternion);
+      this.spaceship.mesh.rotation.copy(this.spaceship.rotation);
+      if (typeof this.spaceship.syncThirdPerson === 'function') {
+        this.spaceship.syncThirdPerson();
+      }
+    }
     this.asteroids = this.environmentSystem.asteroids;
     this.planets = this.environmentSystem.planets;
-    this.oceanusStation = this.environmentSystem.oceanusStation; // Getter for backwards compatibility
   }
 
   checkNavTargetProximity() {
@@ -1137,9 +1152,18 @@ setTimeout(() => {
   game.ui.setOnTitleDismiss(() => {
     console.log('Title dismissed - game ready');
     
-    // Switch to Aridus Prime's soundtracks (ambient)
+    // Force-stop any title music and switch to ambient immediately
     console.log('Switching to Aridus Prime soundtracks');
-    game.audioManager.musicManager.switchSoundtracksImmediate(['ambient']);
+  const mm = game.audioManager?.musicManager;
+    if (mm) {
+      // Hard stop any current playback (title queue, notes, timeouts)
+      if (typeof mm.stopTrack === 'function') mm.stopTrack();
+      // Update soundtrack folder to ambient
+      if (typeof mm.switchSoundtracksImmediate === 'function') mm.switchSoundtracksImmediate(['ambient']);
+      // Start ambient playback right away and fade in quickly
+      if (typeof mm.playTrack === 'function') mm.playTrack('ambient');
+      if (typeof mm.fadeIn === 'function') mm.fadeIn(1200);
+    }
     
     // Show UI and cockpit after title is dismissed
     game.ui.uiContainer.style.display = 'block';
