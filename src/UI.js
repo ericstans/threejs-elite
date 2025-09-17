@@ -8,6 +8,7 @@ import { CargoUI } from './ui/CargoUI.js';
 import { CashUI } from './ui/CashUI.js';
 import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
+import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -154,11 +155,30 @@ export class UI {
     this.cashUI = new CashUI(this.uiContainer);
     this.commoditiesUI = new CommoditiesUI(this.uiContainer, this.cargoSystem);
     this.servicesUI = new ServicesUI(this.uiContainer);
+  this.refuelRepairUI = new RefuelRepairUI(this.uiContainer);
 
     // Set up commodities callback
     this.servicesUI.onCommoditiesClick = () => {
       this.showCommoditiesFromCurrentLocation();
     };
+    // Set up refuel & repair callback
+    this.servicesUI.onRefuelRepairClick = () => {
+      this.showRefuelRepair();
+    };
+
+    // Wire refuel/repair UI callbacks
+    if (this.refuelRepairUI) {
+      this.refuelRepairUI.onRepairToFull = () => {
+        this.repairHullToFull();
+      };
+      this.refuelRepairUI.onRefuel = () => {
+        // Placeholder: no logic yet
+        this.refuelRepairUI.setStatus('Refuel not implemented yet.');
+      };
+      this.refuelRepairUI.onClose = () => {
+        // No-op for now
+      };
+    }
 
     // Set up commodities cargo update callback
     this.commoditiesUI.onCargoUpdate = (itemsToSell, totalValue) => {
@@ -663,6 +683,63 @@ export class UI {
 
   isServicesVisible() {
     return this.servicesUI.isServicesVisible();
+  }
+
+  // Refuel & Repair UI methods
+  showRefuelRepair() {
+    if (!this.refuelRepairUI) return;
+    const hull = this.spaceship?.hullStrength ?? 100;
+    const maxHull = (typeof this.spaceship?.maxHullStrength === 'number') ? this.spaceship.maxHullStrength : 100;
+    const cash = this.spaceship?.getCash ? this.spaceship.getCash() : 0;
+    this.refuelRepairUI.show(hull, maxHull, cash);
+    this.debugFlagsUI.minimize();
+  }
+
+  hideRefuelRepair() {
+    if (!this.refuelRepairUI) return;
+    this.refuelRepairUI.hide();
+    this.debugFlagsUI.restore();
+  }
+
+  updateRefuelRepair() {
+    if (!this.refuelRepairUI || !this.refuelRepairUI.isVisible) return;
+    const hull = this.spaceship?.hullStrength ?? 100;
+    const maxHull = (typeof this.spaceship?.maxHullStrength === 'number') ? this.spaceship.maxHullStrength : 100;
+    const cash = this.spaceship?.getCash ? this.spaceship.getCash() : 0;
+    this.refuelRepairUI.update(hull, maxHull, cash);
+  }
+
+  repairHullToFull() {
+    if (!this.spaceship) return;
+    const maxHull = (typeof this.spaceship?.maxHullStrength === 'number') ? this.spaceship.maxHullStrength : 100;
+    const currentHull = Math.max(0, Math.min(maxHull, Math.floor(this.spaceship.hullStrength ?? maxHull)));
+    const missing = Math.max(0, maxHull - currentHull);
+    const cost = missing; // $1 per point
+    const currentCash = this.spaceship.getCash ? this.spaceship.getCash() : 0;
+    if (missing <= 0) {
+      this.refuelRepairUI?.setStatus('Hull already at maximum.');
+      this.updateRefuelRepair();
+      return;
+    }
+    if (currentCash < cost) {
+      this.refuelRepairUI?.setStatus('Insufficient funds.');
+      this.updateRefuelRepair();
+      return;
+    }
+    // Deduct and repair
+    this.spaceship.removeCash(cost);
+    this.spaceship.hullStrength = maxHull;
+    // Update ShipHealthUI
+    if (this.shipHealthUI) {
+      this.shipHealthUI.update(this.spaceship);
+    }
+    // Update cash display
+    if (this.cashUI) {
+      this.cashUI.updateCash(this.spaceship.getCash());
+    }
+    // Update this modal
+    this.refuelRepairUI?.setStatus(`Repaired ${missing} hull for $${cost.toLocaleString()}.`);
+    this.updateRefuelRepair();
   }
 
   showTitle() {
@@ -1327,6 +1404,8 @@ export class UI {
           this.hideMapModal();
         } else if (this.isCommoditiesVisible()) {
           this.hideCommodities();
+        } else if (this.refuelRepairUI?.isVisible) {
+          this.hideRefuelRepair();
         }
       }
     };

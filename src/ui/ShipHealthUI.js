@@ -65,9 +65,10 @@ export class ShipHealthUI {
   getHull() {
     // Always use live ship.hullStrength, initialize if missing
     if (this.ship && typeof this.ship.hullStrength !== 'number') {
-      this.ship.hullStrength = 100;
+      const max = (typeof this.ship?.maxHullStrength === 'number') ? this.ship.maxHullStrength : 100;
+      this.ship.hullStrength = max;
     }
-    return this.ship?.hullStrength ?? 100;
+    return (typeof this.ship?.hullStrength === 'number') ? this.ship.hullStrength : 100;
   }
 
   update(ship) {

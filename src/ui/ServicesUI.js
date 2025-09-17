@@ -4,6 +4,7 @@ export class ServicesUI {
     this.servicesModal = null;
     this.isVisible = false;
     this.onCommoditiesClick = null; // Callback for commodities service
+    this.onRefuelRepairClick = null; // Callback for refuel & repair service
     this.availableServices = []; // Track available services for number key mapping
     this.createServicesModal();
     this.setupKeyboardHandlers();
@@ -66,6 +67,12 @@ export class ServicesUI {
         event.preventDefault();
         const serviceIndex = parseInt(event.code.replace('Digit', '')) - 1;
         this.selectServiceByIndex(serviceIndex);
+        return;
+      }
+      // Handle ESC to close services
+      if (event.code === 'Escape') {
+        event.preventDefault();
+        this.hideServices();
       }
     };
 
@@ -74,10 +81,11 @@ export class ServicesUI {
 
   selectServiceByIndex(index) {
     if (index >= 0 && index < this.availableServices.length) {
-      const serviceId = this.availableServices[index];
       const serviceItem = this.servicesList.children[index];
       if (serviceItem) {
-        serviceItem.click();
+        // Trigger click via event to avoid type issues on Element
+        const evt = new MouseEvent('click', { bubbles: true, cancelable: true });
+        serviceItem.dispatchEvent(evt);
       }
     }
   }
@@ -91,7 +99,7 @@ export class ServicesUI {
 
     // Service definitions
     const serviceDefinitions = {
-      'refuel+repair': { name: 'Refuel & Repair', description: 'Refuel your ship and repair hull damage', icon: '🔧', implemented: false },
+      'refuel+repair': { name: 'Refuel & Repair', description: 'Refuel your ship and repair hull damage', icon: '🔧', implemented: true },
       'shipyard': { name: 'Shipyard', description: 'Buy, sell, and upgrade ships', icon: '🚀', implemented: false },
       'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️', implemented: false },
       'commodities': { name: 'Commodities', description: 'Buy and sell trade goods', icon: '📦', implemented: true },
@@ -185,7 +193,12 @@ export class ServicesUI {
         console.log(`Service clicked: ${serviceId}`);
         if (serviceId === 'commodities' && this.onCommoditiesClick) {
           console.log('Calling commodities callback');
+          this.hideServices();
           this.onCommoditiesClick();
+        } else if (serviceId === 'refuel+repair' && this.onRefuelRepairClick) {
+          console.log('Calling refuel+repair callback');
+          this.hideServices();
+          this.onRefuelRepairClick();
         } else {
           console.log(`Selected service: ${serviceId}`);
           // TODO: Implement other service functionality
@@ -215,6 +228,10 @@ export class ServicesUI {
 
   isServicesVisible() {
     return this.isVisible;
+  }
+
+  setOnRefuelRepairClick(callback) {
+    this.onRefuelRepairClick = callback;
   }
 
   // Cleanup method to remove event listeners

@@ -24,6 +24,9 @@ export class Spaceship {
     this.rotationSpeed = typeConfig.stats.rotationSpeed;
     this.throttle = 0;
     this.maxThrottle = 1;
+  // Hull stats
+  this.maxHullStrength = typeof typeConfig.hullStrength === 'number' ? typeConfig.hullStrength : 100;
+  this.hullStrength = this.maxHullStrength;
     // Docking system
     this.dockingTarget = null;
     this.dockingProgress = 0;
@@ -389,6 +392,7 @@ export class Spaceship {
         if (isPlanetTakeoff && this.mesh.parent === this.takeoffPlanet.mesh) {
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
           const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
+          if (DEBUG) console.log('Planet detachment worldQuat:', worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w);
           const parent = this.takeoffPlanet.mesh.parent || this.takeoffSceneParent;
           this.takeoffPlanet.mesh.remove(this.mesh);
           if (parent) parent.add(this.mesh);
@@ -851,9 +855,8 @@ export class Spaceship {
 
         // Parent ship to planet mesh at the start of descent
         if (!this.isParentedToPlanet) {
-          // Store the current world position and rotation
+          // Store the current world position (rotation not needed here)
           const worldPos = this.mesh.getWorldPosition(new THREE.Vector3());
-          const worldQuat = this.mesh.getWorldQuaternion(new THREE.Quaternion());
 
           // Calculate where the ship should be relative to the planet
           // Position it at a safe distance from the planet surface
