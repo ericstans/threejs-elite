@@ -20,6 +20,14 @@ export class GameStateManager {
       firstDocking: false,
       soundtracks: ['title'] // Default soundtracks
     };
+
+    // Jobs state (in-memory for now)
+    // availableByLocation: key `${sectorId}::${locationName}` -> Array<Job>
+    // inProgress: Array<Job>
+    this.jobs = {
+      availableByLocation: {},
+      inProgress: []
+    };
   }
 
   // Pause/Resume functionality
@@ -83,6 +91,47 @@ export class GameStateManager {
 
   removeSoundtrack(soundtrack) {
     this.globalFlags.soundtracks = this.globalFlags.soundtracks.filter(s => s !== soundtrack);
+  }
+
+  // --- Jobs state management ---
+  _jobsKey(ctx) {
+    const sectorId = ctx?.sectorId || 'unknown-sector';
+    const locationName = ctx?.locationName || 'unknown-location';
+    return `${sectorId}::${locationName}`;
+  }
+
+  getJobsAvailableForLocation(ctx) {
+    const key = this._jobsKey(ctx);
+    return Array.isArray(this.jobs.availableByLocation[key]) ? [...this.jobs.availableByLocation[key]] : [];
+  }
+
+  setJobsAvailableForLocation(ctx, jobs) {
+    const key = this._jobsKey(ctx);
+    this.jobs.availableByLocation[key] = Array.isArray(jobs) ? [...jobs] : [];
+  }
+
+  removeAvailableJob(ctx, jobId) {
+    const key = this._jobsKey(ctx);
+    if (!Array.isArray(this.jobs.availableByLocation[key])) return;
+    this.jobs.availableByLocation[key] = this.jobs.availableByLocation[key].filter(j => j.id !== jobId);
+  }
+
+  getJobsInProgress() {
+    return Array.isArray(this.jobs.inProgress) ? [...this.jobs.inProgress] : [];
+  }
+
+  setJobsInProgress(jobs) {
+    this.jobs.inProgress = Array.isArray(jobs) ? [...jobs] : [];
+  }
+
+  addJobInProgress(job) {
+    this.jobs.inProgress = Array.isArray(this.jobs.inProgress) ? this.jobs.inProgress : [];
+    this.jobs.inProgress.push(job);
+  }
+
+  removeJobInProgress(jobId) {
+    if (!Array.isArray(this.jobs.inProgress)) return;
+    this.jobs.inProgress = this.jobs.inProgress.filter(j => j.id !== jobId);
   }
 
   // Process flags from conversation options

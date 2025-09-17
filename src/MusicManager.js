@@ -1,6 +1,6 @@
 // soundfont-player + @tonejs/midi
 
-const DEBUG = true;
+const DEBUG = false;
 
 // We'll dynamically import soundfont-player to avoid ESM/CJS interop issues.
 let _soundfontModulePromise = null;

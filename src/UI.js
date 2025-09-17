@@ -10,6 +10,7 @@ import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
 import { JobsUI } from './ui/JobsUI.js';
+import { getSectorDefinition } from './systems/serialization/sectorDefinitions.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -675,6 +676,8 @@ export class UI {
 
   updateNavTargetInfo(navTargetInfo, targetPosition, camera) {
     this.navTargetUI.updateNavTargetInfo(navTargetInfo, targetPosition, camera);
+    // Keep Jobs UI button states in sync with dock/sector context
+    this.updateJobsContext();
   }
 
   clearNavTargetInfo() {
@@ -699,8 +702,32 @@ export class UI {
   showJobs() {
     // Ensure we have some available jobs for the current location
     const ctx = this._getCurrentDockContext();
+    // Load from GameStateManager if available
+    const gsm = this.game?.gameStateManager;
+    const hasGsm = !!gsm;
+    const hasGetAvail = hasGsm && typeof gsm.getJobsAvailableForLocation === 'function';
+    const hasGetInProg = hasGsm && typeof gsm.getJobsInProgress === 'function';
+    if (hasGetAvail) {
+      try {
+        this._jobsAvailable = gsm.getJobsAvailableForLocation(ctx) || [];
+      } catch (e) {
+        console.warn('GameStateManager.getJobsAvailableForLocation threw; falling back to generate', e);
+        this._jobsAvailable = [];
+      }
+    }
+    if (hasGetInProg) {
+      try {
+        this._jobsInProgress = gsm.getJobsInProgress() || [];
+      } catch (e) {
+        console.warn('GameStateManager.getJobsInProgress threw; continuing with local state', e);
+      }
+    }
     if (this._jobsAvailable.length === 0) {
       this._generateJobsForLocation(ctx);
+      // Persist generated jobs if API exists
+      if (hasGsm && typeof gsm.setJobsAvailableForLocation === 'function') {
+        try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (e) { /* no-op */ }
+      }
     }
     if (this.jobsUI) {
       this.jobsUI.onAcceptJob = (job) => this._acceptJob(job);
@@ -746,22 +773,56 @@ export class UI {
   }
 
   _generateJobsForLocation(ctx) {
-    // Simple random generator: 3 cargo jobs
+    // Generate 3 jobs using real sector definitions for destinations
     const options = [
       'Iron Ore', 'Copper Ore', 'Gold Ore', 'Steel Ingots', 'Electronics', 'Energy Cells', 'Fuel Rods',
       'Food Rations', 'Medical Supplies', 'Data Chips'
     ];
     const pick = () => options[Math.floor(Math.random() * options.length)];
-    const jobs = [];
     const sectors = this.game?.availableSectors || [];
+    const jobs = [];
+
+    const pickDestination = () => {
+      if (!sectors.length) {
+        return { sectorId: ctx.sectorId, sectorName: ctx.sectorName || 'Unknown Sector', locationName: ctx.locationName || 'Unknown' };
+      }
+      // Prefer a different sector than current, fallback to current
+      const otherSectors = sectors.filter(s => s.id !== ctx.sectorId);
+      const chosenSector = (otherSectors.length ? otherSectors[Math.floor(Math.random() * otherSectors.length)] : sectors[Math.floor(Math.random() * sectors.length)]) || null;
+      const secId = chosenSector?.id || ctx.sectorId;
+      const secName = chosenSector?.name || ctx.sectorName || 'Unknown Sector';
+      // Pull a real location name from the destination sector definition
+      const def = typeof getSectorDefinition === 'function' ? getSectorDefinition(secId) : null;
+      let destLoc = null;
+      if (def) {
+        const locs = [];
+        if (Array.isArray(def.planets)) {
+          locs.push(...def.planets.map(p => ({ type: 'planet', name: p.name })));
+        }
+        if (Array.isArray(def.stations)) {
+          locs.push(...def.stations.map(s => ({ type: 'station', name: s.name })));
+        }
+        if (locs.length) {
+          // Prefer locations that have services (e.g., jobs or refuel), fallback to any
+          const withServices = [];
+          if (Array.isArray(def.planets)) {
+            withServices.push(...def.planets.filter(p => Array.isArray(p.services) && p.services.length > 0).map(p => p.name));
+          }
+          if (Array.isArray(def.stations)) {
+            withServices.push(...def.stations.filter(s => Array.isArray(s.services) && s.services.length > 0).map(s => s.name));
+          }
+          const pickFrom = withServices.length ? withServices : locs.map(l => l.name);
+          destLoc = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+        }
+      }
+      const locName = destLoc || (ctx.locationName === 'Oceanus Station' ? 'Aridus Prime' : 'Oceanus Station');
+      return { sectorId: secId, sectorName: secName, locationName: locName };
+    };
+
     for (let i = 0; i < 3; i++) {
       const cargoName = pick();
       const cargoAmount = 3 + Math.floor(Math.random() * 5); // 3-7 units
-      // pick random destination sector different from current
-      const destSector = sectors.length ? sectors[Math.floor(Math.random() * sectors.length)] : { id: ctx.sectorId, name: ctx.sectorName };
-      const destSectorId = destSector?.id || ctx.sectorId;
-      const destSectorName = destSector?.name || ctx.sectorName || 'Unknown Sector';
-      const destLocationName = ctx.locationName === 'Oceanus Station' ? 'Aridus Prime' : 'Oceanus Station'; // cheap alt for now
+      const dest = pickDestination();
       const reward = 100 + Math.floor(Math.random() * 400) + cargoAmount * 20;
       jobs.push({
         id: `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -770,7 +831,7 @@ export class UI {
         cargoAmount,
         reward,
         origin: { sectorId: ctx.sectorId, sectorName: ctx.sectorName, locationName: ctx.locationName },
-        destination: { sectorId: destSectorId, sectorName: destSectorName, locationName: destLocationName }
+        destination: dest
       });
     }
     this._jobsAvailable = jobs;
@@ -784,30 +845,64 @@ export class UI {
   }
 
   _acceptJob(job) {
+    // Ensure cargoSystem reference is available
+    if (!this.cargoSystem && this.game?.cargoSystem) {
+      this.cargoSystem = this.game.cargoSystem;
+    }
     if (!job || !this.cargoSystem) return;
     // Capacity check
     const freeSlots = Math.max(0, (this.cargoSystem.maxCargoSlots || 0) - (this.cargoSystem.getCargoCount?.() || 0));
     if (freeSlots < job.cargoAmount) {
+      // Not enough cargo space to accept job
       // refresh UI state
       this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
       return;
     }
     // Add cargo items tagged with jobId
+    let addedCount = 0;
     for (let i = 0; i < job.cargoAmount; i++) {
       const added = this.cargoSystem.addCargoItem(job.cargoName, 'job');
       if (!added) break;
       const last = this.cargoSystem.cargo[this.cargoSystem.cargo.length - 1];
       if (last) last.jobId = job.id;
+      addedCount++;
+    }
+    if (addedCount < job.cargoAmount) {
+      // Failed to add full cargo for job; aborting accept
+      // Rollback any partial adds tagged to this job
+      for (let i = this.cargoSystem.cargo.length - 1; i >= 0; i--) {
+        const it = this.cargoSystem.cargo[i];
+        if (it && it.jobId === job.id && it.name === job.cargoName) {
+          this.cargoSystem.removeCargo(i);
+        }
+      }
+      this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
+      return;
     }
     // move job to in-progress
     this._jobsAvailable = this._jobsAvailable.filter(j => j.id !== job.id);
     this._jobsInProgress.push(job);
+    // Persist (if GameStateManager jobs API present)
+    const gsm = this.game?.gameStateManager;
+    const ctx = this._getCurrentDockContext();
+    if (gsm && typeof gsm.removeAvailableJob === 'function') {
+      try { gsm.removeAvailableJob(ctx, job.id); } catch (e) { /* ignore */ }
+    }
+    if (gsm && typeof gsm.addJobInProgress === 'function') {
+      try { gsm.addJobInProgress(job); } catch (e) { /* ignore */ }
+    }
+    if (gsm && typeof gsm.setJobsAvailableForLocation === 'function') {
+      try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (e) { /* ignore */ }
+    }
     this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
     // Also prevent sale in commodities UI by refreshing its cargo items (will filter later when we add restriction)
     this.updateCommoditiesCargoItems?.();
   }
 
   _completeJob(job) {
+    if (!this.cargoSystem && this.game?.cargoSystem) {
+      this.cargoSystem = this.game.cargoSystem;
+    }
     if (!job || !this.cargoSystem) return;
     // Must be at destination and have required cargo items with jobId
     const ctx = this._getCurrentDockContext();
@@ -837,6 +932,11 @@ export class UI {
     }
     // Remove job from in-progress
     this._jobsInProgress = this._jobsInProgress.filter(j => j.id !== job.id);
+    // Persist (if GameStateManager jobs API present)
+    const gsm = this.game?.gameStateManager;
+    if (gsm && typeof gsm.removeJobInProgress === 'function') {
+      try { gsm.removeJobInProgress(job.id); } catch (e) { /* ignore */ }
+    }
     // Refresh UI
     this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
     // Update commodities cargo list
