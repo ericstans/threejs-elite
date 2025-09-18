@@ -4,6 +4,8 @@ import { SpaceStation } from '../SpaceStation.js';
 import { Planet } from '../Planet.js';
 import { NPCShip } from '../NPCShip.js';
 import { hashSeed } from '../util/seedUtils.js';
+import { computePlanetServicesForSeed, computeStationServicesForSeed } from './serialization/JobDestinationResolver.js';
+import { getSectorDefinition } from './serialization/sectorDefinitions.js';
 
 /**
  * EnvironmentSystem creates and updates passive world elements:
@@ -32,6 +34,60 @@ export class EnvironmentSystem {
     this.procedural = procedural; // if true, ignore provided planetFactory and generate
   }
 
+  // Ensure planets with identical base names in the current sector are suffixed with Roman numerals (II, III, ...)
+  applyRomanNumeralsForDuplicatePlanets() {
+    const planets = this.planets || [];
+    if (!planets.length) return;
+    // Strip existing Roman numeral suffix to get base name (idempotent behavior)
+    const stripRoman = (name) => {
+      if (!name) return name;
+      const m = name.match(/^(.*)\s+([IVXLCDM]+)$/);
+      if (!m) return name;
+      const roman = m[2];
+      // Basic validation: ensure token is a plausible roman numeral (I..MMMCMXCIX)
+      if (/^[IVXLCDM]+$/.test(roman)) return m[1];
+      return name;
+    };
+    const toRoman = (num) => {
+      /** @type {Array<[number,string]>} */
+      const map = [
+        [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+        [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+        [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+      ];
+      let n = Math.max(1, Math.floor(num));
+      let out = '';
+      for (const [val, sym] of map) {
+        while (n >= val) { out += sym; n -= val; }
+      }
+      return out;
+    };
+    // Count occurrences by base name
+    const counts = new Map();
+    for (const p of planets) {
+      const base = stripRoman(p.name);
+      counts.set(base, (counts.get(base) || 0) + 1);
+    }
+    // Track index for each base as we traverse in order
+    const seen = new Map();
+    for (const p of planets) {
+      const base = stripRoman(p.name);
+      const total = counts.get(base) || 0;
+      const idx = (seen.get(base) || 0) + 1;
+      seen.set(base, idx);
+      if (total > 1) {
+        // Keep the first occurrence unsuffixed; subsequent get Roman numerals II, III, ...
+        if (idx === 1) {
+          p.name = base; // ensure cleaned
+        } else {
+          p.name = `${base} ${toRoman(idx)}`;
+        }
+      } else {
+        p.name = base; // single occurrence, ensure cleaned
+      }
+    }
+  }
+
   initProcedural(seed, sectorSize = 1800) {
     // Hierarchical deterministic generation using namespaced hash seeds.
     this.clearPlanetsAndStations();
@@ -40,7 +96,12 @@ export class EnvironmentSystem {
       this.planetClusterStardust = null;
     }
     this._stardustTime = 0;
-    const planetTypes = this._getPlanetArchetypes();
+  const planetTypes = this._getPlanetArchetypes();
+  // Try to pull weighting from sector definition if available
+  const currentId = this.gameEngine?.sectorManager?.currentSectorId || this.gameEngine?.sectorManager?.currentSectorId;
+  const def = currentId ? getSectorDefinition(currentId) : null;
+  const pWeights = def?.planetServiceWeights;
+  const sWeights = def?.stationServiceWeights;
     const radiusRange = [35, 110];
     const spread = sectorSize;
     const countRng = this._rng(hashSeed(seed, 'planetCount'));
@@ -56,7 +117,8 @@ export class EnvironmentSystem {
         (prng() - 0.5) * spread * 0.6,
         -400 - prng() * spread
       );
-      const planet = new Planet(radius, pos, archetype.color, archetype.name, archetype.greeting);
+  const services = computePlanetServicesForSeed(pSeed, pWeights);
+      const planet = new Planet(radius, pos, archetype.color, archetype.name, archetype.greeting, services);
       planet.rotationSpeed = 0.02 + prng() * 0.15;
       planet.dockable = prng() < 0.55;
       this.planets.push(planet);
@@ -66,6 +128,8 @@ export class EnvironmentSystem {
       if (prng() < 0.22) this._addMoon(planet, prng);
       chosen.push(planet);
     }
+    // Apply Roman numerals to any duplicate planet names before creating stations so station default names inherit updated names
+    this.applyRomanNumeralsForDuplicatePlanets();
     const stationCountRng = this._rng(hashSeed(seed, 'stationCount'));
     const stationCount = Math.floor(stationCountRng() * 3);
     const indices = [...Array(chosen.length).keys()];
@@ -73,8 +137,10 @@ export class EnvironmentSystem {
       const idxPickRng = this._rng(hashSeed(seed, 'stationIndex', s));
       const idx = indices.splice(Math.floor(idxPickRng() * indices.length), 1)[0];
       const pl = chosen[idx];
-      const stRng = this._rng(hashSeed(seed, 'station', s));
-      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3) });
+      const sSeed = hashSeed(seed, 'station', s);
+      const stRng = this._rng(sSeed);
+  const services = computeStationServicesForSeed(sSeed, sWeights);
+      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3), services });
       this.stations.push(station);
       console.log('EnvironmentSystem: Created station:', station.getName?.(), 'Total stations:', this.stations.length);
       this.gameEngine.addEntity(station);
@@ -210,18 +276,18 @@ export class EnvironmentSystem {
       );
     };
     // Provide  nav-target interface (moons are nav-targetable but NOT commable)
-    moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
-    moon.userData.navName = `${planet.getName()} Moon`;
-    moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
-    moon.userData.isNavTargeted = false;
-    moon.userData.isCommable = false; // explicitly not commable
-    moon.getId = () => moon.userData.navId;
-    moon.getName = () => moon.userData.navName;
-    moon.getMass = () => moon.userData.navMass;
-    moon.setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
-    moon.isNavTarget = () => moon.userData.isNavTargeted;
-    moon.getPosition = () => moon.position.clone();
-    moon.getType = () => 'moon';
+  moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
+  moon.userData.navName = `${planet.getName()} Moon`;
+  moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
+  moon.userData.isNavTargeted = false;
+  moon.userData.isCommable = false; // explicitly not commable
+  /** @type {any} */ (moon).getId = () => moon.userData.navId;
+  /** @type {any} */ (moon).getName = () => moon.userData.navName;
+  /** @type {any} */ (moon).getMass = () => moon.userData.navMass;
+  /** @type {any} */ (moon).setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
+  /** @type {any} */ (moon).isNavTarget = () => moon.userData.isNavTargeted;
+  /** @type {any} */ (moon).getPosition = () => moon.position.clone();
+  /** @type {any} */ (moon).getType = () => 'moon';
     this.gameEngine.scene.add(moon);
     planet.moon = moon;
   }

@@ -19,6 +19,7 @@ import { AudioManager } from './systems/AudioManager.js';
 import { registerDefaultSerializers } from './systems/serialization/registerDefaultSerializers.js';
 import { getSectorDefinition, availableSectors } from './systems/serialization/sectorDefinitions.js';
 import { hashSeed } from './util/seedUtils.js';
+import { computePlanetServicesForSeed } from './systems/serialization/JobDestinationResolver.js';
 
 // import { NPCShip } from './NPCShip.js';
 import { EngineParticles } from './EngineParticles.js';
@@ -756,7 +757,10 @@ class Game {
           const a = archetypes[Math.floor(prng() * archetypes.length)];
           const radius = 40 + prng() * 55;
           const pos = new THREE.Vector3((prng() - 0.5) * spread, (prng() - 0.5) * spread * 0.5, -600 - prng() * spread);
-          const planet = new Planet(radius, pos, a.color, a.name, a.greeting);
+          // Assign deterministic services consistent with resolver and sector weights
+          const pWeights = def?.planetServiceWeights;
+          const services = computePlanetServicesForSeed(pSeed, pWeights);
+          const planet = new Planet(radius, pos, a.color, a.name, a.greeting, services);
           planet.rotationSpeed = 0.02 + prng() * 0.12;
           planet.dockable = prng() < 0.55;
           this.environmentSystem.planets.push(planet);
@@ -764,6 +768,10 @@ class Game {
           this.gameEngine.scene.add(planet.mesh);
           if (prng() < 0.18 && this.environmentSystem._addPlanetRings) this.environmentSystem._addPlanetRings(planet, prng);
           if (prng() < 0.22 && this.environmentSystem._addMoon) this.environmentSystem._addMoon(planet, prng);
+        }
+        // After hybrid planets are added, normalize duplicate names with Roman numerals so stations inherit final names
+        if (this.environmentSystem.applyRomanNumeralsForDuplicatePlanets) {
+          this.environmentSystem.applyRomanNumeralsForDuplicatePlanets();
         }
         // Add procedural stardust
         const wideRand = this.environmentSystem._rng(hashSeed(hybridSeed, 'wide'));

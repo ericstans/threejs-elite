@@ -10,7 +10,7 @@ import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
 import { JobsUI } from './ui/JobsUI.js';
-import { getSectorDefinition } from './systems/serialization/sectorDefinitions.js';
+import { pickRandomJobsDestination } from './systems/serialization/JobDestinationResolver.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -786,37 +786,11 @@ export class UI {
       if (!sectors.length) {
         return { sectorId: ctx.sectorId, sectorName: ctx.sectorName || 'Unknown Sector', locationName: ctx.locationName || 'Unknown' };
       }
-      // Prefer a different sector than current, fallback to current
-      const otherSectors = sectors.filter(s => s.id !== ctx.sectorId);
-      const chosenSector = (otherSectors.length ? otherSectors[Math.floor(Math.random() * otherSectors.length)] : sectors[Math.floor(Math.random() * sectors.length)]) || null;
-      const secId = chosenSector?.id || ctx.sectorId;
-      const secName = chosenSector?.name || ctx.sectorName || 'Unknown Sector';
-      // Pull a real location name from the destination sector definition
-      const def = typeof getSectorDefinition === 'function' ? getSectorDefinition(secId) : null;
-      let destLoc = null;
-      if (def) {
-        const locs = [];
-        if (Array.isArray(def.planets)) {
-          locs.push(...def.planets.map(p => ({ type: 'planet', name: p.name })));
-        }
-        if (Array.isArray(def.stations)) {
-          locs.push(...def.stations.map(s => ({ type: 'station', name: s.name })));
-        }
-        if (locs.length) {
-          // Prefer locations that have services (e.g., jobs or refuel), fallback to any
-          const withServices = [];
-          if (Array.isArray(def.planets)) {
-            withServices.push(...def.planets.filter(p => Array.isArray(p.services) && p.services.length > 0).map(p => p.name));
-          }
-          if (Array.isArray(def.stations)) {
-            withServices.push(...def.stations.filter(s => Array.isArray(s.services) && s.services.length > 0).map(s => s.name));
-          }
-          const pickFrom = withServices.length ? withServices : locs.map(l => l.name);
-          destLoc = pickFrom[Math.floor(Math.random() * pickFrom.length)];
-        }
-      }
-      const locName = destLoc || (ctx.locationName === 'Oceanus Station' ? 'Aridus Prime' : 'Oceanus Station');
-      return { sectorId: secId, sectorName: secName, locationName: locName };
+      // Use resolver to only select locations that explicitly offer the 'jobs' service.
+      const dest = pickRandomJobsDestination(ctx, sectors);
+      if (dest) return dest;
+      // Fallback (should be rare): keep within current sector/location
+      return { sectorId: ctx.sectorId, sectorName: ctx.sectorName || 'Unknown Sector', locationName: ctx.locationName || 'Unknown' };
     };
 
     for (let i = 0; i < 3; i++) {

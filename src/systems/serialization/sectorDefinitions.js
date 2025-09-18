@@ -72,6 +72,9 @@ export const sectorDefinitions = {
     stations: [],
     npcShips: [],
     asteroidField: { seed: 0x33dd, destroyedIds: [], center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+    // Procedural weighting for services (applies to hybrid extras and resolver)
+    planetServiceWeights: { 'refuel+repair': 1, commodities: 0.55, jobs: 0.30 },
+    stationServiceWeights: { 'refuel+repair': 1, commodities: 1, shipyard: 0.5, outfitting: 0.5, jobs: 0.9 },
     hybridProceduralExtras: {
       proceduralPlanetCount: 3, // number of additional procedural planets to spawn
       seedOffset: 0x9e // unique offset so procedural portion differs from baseline seed
@@ -85,6 +88,9 @@ export const sectorDefinitions = {
     stations: [],
     npcShips: [],
     asteroidField: { seed: 0x33dd, destroyedIds: [], center: { x: 400, y: 0, z: -1200 }, size: 1400 },
+    // Fully procedural sector weighting for services
+    planetServiceWeights: { 'refuel+repair': 0, commodities: 0, shipyard: 0, outfitting: 0, jobs: 0, rumors: 0 },
+    stationServiceWeights: { 'refuel+repair': 1, commodities: 0, shipyard: 0, outfitting: 0, jobs: 0, rumors: 0 },
     hybridProceduralExtras: {
       proceduralPlanetCount: 50, // number of additional procedural planets to spawn
       seedOffset: 0x9f // unique offset so procedural portion differs from baseline seed
