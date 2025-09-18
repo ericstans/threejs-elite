@@ -33,6 +33,10 @@ export class Controls {
   }
 
   update(deltaTime) {
+    // If controls are disabled (e.g., ship destroyed), ignore input entirely
+    if (this.spaceship && (this.spaceship._controlsDisabled || this.spaceship.hullStrength <= 0)) {
+      return;
+    }
     const sensitivity = 1.0;
 
     // Handle escape key for options menu (only if no other modals are open)

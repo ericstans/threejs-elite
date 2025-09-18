@@ -35,6 +35,12 @@ export class ThirdPersonCamera {
     this.thirdPersonInitialized = false;
 
     this._initOrbitEventHandlers();
+
+    // When ship is destroyed and debris finishes, freeze camera at the last position
+    this._deathCameraFrozen = false;
+    this._lastDeathFocus = new THREE.Vector3();
+    this._frozenCamPos = new THREE.Vector3();
+    this._frozenCamQuat = new THREE.Quaternion();
   }
 
   _initOrbitEventHandlers() {
@@ -193,6 +199,10 @@ export class ThirdPersonCamera {
 
   update(deltaTime) {
     // Handle orbit idle timeout
+    // If we're frozen post-destruction, keep the final camera pose and skip repositioning
+    if (this._deathCameraFrozen) {
+      return;
+    }
     if (this.spaceship.thirdPersonMode && this.thirdPersonOrbitActive) {
       this.thirdPersonOrbitIdleSeconds += deltaTime;
       if (this.thirdPersonOrbitIdleSeconds >= this.thirdPersonOrbitIdleThreshold) {
@@ -205,7 +215,14 @@ export class ThirdPersonCamera {
     }
 
     // Update camera position for third-person mode
-    const spaceshipPos = this.spaceship.getPosition();
+    // If ship has exploded, follow debris centroid instead
+    const sds = this.gameEngine.shipDestructionSystem;
+    const debrisActive = !!(sds && sds.isActive && sds.isActive());
+    // Cache last focus when debris is active, so when it ends we can hold position
+    if (debrisActive) {
+      this._lastDeathFocus.copy(sds.getFocus());
+    }
+    const focusPos = debrisActive ? sds.getFocus() : (this._deathCameraFrozen ? this._lastDeathFocus : this.spaceship.getPosition());
     if (this.spaceship.thirdPersonMode && this.thirdPersonCameraOffset) {
       if (this.thirdPersonOrbitActive) {
         // Orbit mode: compute offset in world space using spherical angles independent of ship roll
@@ -215,17 +232,33 @@ export class ThirdPersonCamera {
         const cy = Math.cos(this.thirdPersonOrbitYaw);
         const sy = Math.sin(this.thirdPersonOrbitYaw);
         const offset = new THREE.Vector3(r * sy * cp, r * sp, r * cy * cp); // z forward
-        const camPos = spaceshipPos.clone().add(offset);
+        const camPos = focusPos.clone().add(offset);
         this.gameEngine.camera.position.copy(camPos);
-        this.gameEngine.camera.lookAt(spaceshipPos);
+        this.gameEngine.camera.lookAt(focusPos);
       } else {
         // Follow mode: camera follows ship with fixed offset
         const shipQuat = this.spaceship.quaternion.clone();
         const offsetWorld = this.thirdPersonCameraOffset.clone().applyQuaternion(shipQuat);
-        const camPos = spaceshipPos.clone().add(offsetWorld);
+        const camPos = focusPos.clone().add(offsetWorld);
         this.gameEngine.camera.position.copy(camPos);
-        this.gameEngine.camera.quaternion.copy(shipQuat);
+        // If we're frozen at death, look at the last focus point and don't copy ship rotation
+        if (this._deathCameraFrozen) {
+          this.gameEngine.camera.lookAt(this._lastDeathFocus);
+        } else {
+          this.gameEngine.camera.quaternion.copy(shipQuat);
+        }
       }
+    }
+
+    // If debris just finished and the ship is destroyed, freeze the camera and show Game Over
+    if (!debrisActive && this.spaceship && this.spaceship._destroyed && !this._deathCameraFrozen) {
+      // Freeze now; camera update above will hold position/orientation
+      this._deathCameraFrozen = true;
+      // Cache final camera pose
+      this._frozenCamPos.copy(this.gameEngine.camera.position);
+      this._frozenCamQuat.copy(this.gameEngine.camera.quaternion);
+      // Show Game Over overlay
+      try { this.ui.showGameOver && this.ui.showGameOver(); } catch (_) {}
     }
   }
 

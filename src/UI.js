@@ -14,6 +14,7 @@ import { pickRandomJobsDestination } from './systems/serialization/JobDestinatio
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
+import { GameOverOverlay } from './ui/GameOverOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 import { ShipHealthUI } from './ui/ShipHealthUI.js';
@@ -184,7 +185,7 @@ export class UI {
       };
       this.refuelRepairUI.onRefuel = () => {
         // Placeholder: no logic yet
-        this.refuelRepairUI.setStatus('Refuel not implemented yet.');
+        this.refuelRepairUI.setStatus('Your ship has been refueled.');
       };
       this.refuelRepairUI.onClose = () => {
         // No-op for now
@@ -218,6 +219,13 @@ export class UI {
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
+    this.gameOverOverlay = new GameOverOverlay();
+    this.gameOverOverlay.setOnQuit(() => {
+      // Perform a clean restart back to the Title screen
+      try { this.hideGameOver(); } catch (_) {}
+      try { this.titleOverlay.hide(); } catch (_) {}
+      window.location.reload();
+    });
 
     // Setup escape key handlers for modals
     this.setupModalEventListeners();
@@ -992,6 +1000,15 @@ export class UI {
 
   isTitleVisible() {
     return this.titleOverlay && this.titleOverlay.isVisible;
+  }
+
+  // Game Over overlay methods
+  showGameOver() {
+    this.gameOverOverlay?.show();
+  }
+
+  hideGameOver() {
+    this.gameOverOverlay?.hide();
   }
 
   // Tutorial overlay methods

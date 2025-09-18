@@ -15,7 +15,7 @@ export class Planet {
     this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
     this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
     this.isNavTargeted = false;
-    this.isCommable = true; // All planets are commable
+    this.isCommable = true;
     this.dockable = true; // default; procedural generation may override
     this.moon = null; // Optional moon object
 
@@ -49,7 +49,7 @@ export class Planet {
 
   createPlanetMesh() {
     // Create a low-poly sphere for flat-shaded look
-    const geometry = new THREE.SphereGeometry(this.radius, 8, 6);
+    const geometry = new THREE.SphereGeometry(this.radius, 14, 10);
     const material = new THREE.MeshLambertMaterial({
       color: this.color,
       flatShading: true

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Explosion } from './Explosion.js';
+import { ShipDestructionSystem } from './systems/ShipDestructionSystem.js';
 import { generateStarfieldEquirectTexture } from './util/generateStarfieldTexture.js';
 
 const DRAW_DISTANCE = 8000;
@@ -17,6 +18,7 @@ export class GameEngine {
 
     this.clock = new THREE.Clock();
     this.entities = [];
+  this.shipDestructionSystem = new ShipDestructionSystem(this.scene);
 
     // External references (set by Game class)
     /** @type {any} */
@@ -163,7 +165,8 @@ export class GameEngine {
 
   generateSpatialAudioBuffers() {
     // Create audio context for generating procedural sounds
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const AudioCtx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+  const audioContext = new AudioCtx();
 
     // Generate laser hit sound buffer
     this.audioBuffers.laserHit = this.generateLaserHitBuffer(audioContext);
@@ -373,12 +376,22 @@ export class GameEngine {
         };
         spawnExplosion();
       }
+      // Trigger lightweight debris breakup if third-person model is present
+      try {
+        if (this.spaceship && this.spaceship.thirdPersonLoaded && this.spaceship.thirdPersonGroup) {
+          this.shipDestructionSystem.start(this.spaceship);
+        }
+      } catch(_) {}
     }
     this.entities.forEach(entity => {
       if (entity.update) {
         entity.update(deltaTime);
       }
     });
+    // Update ship debris breakup
+    if (this.shipDestructionSystem && this.shipDestructionSystem.isActive()) {
+      this.shipDestructionSystem.update(deltaTime);
+    }
 
     // --- Planet collision and bounce for player ship ---
     if (this.spaceship) {

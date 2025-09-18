@@ -642,8 +642,12 @@ class Game {
       // Third-person camera positioning is handled by ThirdPersonCamera system
       // The system updates the camera position in its update() method
     } else {
-      this.gameEngine.camera.position.copy(spaceshipPos);
-      this.gameEngine.camera.rotation.copy(spaceshipRot);
+      // In first-person mode, do not snap the camera after destruction; keep last view
+      const destroyed = (typeof this.spaceship.hullStrength === 'number') && this.spaceship.hullStrength <= 0;
+      if (!destroyed) {
+        this.gameEngine.camera.position.copy(spaceshipPos);
+        this.gameEngine.camera.rotation.copy(spaceshipRot);
+      }
     }
 
     // Update engine rumble based on throttle & docking (station or planet)
