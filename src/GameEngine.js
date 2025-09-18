@@ -245,48 +245,87 @@ export class GameEngine {
       }
       // Overlay animated spiderweb crack effect on main canvas
       try {
-        let crack = document.getElementById('canopy-crack-overlay');
-        if (!crack) {
-          crack = document.createElement('canvas');
-          crack.id = 'canopy-crack-overlay';
-          crack.style.position = 'fixed';
-          crack.style.left = '0';
-          crack.style.top = '0';
-          crack.style.width = '100vw';
-          crack.style.height = '100vh';
-          crack.style.pointerEvents = 'none';
-          crack.style.zIndex = '99999';
-          document.body.appendChild(crack);
-        }
-        // Animate spiderweb cracks
-        const canvas = crack instanceof HTMLCanvasElement ? crack : null;
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          // Draw animated cracks (simple radial lines)
-          const centerX = canvas.width/2, centerY = canvas.height/2;
-          for (let i=0; i<16; i++) {
-            const angle = (Math.PI*2) * (i/16) + Math.random()*0.2;
-            const len = 180 + Math.random()*120;
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(0,0);
-            ctx.lineTo(len, 0);
-            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = 'rgba(255,255,255,0.5)';
-            ctx.shadowBlur = 8;
-            ctx.stroke();
-            ctx.restore();
+        // Only show the main canopy cracks in first-person view
+        if (this.spaceship && this.spaceship.thirdPersonMode === false) {
+          let crack = document.getElementById('canopy-crack-overlay');
+          if (!crack) {
+            crack = document.createElement('canvas');
+            crack.id = 'canopy-crack-overlay';
+            crack.style.position = 'fixed';
+            crack.style.left = '0';
+            crack.style.top = '0';
+            crack.style.width = '100vw';
+            crack.style.height = '100vh';
+            crack.style.pointerEvents = 'none';
+            // Place behind cockpit PNG (cockpitWrapper uses z-index 500)
+            crack.style.zIndex = '400';
+            document.body.appendChild(crack);
+          } else {
+            // Ensure z-index remains behind cockpit image
+            crack.style.zIndex = '400';
+          }
+          // Animate spiderweb cracks
+          const canvas = crack instanceof HTMLCanvasElement ? crack : null;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw animated cracks (simple radial lines)
+            const centerX = canvas.width/2, centerY = canvas.height/2;
+            for (let i=0; i<16; i++) {
+              const angle = (Math.PI*2) * (i/16) + Math.random()*0.2;
+              const len = 180 + Math.random()*600;
+              ctx.save();
+              ctx.translate(centerX, centerY);
+              ctx.rotate(angle);
+              ctx.beginPath();
+              ctx.moveTo(0,0);
+              ctx.lineTo(len, 0);
+              ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+              ctx.lineWidth = 3;
+              ctx.shadowColor = 'rgba(255,255,255,0.5)';
+              ctx.shadowBlur = 8;
+              ctx.stroke();
+              ctx.restore();
+            }
           }
         }
       } catch(e) {}
-      // Overlay cracks on Nav Target, Target, Radar UI (use actual panel elements)
-      const crackOverlay = () => {
+      // Overlay cracks on Target/Nav for first-person even if panels are hidden; keep Radar panel behavior
+      if (this.spaceship && this.spaceship.thirdPersonMode === false) {
+        try { this.ui && this.ui.showTargetNavCracksOverlay && this.ui.showTargetNavCracksOverlay(); } catch (_) {}
+        // For Radar specifically, still inject into panel (if present) to keep its relative placement
+        if (this.ui && this.ui.radarUI && this.ui.radarUI.radarPanel) {
+          const el = this.ui.radarUI.radarPanel;
+          if (el && !el.querySelector('.crack-svg')) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+            svg.classList.add('crack-svg');
+            svg.setAttribute('width','100%');
+            svg.setAttribute('height','100%');
+            svg.style.position = 'absolute';
+            svg.style.left = '0';
+            svg.style.top = '0';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '9999';
+            for (let i=0; i<8; i++) {
+              const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
+              const x2 = 60+Math.cos(angle)*40;
+              const y2 = 30+Math.sin(angle)*20;
+              const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+              line.setAttribute('x1','60');
+              line.setAttribute('y1','30');
+              line.setAttribute('x2',String(x2));
+              line.setAttribute('y2',String(y2));
+              line.setAttribute('stroke','white');
+              line.setAttribute('stroke-width','2');
+              svg.appendChild(line);
+            }
+            el.appendChild(svg);
+          }
+        }
+      } else {
+        // In third-person, keep legacy behavior for panel overlays (target, nav, radar) if panels exist
         const panels = [];
         if (this.ui && this.ui.navTargetUI && this.ui.navTargetUI.navTargetPanel) panels.push(this.ui.navTargetUI.navTargetPanel);
         if (this.ui && this.ui.targetUI && this.ui.targetUI.targetPanel) panels.push(this.ui.targetUI.targetPanel);
@@ -318,8 +357,7 @@ export class GameEngine {
             el.appendChild(svg);
           }
         });
-      };
-      crackOverlay.call(this);
+      }
       // Play cracking sound
       try {
         const ctx = window.AudioContext ? new window.AudioContext() : null;

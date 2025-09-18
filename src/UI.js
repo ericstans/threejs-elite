@@ -1002,6 +1002,98 @@ export class UI {
     return this.titleOverlay && this.titleOverlay.isVisible;
   }
 
+  // --- First-person cracks overlays for Target and Nav Target ---
+  // These appear even if the actual panels are hidden, and render in front of the cockpit PNG
+  showTargetNavCracksOverlay() {
+    if (!this.cockpitWrapper) return;
+    // Create or update NAV cracks overlay
+    if (!this._navCracksOverlay) {
+      this._navCracksOverlay = document.createElement('div');
+      const el = this._navCracksOverlay;
+      el.id = 'nav-cracks-overlay';
+      el.style.position = 'absolute';
+      el.style.pointerEvents = 'none';
+      // In front of cockpit image (cockpitWrapper is z-index 500)
+      el.style.zIndex = '550';
+      // Position at nav anchor
+      el.style.left = this._anchors.nav.left;
+      el.style.top = this._anchors.nav.top;
+      el.style.transform = 'translate(-50%, -50%)';
+      el.style.width = '10%';
+      el.style.height = '20%';
+      this.cockpitWrapper.appendChild(el);
+      // Draw SVG cracks
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('width','100%');
+      svg.setAttribute('height','100%');
+      svg.style.position = 'absolute';
+      svg.style.left = '0';
+      svg.style.top = '0';
+      svg.style.pointerEvents = 'none';
+      svg.style.zIndex = '1';
+      for (let i=0; i<8; i++) {
+        const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
+        const x2 = 60+Math.cos(angle)*40;
+        const y2 = 30+Math.sin(angle)*20;
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1','60');
+        line.setAttribute('y1','30');
+        line.setAttribute('x2',String(x2));
+        line.setAttribute('y2',String(y2));
+        line.setAttribute('stroke','white');
+        line.setAttribute('stroke-width','2');
+        svg.appendChild(line);
+      }
+      el.appendChild(svg);
+    }
+    // Create or update TARGET cracks overlay
+    if (!this._targetCracksOverlay) {
+      this._targetCracksOverlay = document.createElement('div');
+      const el = this._targetCracksOverlay;
+      el.id = 'target-cracks-overlay';
+      el.style.position = 'absolute';
+      el.style.pointerEvents = 'none';
+      el.style.zIndex = '550';
+      // Position at target anchor
+      el.style.left = this._anchors.target.left;
+      el.style.top = this._anchors.target.top;
+      el.style.transform = 'translate(-50%, -50%)';
+      el.style.width = '10%';
+      el.style.height = '20%';
+      this.cockpitWrapper.appendChild(el);
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('width','100%');
+      svg.setAttribute('height','100%');
+      svg.style.position = 'absolute';
+      svg.style.left = '0';
+      svg.style.top = '0';
+      svg.style.pointerEvents = 'none';
+      svg.style.zIndex = '1';
+      for (let i=0; i<8; i++) {
+        const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
+        const x2 = 60+Math.cos(angle)*40;
+        const y2 = 30+Math.sin(angle)*20;
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1','60');
+        line.setAttribute('y1','30');
+        line.setAttribute('x2',String(x2));
+        line.setAttribute('y2',String(y2));
+        line.setAttribute('stroke','white');
+        line.setAttribute('stroke-width','2');
+        svg.appendChild(line);
+      }
+      el.appendChild(svg);
+    }
+  }
+
+  hideTargetNavCracksOverlay() {
+    const removeEl = (el) => { if (el && el.parentElement) el.parentElement.removeChild(el); };
+    removeEl(this._navCracksOverlay);
+    removeEl(this._targetCracksOverlay);
+    this._navCracksOverlay = null;
+    this._targetCracksOverlay = null;
+  }
+
   // Game Over overlay methods
   showGameOver() {
     this.gameOverOverlay?.show();
