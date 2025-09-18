@@ -15,6 +15,7 @@ export class CommoditiesUI {
     this.onCargoAdd = null; // Callback to add items back to cargo
     this.onCargoRemove = null; // Callback to remove items from cargo
     this.onBuyItems = null; // Callback to handle buying items
+    this.onClose = null; // Callback when the modal closes
     this.createCommoditiesModal();
   }
 
@@ -299,6 +300,9 @@ export class CommoditiesUI {
     this.modal.style.display = 'none';
     // Return moved items to cargo bay
     this.returnItemsToCargo();
+    if (typeof this.onClose === 'function') {
+      try { this.onClose(); } catch (_) {}
+    }
   }
 
   updateCommodities(commodities) {

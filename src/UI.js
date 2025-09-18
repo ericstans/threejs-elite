@@ -693,6 +693,8 @@ export class UI {
   }
 
   showServices(services, locationName) {
+    // Cache context so sub-screens can return here on close/ESC
+    this._lastServicesContext = { services: Array.isArray(services) ? [...services] : services, locationName };
     this.servicesUI.showServices(services, locationName);
     this.debugFlagsUI.minimize();
   }
@@ -740,6 +742,12 @@ export class UI {
     if (this.jobsUI) {
       this.jobsUI.onAcceptJob = (job) => this._acceptJob(job);
       this.jobsUI.onCompleteJob = (job) => this._completeJob(job);
+      this.jobsUI.onClose = () => {
+        // When Jobs closes (via X or ESC), return to Services if context exists
+        if (this._lastServicesContext) {
+          this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+        }
+      };
       this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
       this.debugFlagsUI.minimize();
     }
@@ -931,6 +939,12 @@ export class UI {
     const hull = this.spaceship?.hullStrength ?? 100;
     const maxHull = (typeof this.spaceship?.maxHullStrength === 'number') ? this.spaceship.maxHullStrength : 100;
     const cash = this.spaceship?.getCash ? this.spaceship.getCash() : 0;
+    // Ensure closing this modal returns to Services when appropriate
+    this.refuelRepairUI.onClose = () => {
+      if (this._lastServicesContext) {
+        this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+      }
+    };
     this.refuelRepairUI.show(hull, maxHull, cash);
     this.debugFlagsUI.minimize();
   }
@@ -1525,6 +1539,12 @@ export class UI {
         const currentCash = this.spaceship.getCash();
         this.commoditiesUI.updateCash(currentCash);
       }
+      // Ensure closing this modal returns to Services when appropriate
+      this.commoditiesUI.onClose = () => {
+        if (this._lastServicesContext) {
+          this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+        }
+      };
       this.commoditiesUI.show();
       this.debugFlagsUI.minimize();
     }
@@ -1745,11 +1765,23 @@ export class UI {
         } else if (this.isMapModalVisible()) {
           this.hideMapModal();
         } else if (this.isCommoditiesVisible()) {
+          // Close commodities and return to Services menu when context is available
           this.hideCommodities();
+          if (this._lastServicesContext) {
+            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+          }
         } else if (this.refuelRepairUI?.isVisible) {
+          // Close refuel/repair and return to Services
           this.hideRefuelRepair();
+          if (this._lastServicesContext) {
+            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+          }
         } else if (this.jobsUI?.isVisible) {
+          // Close jobs and return to Services
           this.hideJobs();
+          if (this._lastServicesContext) {
+            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+          }
         }
       }
     };

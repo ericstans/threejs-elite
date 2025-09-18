@@ -7,6 +7,7 @@ export class JobsUI {
     this.currentContext = { sectorId: null, locationName: null };
     this.onAcceptJob = null;
     this.onCompleteJob = null;
+    this.onClose = null; // Host-provided callback when Jobs closes
     this._build();
   }
 
@@ -60,7 +61,7 @@ export class JobsUI {
     this.title.style.fontWeight = 'bold';
     header.appendChild(this.title);
 
-    const closeBtn = document.createElement('button');
+  const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.background = 'transparent';
     closeBtn.style.border = '1px solid #00ff00';
@@ -68,7 +69,7 @@ export class JobsUI {
     closeBtn.style.padding = '4px 10px';
     closeBtn.style.cursor = 'pointer';
     closeBtn.style.fontFamily = 'PeaberryMono, monospace';
-    closeBtn.addEventListener('click', () => this.hide());
+  closeBtn.addEventListener('click', () => this.hide());
     header.appendChild(closeBtn);
 
     // Columns
@@ -187,6 +188,9 @@ export class JobsUI {
   hide() {
     this.modal.style.display = 'none';
     this.isVisible = false;
+    if (typeof this.onClose === 'function') {
+      try { this.onClose(); } catch (_) {}
+    }
   }
 
   update(availableJobs, inProgressJobs, context) {
