@@ -34,16 +34,21 @@ export function createShipBodyMaterial(color = null) {
   // Generate random color if none provided
   if (!color) {
     const randomHue = Math.random() * 360; // Random hue from 0-360
-    const saturation = 0.6; // Moderate saturation for good visibility
-    const lightness = 0.5;  // Moderate lightness for good contrast
+    const saturation = 0.9;  // Very high saturation for vibrant colors
+    const lightness = 0.5;   // Medium lightness for good visibility
     color = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
   }
   
+  // Create emissive color that's 30% of the base color for enhanced glow
+  const baseColor = color instanceof THREE.Color ? color : new THREE.Color(color);
+  const emissiveColor = baseColor.clone().multiplyScalar(0.3);
+  
   return new THREE.MeshStandardMaterial({
-    color: color,           // Random or provided color
-    metalness: 0.3,         // Moderate metallic look
-    roughness: 0.4,         // Moderate roughness
-    emissive: 0x111111,     // Slight glow
+    color: baseColor,       // Random or provided color
+    metalness: 0.2,         // Lower metalness to show more base color
+    roughness: 0.6,         // Higher roughness to show less environment reflection
+    emissive: emissiveColor, // Subtle glow matching the base color
+    emissiveIntensity: 0.3, // Increased glow intensity
     transparent: false,
     opacity: 1.0,
     side: THREE.DoubleSide
@@ -89,10 +94,10 @@ export function createEngineMaterial() {
  * @param {THREE.Object3D} model - The 3D model to process
  */
 export function replaceCockpitMaterials(model) {
-  // Generate a unique random color for this ship
+  // Generate a unique random color for this ship with increased vibrancy
   const randomHue = Math.random() * 360; // Random hue from 0-360
-  const saturation = 0.6; // Moderate saturation for good visibility
-  const lightness = 0.5;  // Moderate lightness for good contrast
+  const saturation = 0.9;  // Very high saturation for vibrant colors
+  const lightness = 0.5;   // Medium lightness for good visibility
   const shipColor = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
   
   model.traverse((child) => {

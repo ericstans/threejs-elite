@@ -135,16 +135,35 @@ export class Spaceship {
 
   syncThirdPerson() {
     if (this.thirdPersonMode) {
-      // Base position is logical ship position (cockpit viewpoint)
-      const basePos = this.position.clone();
-      if (this.thirdPersonVisualOffset) {
-        // Rotate offset by ship orientation so it stays attached properly
-        const rotated = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
-        basePos.add(rotated);
+      if (this.flags.isDocked && this.dockingTarget) {
+        // When docked to a planet, ensure third-person model is properly positioned
+        // relative to the planet's current rotation
+        const planetPos = this.dockingTarget.getPosition();
+        const rotatedLandingPoint = this.dockingPosition.clone().applyQuaternion(this.dockingTarget.mesh.quaternion);
+        const worldPos = planetPos.clone().add(rotatedLandingPoint);
+        
+        // Apply visual offset if needed
+        if (this.thirdPersonVisualOffset) {
+          const rotatedOffset = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
+          worldPos.add(rotatedOffset);
+        }
+        
+        this.thirdPersonGroup.position.copy(worldPos);
+        this.thirdPersonGroup.quaternion.copy(this.quaternion);
+        this.thirdPersonGroup.visible = true;
+      } else {
+        // Normal (non-docked) behavior
+        // Base position is logical ship position (cockpit viewpoint)
+        const basePos = this.position.clone();
+        if (this.thirdPersonVisualOffset) {
+          // Rotate offset by ship orientation so it stays attached properly
+          const rotated = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
+          basePos.add(rotated);
+        }
+        this.thirdPersonGroup.position.copy(basePos);
+        this.thirdPersonGroup.quaternion.copy(this.quaternion);
+        this.thirdPersonGroup.visible = true;
       }
-      this.thirdPersonGroup.position.copy(basePos);
-      this.thirdPersonGroup.quaternion.copy(this.quaternion);
-      this.thirdPersonGroup.visible = true;
     } else {
       this.thirdPersonGroup.visible = false;
     }
@@ -184,22 +203,43 @@ export class Spaceship {
     // Create a simple spaceship geometry (cockpit view)
     const group = new THREE.Group();
 
-    // Main body
+    // Main body - using MeshPhysicalMaterial for better appearance
     const bodyGeometry = new THREE.ConeGeometry(0.3, 2, 8);
-    const bodyMaterial = new THREE.MeshLambertMaterial({
-      color: 0x666666,
+    
+    // Generate a vibrant random color for the ship body
+    const randomHue = Math.random() * 360;
+    const saturation = 0.9;  // Very high saturation for vibrant colors
+    const lightness = 0.5;   // Medium lightness for good visibility
+    const shipColor = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
+    
+    // Create emissive color based on the ship color for subtle glow
+    const emissiveColor = shipColor.clone().multiplyScalar(0.3);
+    
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+      color: shipColor,
+      metalness: 0.2,         // Lower metalness to show more base color
+      roughness: 0.6,         // Higher roughness to show less environment reflection
+      emissive: emissiveColor, // Subtle glow matching the base color
+      emissiveIntensity: 0.3,  // Increased glow intensity
       flatShading: true
     });
+    
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.rotation.x = Math.PI / 2;
     group.add(body);
 
-    // Wings
+    // Wings - using similar material but slightly darker
     const wingGeometry = new THREE.BoxGeometry(1.5, 0.1, 0.3);
-    const wingMaterial = new THREE.MeshLambertMaterial({
-      color: 0x444444,
+    const wingColor = shipColor.clone().multiplyScalar(0.8); // Darker than body
+    const wingMaterial = new THREE.MeshStandardMaterial({
+      color: wingColor,
+      metalness: 0.2,
+      roughness: 0.6,
+      emissive: emissiveColor.clone().multiplyScalar(0.8),
+      emissiveIntensity: 0.3,
       flatShading: true
     });
+    
     const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
     leftWing.position.set(-0.5, 0, 0);
     group.add(leftWing);
@@ -208,14 +248,22 @@ export class Spaceship {
     rightWing.position.set(0.5, 0, 0);
     group.add(rightWing);
 
-    // Cockpit
+    // Cockpit - using enhanced glass material
     const cockpitGeometry = new THREE.SphereGeometry(0.4, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    const cockpitMaterial = new THREE.MeshLambertMaterial({
-      color: 0x222222,
-      flatShading: true,
+    const cockpitMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x4444ff,
+      metalness: 0.1,
+      roughness: 0.1,
+      transmission: 0.8,
+      opacity: 0.7,
       transparent: true,
-      opacity: 0.7
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.0,
+      ior: 1.5,
+      reflectivity: 0.9,
+      flatShading: true
     });
+    
     const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
     cockpit.position.set(0, 0.2, 0.5);
     group.add(cockpit);
@@ -629,9 +677,12 @@ export class Spaceship {
       this.rotation.setFromQuaternion(this.quaternion);
 
       // Update mesh position and rotation
-      this.mesh.position.copy(this.dockingPosition);
-      this.mesh.quaternion.copy(this.dockingRotation);
-      this.mesh.rotation.setFromQuaternion(this.dockingRotation);
+      this.mesh.position.copy(this.position);
+      this.mesh.quaternion.copy(this.quaternion);
+      this.mesh.rotation.copy(this.rotation);
+
+      // Make sure third-person representation stays in sync
+      this.syncThirdPerson();
 
       // Zero velocity and angular velocity so engine sound logic works
       this.velocity.set(0, 0, 0);
