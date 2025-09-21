@@ -50,12 +50,12 @@ export class Controls {
           const anyModal = typeof ui.isAnyModalOpenForEsc === 'function'
             ? ui.isAnyModalOpenForEsc()
             : (
-                ui.isCommsModalVisible() ||
-                ui.isMapModalVisible() ||
-                ui.isOptionsVisible() ||
-                ui.isTitleVisible() ||
-                ui.isServicesVisible()
-              );
+              ui.isCommsModalVisible() ||
+              ui.isMapModalVisible() ||
+              ui.isOptionsVisible() ||
+              ui.isTitleVisible() ||
+              ui.isServicesVisible()
+            );
           if (!suppress && !anyModal) {
             // No modals are open - open options and pause game
             this.game.ui.showOptions();
@@ -110,12 +110,6 @@ export class Controls {
     if (this.keys['KeyX']) {
       const currentThrottle = this.spaceship.getThrottle();
       this.spaceship.setThrottle(currentThrottle + 1.0 * deltaTime);
-
-      // Start music on first X press
-      // (Retained for debug logging but auto-start now handled above)
-      if (DEBUG && this.game && !this.game.musicStarted) {
-        if (DEBUG) console.log('Controls: X key pressed; music will start via auto-start logic');
-      }
     }
     if (this.keys['KeyZ']) {
       const currentThrottle = this.spaceship.getThrottle();
@@ -158,11 +152,11 @@ export class Controls {
 
     // Navigation targeting: tap Y to cycle nav targets, hold Y to clear nav target
     // Disable nav targeting during landing sequence and while docked
-    const isLandingOrDocked = this.spaceship.flags.isDocked || 
-                             this.spaceship.flags.isDocking ||
-                             this.spaceship.flags.landingVectorLocked || 
-                             this.spaceship.flags.landingAlignmentLocked;
-    
+    const isLandingOrDocked = this.spaceship.flags.isDocked ||
+      this.spaceship.flags.isDocking ||
+      this.spaceship.flags.landingVectorLocked ||
+      this.spaceship.flags.landingAlignmentLocked;
+
     if (this.keys['KeyY'] && !isLandingOrDocked) {
       if (!this._yKeyHeld) {
         this._yKeyHeld = { start: performance.now(), cleared: false };
@@ -331,10 +325,10 @@ export class Controls {
 
         // Start with title soundtrack
         if (DEBUG) console.log('startMusic: Playing title track');
-  this.game.audioManager?.musicManager?.switchSoundtracksImmediate(['title']);
-  this.game.audioManager?.musicManager?.playTrack('ambient');
+        this.game.audioManager?.musicManager?.switchSoundtracksImmediate(['title']);
+        this.game.audioManager?.musicManager?.playTrack('ambient');
         if (DEBUG) console.log('startMusic: Starting fade in');
-  this.game.audioManager?.musicManager?.fadeIn(3000); // 3 second fade in
+        this.game.audioManager?.musicManager?.fadeIn(3000); // 3 second fade in
         if (DEBUG) console.log('startMusic: Music system started successfully');
 
         // Immediately kick engine rumble so it starts exactly with the music

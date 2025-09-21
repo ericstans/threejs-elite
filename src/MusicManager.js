@@ -348,6 +348,9 @@ export class MusicManager {
   // Playback API (compatible with existing usage)
   playTrack(name) {
     if (!this.isInitialized) return;
+    // Force-stop any currently playing MIDI track
+    this._cancelCurrentPlayback();
+    
     if (name === 'ambient') {
       this.stopTrack();
       this.currentTrack = 'ambient';
@@ -399,6 +402,9 @@ export class MusicManager {
   }
 
   crossfadeToTrack(name, duration = 1000) {
+    // Force-stop any currently playing MIDI track when doing a crossfade
+    this._cancelCurrentPlayback();
+    
     if (name === 'ambient' && this.currentTrack !== 'ambient') {
       this.fadeOut(duration / 2);
       setTimeout(() => {
@@ -413,6 +419,9 @@ export class MusicManager {
   // Immediate soundtrack switch (stops current track and starts new one immediately)
   switchSoundtracksImmediate(soundtracks) {
     if (DEBUG) console.log('MusicManager: switchSoundtracksImmediate called with:', soundtracks);
+
+    // Force-stop any currently playing MIDI track
+    this._cancelCurrentPlayback();
 
     if (this.gameStateManager) {
       this.gameStateManager.setSoundtracks(Array.isArray(soundtracks) ? soundtracks : [soundtracks]);
@@ -556,10 +565,19 @@ export class MusicManager {
     }
     this._activeNotes.forEach(stopFn => { try { stopFn(); } catch (_) { /* Note stop failed */ } });
     this._activeNotes.clear();
+    
+    // Clear next scheduled timeout
+    if (this._scheduledNextTimeout) {
+      clearTimeout(this._scheduledNextTimeout);
+      this._scheduledNextTimeout = null;
+    }
   }
 
   async _playRandomAmbientMidi() {
     if (!this.isPlaying || this.currentTrack !== 'ambient') return;
+
+    // Ensure any currently playing MIDI track is stopped
+    this._cancelCurrentPlayback();
 
     // Get current soundtracks from GameStateManager, default to ['ambient']
     const soundtracks = this.gameStateManager?.getCurrentSoundtracks() || ['ambient'];
