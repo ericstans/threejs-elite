@@ -9,7 +9,10 @@ export class GameEngine {
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, DRAW_DISTANCE);
-    this.renderer = new THREE.WebGLRenderer({ antialias: false });
+    this.renderer = new THREE.WebGLRenderer({ 
+      antialias: false,
+      stencil: true // Enable stencil buffer for portal effects
+    });
 
     this.setupRenderer();
     this.setupScene();
@@ -18,13 +21,15 @@ export class GameEngine {
 
     this.clock = new THREE.Clock();
     this.entities = [];
-  this.shipDestructionSystem = new ShipDestructionSystem(this.scene);
+    this.shipDestructionSystem = new ShipDestructionSystem(this.scene);
 
     // External references (set by Game class)
     /** @type {any} */
     this.spaceship = null;
     /** @type {any} */
     this.ui = null;
+    /** @type {any} */
+    this.portalSystem = null; // Will be set by the Game class
   }
 
   setupRenderer() {
@@ -527,6 +532,10 @@ export class GameEngine {
   }
 
   render() {
+    // With the render target approach, we don't need special rendering in GameEngine
+    // The portal system handles rendering its content to the render target in its update method
+    
+    // Just do the normal render
     this.renderer.render(this.scene, this.camera);
   }
 

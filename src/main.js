@@ -105,6 +105,8 @@ class Game {
     this.portalSystem = new PortalSystem(this.gameEngine.scene, this.gameEngine, this.spaceship);
     // Set up sector data for portal system
     this.portalSystem.setSectorData(this.availableSectors, getSectorDefinition);
+    // Connect portalSystem to gameEngine for rendering
+    this.gameEngine.portalSystem = this.portalSystem;
     // Combat system now owns lasers & explosions
     this.combatSystem = new CombatSystem({
       gameEngine: this.gameEngine,
