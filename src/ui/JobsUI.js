@@ -145,7 +145,12 @@ export class JobsUI {
     // ESC handler
     this._escHandler = (e) => {
       if (!this.isVisible) return;
-      if (e.key === 'Escape') this.hide();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e.stopPropagation) e.stopPropagation();
+        this.hide();
+      }
     };
     document.addEventListener('keydown', this._escHandler);
     // Remove debug logging; keep only functional delegation

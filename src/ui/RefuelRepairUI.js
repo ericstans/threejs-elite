@@ -185,6 +185,9 @@ export class RefuelRepairUI {
     this._escHandler = (e) => {
       if (!this.isVisible) return;
       if (e.key === 'Escape') {
+        e.preventDefault();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e.stopPropagation) e.stopPropagation();
         this.hide();
       }
     };

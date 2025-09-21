@@ -39,17 +39,24 @@ export class Controls {
     }
     const sensitivity = 1.0;
 
-    // Handle escape key for options menu (only if no other modals are open)
+    // Handle escape key for options menu (only if no other modals are open and not suppressed)
     if (this.keys['Escape']) {
       if (!this._escapeKeyHeld) {
         this._escapeKeyHeld = true;
         if (this.game && this.game.ui) {
-          // Only handle options if no other modals are open
-          if (!this.game.ui.isCommsModalVisible() &&
-              !this.game.ui.isMapModalVisible() &&
-              !this.game.ui.isOptionsVisible() &&
-              !this.game.ui.isTitleVisible() &&
-              !this.game.ui.isServicesVisible()) {
+          // Only handle options if no other modals are open and UI is not suppressing ESC->Options
+          const ui = this.game.ui;
+          const suppress = typeof ui.shouldSuppressOptionsEsc === 'function' ? ui.shouldSuppressOptionsEsc() : false;
+          const anyModal = typeof ui.isAnyModalOpenForEsc === 'function'
+            ? ui.isAnyModalOpenForEsc()
+            : (
+                ui.isCommsModalVisible() ||
+                ui.isMapModalVisible() ||
+                ui.isOptionsVisible() ||
+                ui.isTitleVisible() ||
+                ui.isServicesVisible()
+              );
+          if (!suppress && !anyModal) {
             // No modals are open - open options and pause game
             this.game.ui.showOptions();
             this.game.pause();

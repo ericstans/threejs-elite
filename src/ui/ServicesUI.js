@@ -7,6 +7,9 @@ export class ServicesUI {
     this.onRefuelRepairClick = null; // Callback for refuel & repair service
     this.onJobsClick = null; // Callback for jobs service
     this.availableServices = []; // Track available services for number key mapping
+    this._ignoreEscUntil = 0; // timestamp to temporarily ignore ESC after (re)show
+    this._escSuppressed = false; // true when we should ignore ESC until keyup
+    this._keyupClearHandler = null; // one-shot keyup clearer
     this.createServicesModal();
     this.setupKeyboardHandlers();
   }
@@ -72,6 +75,12 @@ export class ServicesUI {
       }
       // Handle ESC to close services
       if (event.code === 'Escape') {
+        // If another handler already handled this (e.g., sub-screen close), ignore
+        if (event.defaultPrevented) return;
+        // If suppression is active (waiting for keyup), ignore this ESC
+        if (this._escSuppressed) { event.preventDefault(); return; }
+        // Guard briefly after showing to avoid immediate close on the same ESC press
+        if (Date.now() < this._ignoreEscUntil) { event.preventDefault(); return; }
         event.preventDefault();
         this.hideServices();
       }
@@ -224,6 +233,22 @@ export class ServicesUI {
 
     this.servicesModal.style.display = 'block';
     this.isVisible = true;
+    // Briefly ignore ESC so returning from a sub-screen doesn't instantly close it
+    this._ignoreEscUntil = Date.now() + 250;
+  }
+
+  // Public: ignore ESC until the next keyup so held/repeat ESC doesn't close immediately
+  suppressEscUntilKeyup() {
+    this._escSuppressed = true;
+    if (this._keyupClearHandler) return; // already waiting for keyup
+    this._keyupClearHandler = (e) => {
+      if (e.code === 'Escape' || e.key === 'Escape') {
+        this._escSuppressed = false;
+        document.removeEventListener('keyup', this._keyupClearHandler);
+        this._keyupClearHandler = null;
+      }
+    };
+    document.addEventListener('keyup', this._keyupClearHandler, { once: true });
   }
 
   hideServices() {

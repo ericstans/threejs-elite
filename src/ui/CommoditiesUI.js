@@ -32,6 +32,17 @@ export class CommoditiesUI {
     this.modal.style.zIndex = '4000';
     this.modal.style.pointerEvents = 'auto';
     this.container.appendChild(this.modal);
+    // ESC handler
+    this._escHandler = (e) => {
+      if (!this.isVisible) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        else if (e.stopPropagation) e.stopPropagation();
+        this.hide();
+      }
+    };
+    document.addEventListener('keydown', this._escHandler);
 
     // Modal content
     this.content = document.createElement('div');
@@ -302,6 +313,15 @@ export class CommoditiesUI {
     this.returnItemsToCargo();
     if (typeof this.onClose === 'function') {
       try { this.onClose(); } catch (_) {}
+    }
+  }
+
+  destroy() {
+    if (this._escHandler) {
+      document.removeEventListener('keydown', this._escHandler);
+    }
+    if (this.modal && this.modal.parentNode) {
+      this.modal.parentNode.removeChild(this.modal);
     }
   }
 

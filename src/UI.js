@@ -695,6 +695,8 @@ export class UI {
   showServices(services, locationName) {
     // Cache context so sub-screens can return here on close/ESC
     this._lastServicesContext = { services: Array.isArray(services) ? [...services] : services, locationName };
+    // Also suppress Options ESC momentarily when Services opens
+    this._suppressOptionsEscUntil = Math.max(Date.now() + 300, this._suppressOptionsEscUntil || 0);
     this.servicesUI.showServices(services, locationName);
     this.debugFlagsUI.minimize();
   }
@@ -710,6 +712,8 @@ export class UI {
 
   // --- Jobs UI methods ---
   showJobs() {
+    // Mark that we should return to Services when this screen closes
+    this._returnToServicesOnSubClose = true;
     // Ensure we have some available jobs for the current location
     const ctx = this._getCurrentDockContext();
     // Load from GameStateManager if available
@@ -745,7 +749,7 @@ export class UI {
       this.jobsUI.onClose = () => {
         // When Jobs closes (via X or ESC), return to Services if context exists
         if (this._lastServicesContext) {
-          this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+          this._returnToServices();
         }
       };
       this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
@@ -757,6 +761,10 @@ export class UI {
     if (!this.jobsUI) return;
     this.jobsUI.hide();
     this.debugFlagsUI.restore();
+    // If we hid due to ESC/close while expecting a return, do it now
+    if (this._returnToServicesOnSubClose && this._lastServicesContext) {
+      this._returnToServices();
+    }
   }
 
   updateJobsContext() {
@@ -936,13 +944,14 @@ export class UI {
   // Refuel & Repair UI methods
   showRefuelRepair() {
     if (!this.refuelRepairUI) return;
+    this._returnToServicesOnSubClose = true;
     const hull = this.spaceship?.hullStrength ?? 100;
     const maxHull = (typeof this.spaceship?.maxHullStrength === 'number') ? this.spaceship.maxHullStrength : 100;
     const cash = this.spaceship?.getCash ? this.spaceship.getCash() : 0;
     // Ensure closing this modal returns to Services when appropriate
     this.refuelRepairUI.onClose = () => {
       if (this._lastServicesContext) {
-        this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+        this._returnToServices();
       }
     };
     this.refuelRepairUI.show(hull, maxHull, cash);
@@ -953,6 +962,9 @@ export class UI {
     if (!this.refuelRepairUI) return;
     this.refuelRepairUI.hide();
     this.debugFlagsUI.restore();
+    if (this._returnToServicesOnSubClose && this._lastServicesContext) {
+      this._returnToServices();
+    }
   }
 
   updateRefuelRepair() {
@@ -1528,6 +1540,7 @@ export class UI {
   // Commodities UI methods
   showCommodities(commodities) {
     if (this.commoditiesUI) {
+      this._returnToServicesOnSubClose = true;
       this.commoditiesUI.updateCommodities(commodities);
       // Update cargo items in commodities UI
       if (this.cargoSystem) {
@@ -1542,7 +1555,7 @@ export class UI {
       // Ensure closing this modal returns to Services when appropriate
       this.commoditiesUI.onClose = () => {
         if (this._lastServicesContext) {
-          this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+          this._returnToServices();
         }
       };
       this.commoditiesUI.show();
@@ -1554,6 +1567,9 @@ export class UI {
     if (this.commoditiesUI) {
       this.commoditiesUI.hide();
       this.debugFlagsUI.restore();
+      if (this._returnToServicesOnSubClose && this._lastServicesContext) {
+        this._returnToServices();
+      }
     }
   }
 
@@ -1761,32 +1777,66 @@ export class UI {
     this.modalEscapeKeyHandler = (event) => {
       if (event.code === 'Escape') {
         if (this.isCommsModalVisible()) {
+          // Consume ESC and close Comms/Nav Comms without letting Options open
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          else if (event.stopPropagation) event.stopPropagation();
+          this._suppressOptionsEscUntil = Date.now() + 400;
           this.hideCommsModal();
         } else if (this.isMapModalVisible()) {
+          // Similarly consume ESC for Map modal to avoid Options popping
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          else if (event.stopPropagation) event.stopPropagation();
+          this._suppressOptionsEscUntil = Date.now() + 400;
           this.hideMapModal();
         } else if (this.isCommoditiesVisible()) {
           // Close commodities and return to Services menu when context is available
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          else if (event.stopPropagation) event.stopPropagation();
           this.hideCommodities();
           if (this._lastServicesContext) {
-            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+            this._returnToServices();
           }
         } else if (this.refuelRepairUI?.isVisible) {
           // Close refuel/repair and return to Services
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          else if (event.stopPropagation) event.stopPropagation();
           this.hideRefuelRepair();
           if (this._lastServicesContext) {
-            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+            this._returnToServices();
           }
         } else if (this.jobsUI?.isVisible) {
           // Close jobs and return to Services
+          event.preventDefault();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          else if (event.stopPropagation) event.stopPropagation();
           this.hideJobs();
           if (this._lastServicesContext) {
-            this.showServices(this._lastServicesContext.services, this._lastServicesContext.locationName);
+            this._returnToServices();
           }
         }
       }
     };
-
     document.addEventListener('keydown', this.modalEscapeKeyHandler);
+  }
+
+  // Helper: return to Services safely once
+  _returnToServices() {
+    // Avoid duplicate reopen attempts in the same cycle
+    if (!this._lastServicesContext) return;
+    const ctx = this._lastServicesContext;
+    // Clear the flag first to prevent recursive loops
+    this._returnToServicesOnSubClose = false;
+    // Suppress global ESC->Options handling for a short window while we transition back
+    this._suppressOptionsEscUntil = Date.now() + 50;
+    // Defer a bit so Services ESC guard is active and key repeat settles
+    setTimeout(() => {
+      this.showServices(ctx.services, ctx.locationName);
+      this.servicesUI?.suppressEscUntilKeyup?.();
+    }, 120);
   }
 
   isMapModalVisible() {
@@ -1803,6 +1853,26 @@ export class UI {
         game.resume();
       }
     };
+  }
+
+  // Global UI state helpers for ESC/Options coordination
+  // Return true if any major modal/screen is open (used to gate opening Options on ESC)
+  isAnyModalOpenForEsc() {
+    return (
+      this.isCommsModalVisible() ||
+      this.isMapModalVisible() ||
+      this.isOptionsVisible() ||
+      this.isTitleVisible() ||
+      this.isServicesVisible() ||
+      this.isCommoditiesVisible() ||
+      !!(this.refuelRepairUI?.isVisible) ||
+      !!(this.jobsUI?.isVisible)
+    );
+  }
+
+  // Short-lived suppression after routing back to Services to avoid opening Options
+  shouldSuppressOptionsEsc() {
+    return Date.now() < (this._suppressOptionsEscUntil || 0);
   }
 
   destroy() {
