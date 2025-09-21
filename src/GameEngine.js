@@ -443,20 +443,30 @@ export class GameEngine {
       if (this.spaceship._planetBounceCooldown > 0) {
         this.spaceship._planetBounceCooldown -= deltaTime;
       }
-      // Find all planets
-      const planets = this.entities.filter(e => e.getType && e.getType() === 'planet');
+      
       const shipPos = this.spaceship.getPosition();
-      for (const planet of planets) {
-        const planetPos = planet.getPosition();
-        const r = planet.radius;
-        const dist = shipPos.distanceTo(planetPos);
+      
+      // Collision handling function to avoid duplicating code
+      const handleCollision = (entity, collisionRadius) => {
+        const entityPos = entity.getPosition();
+        const dist = shipPos.distanceTo(entityPos);
+        
         // Prevent bounce/collision if ship is in landing animation phase
         const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
-        if (dist < r + 1.5 && this.spaceship._planetBounceCooldown <= 0 && !isLanding) { // 1.5 = ship radius fudge
+        
+        // Check if landing vector is being used for station docking
+        const isStationDocking = entity.getType && entity.getType() === 'station' && 
+                               this.spaceship.flags && 
+                               (this.spaceship.flags.dockingAuthorized || 
+                                this.spaceship.flags.landingVectorLocked);
+        
+        if (dist < collisionRadius + 1.5 && this.spaceship._planetBounceCooldown <= 0 && 
+            !isLanding && !isStationDocking) { // 1.5 = ship radius fudge
+          
           // Collision! Bounce off
-          const normal = shipPos.clone().sub(planetPos).normalize();
-          // Move ship just outside planet
-          const bouncePos = planetPos.clone().add(normal.multiplyScalar(r + 2.0));
+          const normal = shipPos.clone().sub(entityPos).normalize();
+          // Move ship just outside entity
+          const bouncePos = entityPos.clone().add(normal.multiplyScalar(collisionRadius + 2.0));
           this.spaceship.position.copy(bouncePos);
           this.spaceship.mesh.position.copy(bouncePos);
           // Bounce: reflect velocity, preserve speed
@@ -521,7 +531,26 @@ export class GameEngine {
           } catch (e) { /* ignore flash errors */ }
           // Set bounce cooldown (0.3s)
           this.spaceship._planetBounceCooldown = 0.3;
-          // Optionally: play sound, show effect, etc.
+          
+          return true; // collision handled
+        }
+        
+        return false; // no collision
+      };
+      
+      // Find all planets
+      const planets = this.entities.filter(e => e.getType && e.getType() === 'planet');
+      for (const planet of planets) {
+        if (handleCollision(planet, planet.radius)) {
+          break; // Stop checking after a collision is handled
+        }
+      }
+      
+      // Find all stations
+      const stations = this.entities.filter(e => e.getType && e.getType() === 'station');
+      for (const station of stations) {
+        if (handleCollision(station, station.size)) {
+          break; // Stop checking after a collision is handled
         }
       }
     }
