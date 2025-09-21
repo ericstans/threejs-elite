@@ -26,6 +26,8 @@ export class ControlsUI {
       <div>SPACE - Shoot</div>
       <div>T - Target</div>
       <div>Y - Nav Target</div>
+      <div>M - Map</div>
+      <div>J - Jobs In Progress</div>
     `;
 
     // Add F9 indicator in top right corner

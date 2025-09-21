@@ -8,6 +8,7 @@ export class JobsUI {
     this.onAcceptJob = null;
     this.onCompleteJob = null;
     this.onClose = null; // Host-provided callback when Jobs closes
+    this.showAvailableColumn = true; // Flag to control if the available jobs column is visible
     this._build();
   }
 
@@ -186,6 +187,7 @@ export class JobsUI {
     this.inProgressJobs = inProgressJobs || [];
     this.currentContext = context || this.currentContext;
     this._renderLists();
+    this._updateColumnLayout(); // Apply column visibility settings
     this.modal.style.display = 'block';
     this.isVisible = true;
   }
@@ -195,6 +197,37 @@ export class JobsUI {
     this.isVisible = false;
     if (typeof this.onClose === 'function') {
       try { this.onClose(); } catch (_) {}
+    }
+  }
+
+  setShowAvailableColumn(show) {
+    this.showAvailableColumn = show;
+    this._updateColumnLayout();
+  }
+
+  _updateColumnLayout() {
+    // Get references to the columns container and the left column (Available Jobs)
+    const columns = this.content.querySelector('div[style*="grid-template-columns"]');
+    const leftColumn = columns?.children[0];
+    
+    if (columns && leftColumn) {
+      if (this.showAvailableColumn) {
+        // Show both columns
+        /** @type {HTMLElement} */ (columns).style.gridTemplateColumns = '1fr 1fr';
+        /** @type {HTMLElement} */ (leftColumn).style.display = 'block';
+        // Center the content properly
+        this.content.style.maxWidth = '1100px';
+        // Update title for full jobs view
+        this.title.textContent = 'JOBS';
+      } else {
+        // Hide available jobs column, only show in-progress column
+        /** @type {HTMLElement} */ (columns).style.gridTemplateColumns = '1fr';
+        /** @type {HTMLElement} */ (leftColumn).style.display = 'none';
+        // Adjust width for single column
+        this.content.style.maxWidth = '700px';
+        // Update title for in-progress only view
+        this.title.textContent = 'JOBS IN PROGRESS';
+      }
     }
   }
 

@@ -207,6 +207,14 @@ export class Controls {
       this.keys['KeyM'] = false;
     }
 
+    // Jobs in Progress (J key) - only when not docked
+    if (this.keys['KeyJ'] && !this.spaceship.flags.isDocked) {
+      if (this.onJobsInProgress) {
+        this.onJobsInProgress();
+      }
+      this.keys['KeyJ'] = false;
+    }
+
     // ESC to close modals
     if (this.keys['Escape']) {
       if (this.onCloseComms) {
@@ -290,6 +298,10 @@ export class Controls {
 
   setOnServices(callback) {
     this.onServices = callback;
+  }
+
+  setOnJobsInProgress(callback) {
+    this.onJobsInProgress = callback;
   }
 
   setOnCloseServices(callback) {

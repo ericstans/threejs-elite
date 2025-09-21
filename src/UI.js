@@ -752,6 +752,10 @@ export class UI {
           this._returnToServices();
         }
       };
+      
+      // Ensure both columns are visible for the full jobs view
+      this.jobsUI.setShowAvailableColumn(true);
+      
       this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
       this.debugFlagsUI.minimize();
     }
@@ -764,6 +768,38 @@ export class UI {
     // If we hid due to ESC/close while expecting a return, do it now
     if (this._returnToServicesOnSubClose && this._lastServicesContext) {
       this._returnToServices();
+    }
+  }
+
+  showJobsInProgress() {
+    // Lightweight version of showJobs that only shows jobs in progress
+    // Load from GameStateManager if available
+    const gsm = this.game?.gameStateManager;
+    const hasGsm = !!gsm;
+    const hasGetInProg = hasGsm && typeof gsm.getJobsInProgress === 'function';
+    
+    if (hasGetInProg) {
+      try {
+        this._jobsInProgress = gsm.getJobsInProgress() || [];
+      } catch (e) {
+        console.warn('GameStateManager.getJobsInProgress threw; continuing with local state', e);
+      }
+    }
+    
+    if (this.jobsUI) {
+      // Only provide the complete job callback since this view is read-only for jobs in progress
+      this.jobsUI.onCompleteJob = (job) => this._completeJob(job);
+      this.jobsUI.onClose = null; // No special behavior on close
+      
+      // Get current dock context for completion eligibility checking
+      const ctx = this._getCurrentDockContext();
+      
+      // Hide the Available Jobs column
+      this.jobsUI.setShowAvailableColumn(false);
+      
+      // Show only in-progress jobs with empty available jobs
+      this.jobsUI.show([], this._jobsInProgress, ctx);
+      this.debugFlagsUI.minimize();
     }
   }
 

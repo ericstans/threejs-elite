@@ -450,6 +450,14 @@ class Game {
       this.ui.hideMapModal();
     });
 
+    // Show Jobs in Progress (J key)
+    this.controls.setOnJobsInProgress(() => {
+      // Only show when not docked (the key handler already checks this but adding another check for safety)
+      if (!this.spaceship.flags.isDocked) {
+        this.ui.showJobsInProgress();
+      }
+    });
+
     // Handle conversation option selection
     this.controls.setOnCommsOption((optionNumber) => {
       this.selectCommsOption(optionNumber);
