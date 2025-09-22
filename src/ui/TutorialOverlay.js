@@ -78,51 +78,20 @@ export class TutorialOverlay {
   createTutorialOverlay() {
     // Create main overlay
     this.overlay = document.createElement('div');
-    this.overlay.style.position = 'fixed';
-    this.overlay.style.top = '0';
-    this.overlay.style.left = '0';
-    this.overlay.style.width = '100%';
-    this.overlay.style.height = '100%';
-    this.overlay.style.background = 'rgba(0, 0, 0, 0.7)';
-    this.overlay.style.display = 'none';
-    this.overlay.style.zIndex = '10001';
-    this.overlay.style.pointerEvents = 'auto';
+    this.overlay.className = 'tutorial-overlay';
 
     // Create cowboy man character
     this.cowboy = document.createElement('div');
-    this.cowboy.style.position = 'absolute';
-    this.cowboy.style.fontSize = '64px';
-    this.cowboy.style.userSelect = 'none';
-    this.cowboy.style.cursor = 'default';
-    this.cowboy.style.zIndex = '10003';
+    this.cowboy.className = 'tutorial-cowboy';
     this.cowboy.textContent = '🤠';
 
     // Create speech bubble
     this.speechBubble = document.createElement('div');
-    this.speechBubble.style.position = 'absolute';
-    this.speechBubble.style.background = '#ffffcc';
-    this.speechBubble.style.border = '2px solid #000000';
-    this.speechBubble.style.borderRadius = '15px';
-    this.speechBubble.style.padding = '15px 20px';
-    this.speechBubble.style.maxWidth = '320px';
-    this.speechBubble.style.fontFamily = 'monospace';
-    this.speechBubble.style.fontSize = '15px';
-    this.speechBubble.style.color = '#000000';
-    this.speechBubble.style.boxShadow = '3px 3px 6px rgba(0,0,0,0.3)';
-    this.speechBubble.style.userSelect = 'none';
-    this.speechBubble.style.cursor = 'default';
-    this.speechBubble.style.zIndex = '10001';
+    this.speechBubble.className = 'tutorial-speech-bubble';
 
     // Create speech bubble tail (pointer)
     this.speechTail = document.createElement('div');
-    this.speechTail.style.position = 'absolute';
-    this.speechTail.style.width = '0';
-    this.speechTail.style.height = '0';
-    this.speechTail.style.borderLeft = '18px solid transparent';
-    this.speechTail.style.borderRight = '0px';
-    this.speechTail.style.borderTop = '28px solid #ffffcc';
-    this.speechTail.style.zIndex = '10002';
-    this.speechTail.style.rotate = '-30deg';
+    this.speechTail.className = 'tutorial-speech-tail';
 
     // Create content area
     this.content = document.createElement('div');
@@ -141,13 +110,7 @@ export class TutorialOverlay {
   createSpotlightCutoutContainer() {
     // Create a container for spotlight cutouts that will be part of the main overlay
     this.spotlightCutout = document.createElement('div');
-    this.spotlightCutout.style.position = 'absolute';
-    this.spotlightCutout.style.top = '0';
-    this.spotlightCutout.style.left = '0';
-    this.spotlightCutout.style.width = '100%';
-    this.spotlightCutout.style.height = '100%';
-    this.spotlightCutout.style.pointerEvents = 'none';
-    this.spotlightCutout.style.zIndex = '1'; // Above the background but below cowboy/dialog
+    this.spotlightCutout.className = 'tutorial-spotlight-cutout';
     this.overlay.appendChild(this.spotlightCutout);
   }
 
@@ -182,16 +145,13 @@ export class TutorialOverlay {
 
     // Add title
     const title = document.createElement('div');
-    title.style.fontWeight = 'bold';
-    title.style.marginBottom = '10px';
-    title.style.fontSize = '16px';
+    title.className = 'tutorial-title';
     title.textContent = step.title;
     this.content.appendChild(title);
 
     // Add message
     const message = document.createElement('div');
-    message.style.marginBottom = '15px';
-    message.style.lineHeight = '1.4';
+    message.className = 'tutorial-message';
     message.textContent = step.message;
     this.content.appendChild(message);
 
@@ -199,45 +159,20 @@ export class TutorialOverlay {
     if (step.showOptions) {
       step.options.forEach(option => {
         const button = document.createElement('button');
-        button.style.display = 'block';
-        button.style.width = '100%';
-        button.style.margin = '5px 0';
-        button.style.padding = '8px 12px';
-        button.style.border = '1px solid #000000';
-        button.style.borderRadius = '5px';
-        button.style.background = '#ffffff';
-        button.style.cursor = 'pointer';
-        button.style.fontFamily = 'monospace';
-        button.style.fontSize = '12px';
+        button.className = 'tutorial-button';
         button.textContent = option.text;
         button.onclick = () => this.handleOption(option.action);
         this.content.appendChild(button);
       });
     } else if (step.showNext) {
       const nextButton = document.createElement('button');
-      nextButton.style.display = 'block';
-      nextButton.style.margin = '10px auto 0';
-      nextButton.style.padding = '8px 16px';
-      nextButton.style.border = '1px solid #000000';
-      nextButton.style.borderRadius = '5px';
-      nextButton.style.background = '#e0e0e0';
-      nextButton.style.cursor = 'pointer';
-      nextButton.style.fontFamily = 'monospace';
-      nextButton.style.fontSize = '12px';
+      nextButton.className = 'tutorial-next-button';
       nextButton.textContent = 'NEXT →';
       nextButton.onclick = () => this.nextStep();
       this.content.appendChild(nextButton);
     } else if (step.showEnd) {
       const endButton = document.createElement('button');
-      endButton.style.display = 'block';
-      endButton.style.margin = '10px auto 0';
-      endButton.style.padding = '8px 16px';
-      endButton.style.border = '1px solid #000000';
-      endButton.style.borderRadius = '5px';
-      endButton.style.background = '#90ee90';
-      endButton.style.cursor = 'pointer';
-      endButton.style.fontFamily = 'monospace';
-      endButton.style.fontSize = '12px';
+      endButton.className = 'tutorial-end-button';
       endButton.textContent = 'END →';
       endButton.onclick = () => this.completeTutorial();
       this.content.appendChild(endButton);

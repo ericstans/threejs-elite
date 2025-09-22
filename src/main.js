@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import './assets/fonts/peaberry.css';
+import './styles/main.css';
 import { GameEngine } from './GameEngine.js';
 import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';

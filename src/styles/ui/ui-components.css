@@ -1,0 +1,260 @@
+/* ui-components.css - Styles for various UI panels and components */
+
+/* Common UI Panel Styles */
+.ui-panel {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px;
+  margin: 4px;
+}
+
+/* Ship Health UI */
+.ship-health-ui {
+  left: 10px;
+  top: 10px;
+  width: 180px;
+}
+
+.health-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(50, 50, 50, 0.5);
+  margin: 2px 0 6px 0;
+  border: 1px solid #444;
+}
+
+.health-bar-fill {
+  height: 100%;
+  background: #00ff00;
+  transition: width 0.3s ease;
+}
+
+.health-bar-critical .health-bar-fill {
+  background: #ff0000;
+}
+
+.health-bar-warning .health-bar-fill {
+  background: #ffff00;
+}
+
+/* Nav Target UI */
+.nav-target-ui {
+  left: 10px;
+  bottom: 10px;
+  width: 180px;
+}
+
+.target-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.target-value {
+  color: #ffffff;
+}
+
+.target-distance {
+  text-align: right;
+  color: #ffffff;
+}
+
+/* Cash UI */
+.cash-ui {
+  right: 10px;
+  top: 10px;
+  padding: 6px 10px;
+}
+
+/* Throttle UI */
+.throttle-ui {
+  right: 10px;
+  bottom: 80px;
+  width: 40px;
+  height: 180px;
+}
+
+.throttle-bar {
+  width: 20px;
+  height: 160px;
+  background: rgba(50, 50, 50, 0.5);
+  margin: 0 auto;
+  position: relative;
+  border: 1px solid #444;
+}
+
+.throttle-fill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: #00ff00;
+  transition: height 0.2s ease;
+}
+
+.throttle-marker {
+  position: absolute;
+  width: 24px;
+  height: 2px;
+  background: #ffffff;
+  left: -2px;
+}
+
+/* Controls UI */
+.controls-ui {
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  text-align: center;
+  width: auto;
+}
+
+.control-key {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00ff00;
+  padding: 2px 6px;
+  margin: 0 4px;
+  border-radius: 3px;
+}
+
+/* Game Over Overlay */
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.game-over-title {
+  font-size: 48px;
+  color: #ff0000;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+.game-over-message {
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.game-over-button {
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #00ff00;
+  color: #00ff00;
+  font-family: monospace;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+/* Commodity and Cargo UI */
+.commodities-ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 800px;
+  max-height: 80%;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #00ff00;
+  padding: 20px;
+  z-index: 2000;
+}
+
+.commodity-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.commodity-table th, 
+.commodity-table td {
+  border: 1px solid #333;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.commodity-table th {
+  background: rgba(0, 80, 0, 0.5);
+}
+
+.commodity-table tr:nth-child(even) {
+  background: rgba(0, 40, 0, 0.2);
+}
+
+.commodity-buy {
+  color: #00ff00;
+  cursor: pointer;
+}
+
+.commodity-sell {
+  color: #ffff00;
+  cursor: pointer;
+}
+
+/* Options UI */
+.options-ui {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #00ff00;
+  padding: 20px;
+  z-index: 2000;
+}
+
+.option-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #333;
+}
+
+.option-label {
+  flex: 1;
+}
+
+.option-control {
+  flex: 1;
+  text-align: right;
+}
+
+.option-slider {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.option-checkbox {
+  margin-right: 10px;
+}
+
+.options-button {
+  display: inline-block;
+  margin: 10px 5px 0 0;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  font-family: monospace;
+  cursor: pointer;
+}

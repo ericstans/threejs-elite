@@ -50,37 +50,15 @@ export class UI {
     this.createUI();
     // Map modal (reuses comms styling for quick implementation)
     this.mapModal = document.createElement('div');
-    this.mapModal.style.position = 'fixed';
-    this.mapModal.style.top = '0';
-    this.mapModal.style.left = '0';
-    this.mapModal.style.width = '100%';
-    this.mapModal.style.height = '100%';
-    this.mapModal.style.background = 'rgba(0, 0, 0, 0.8)';
-    this.mapModal.style.display = 'none';
-    this.mapModal.style.zIndex = '2100';
-    this.mapModal.style.pointerEvents = 'auto';
+    this.mapModal.className = 'map-modal';
     document.body.appendChild(this.mapModal);
 
     this.mapContent = document.createElement('div');
-    this.mapContent.style.position = 'absolute';
-    this.mapContent.style.top = '50%';
-    this.mapContent.style.left = '50%';
-    this.mapContent.style.transform = 'translate(-50%, -50%)';
-    this.mapContent.style.width = '540px';
-    this.mapContent.style.maxHeight = '70%';
-    this.mapContent.style.overflowY = 'auto';
-    this.mapContent.style.background = 'rgba(0,0,0,0.5)';
-    this.mapContent.style.border = '2px solid #00ff00';
-    this.mapContent.style.padding = '20px';
-    this.mapContent.style.color = '#ffffff';
-    this.mapContent.style.fontFamily = 'monospace';
-    this.mapContent.style.boxShadow = '0 0 10px rgba(0,255,0,0.5)';
+    this.mapContent.className = 'map-content';
     this.mapModal.appendChild(this.mapContent);
 
     this.mapTitle = document.createElement('h2');
-    this.mapTitle.style.marginTop = '0';
-    this.mapTitle.style.fontFamily = 'monospace';
-    this.mapTitle.style.color = '#00ff00';
+    this.mapTitle.className = 'map-title';
     this.mapTitle.textContent = 'SECTOR MAP';
     this.mapContent.appendChild(this.mapTitle);
 
@@ -92,37 +70,22 @@ export class UI {
     // Add bitmap cockpit graphic (bottom center) beneath UI
     // --- Cockpit wrapper (holds cockpit image + anchored panels) ---
     this.cockpitWrapper = document.createElement('div');
-    this.cockpitWrapper.style.position = 'fixed';
-    this.cockpitWrapper.style.bottom = '0';
-    this.cockpitWrapper.style.left = '50%';
-    this.cockpitWrapper.style.transform = 'translateX(-50%)';
-    this.cockpitWrapper.style.transformOrigin = '50% 100%'; // pivot at bottom center to keep base sealed
-    this.cockpitWrapper.style.width = '100%'; // existing scaling behavior retained
-    this.cockpitWrapper.style.height = 'auto';
-    this.cockpitWrapper.style.pointerEvents = 'none';
-    this.cockpitWrapper.style.zIndex = '500';
+    this.cockpitWrapper.className = 'cockpit-wrapper';
     document.body.appendChild(this.cockpitWrapper);
 
     this.cockpitBitmap = document.createElement('img');
     this.cockpitBitmap.src = cockpitImageSrc;
     this.cockpitBitmap.alt = 'Cockpit';
-    this.cockpitBitmap.style.width = '100%';
-    this.cockpitBitmap.style.height = 'auto';
-    this.cockpitBitmap.style.display = 'block';
-    this.cockpitBitmap.style.pointerEvents = 'none';
+    this.cockpitBitmap.className = 'cockpit-bitmap';
     this.cockpitWrapper.appendChild(this.cockpitBitmap);
 
     // Bottom overscan extension: only the bottom 1px row of the cockpit stretched downward
     const OVERSCAN_PX = 160; // amount of hidden extension below viewport
     this._cockpitOverscanDiv = document.createElement('div');
     const overscan = this._cockpitOverscanDiv;
-    overscan.style.position = 'absolute';
-    overscan.style.left = '0';
+    overscan.className = 'cockpit-overscan';
     overscan.style.bottom = `-${OVERSCAN_PX}px`;
-    overscan.style.width = '100%';
     overscan.style.height = `${OVERSCAN_PX}px`;
-    overscan.style.pointerEvents = 'none';
-    overscan.style.background = 'transparent'; // will be filled after image load
     this.cockpitWrapper.appendChild(overscan);
     const ensureOverscan = () => this._buildCockpitOverscan();
     if (this.cockpitBitmap.complete) {
@@ -133,16 +96,8 @@ export class UI {
 
     // Create UI container
     this.uiContainer = document.createElement('div');
-    this.uiContainer.style.position = 'fixed';
-    this.uiContainer.style.top = '0';
-    this.uiContainer.style.left = '0';
-    this.uiContainer.style.width = '100%';
-    this.uiContainer.style.height = '100%';
-    this.uiContainer.style.pointerEvents = 'none';
-    this.uiContainer.style.fontFamily = 'monospace';
-    this.uiContainer.style.color = '#00ff00';
-    this.uiContainer.style.fontSize = '14px';
-    this.uiContainer.style.zIndex = '1000'; // ensure above cockpit graphic
+    this.uiContainer.className = 'ui-container';
+    document.body.appendChild(this.uiContainer);
     document.body.appendChild(this.uiContainer);
 
     // Initialize UI components
@@ -309,34 +264,12 @@ export class UI {
 
     // Crosshair
     this.crosshair = document.createElement('div');
-    this.crosshair.style.position = 'absolute';
-    this.crosshair.style.top = '50%';
-    this.crosshair.style.left = '50%';
-    this.crosshair.style.transform = 'translate(-50%, -50%)';
-    this.crosshair.style.width = '20px';
-    this.crosshair.style.height = '20px';
-    this.crosshair.style.border = '2px solid #00ff00';
-    this.crosshair.style.borderRadius = '50%';
-    this.crosshair.style.background = 'transparent';
+    this.crosshair.className = 'crosshair';
     this.uiContainer.appendChild(this.crosshair);
 
     // Docking status display moved into Nav Target panel (bottom area)
     this.dockingStatus = document.createElement('div');
-    this.dockingStatus.style.position = 'absolute';
-    this.dockingStatus.style.left = '50%';
-    this.dockingStatus.style.bottom = '4px';
-    this.dockingStatus.style.transform = 'translateX(-50%)';
-    this.dockingStatus.style.fontFamily = 'monospace';
-    this.dockingStatus.style.fontSize = '12px';
-    this.dockingStatus.style.color = '#ffff00';
-    this.dockingStatus.style.textAlign = 'center';
-    this.dockingStatus.style.background = 'rgba(0, 0, 0, 0.4)';
-    this.dockingStatus.style.padding = '4px 6px';
-    this.dockingStatus.style.border = '1px solid #ffff00';
-    this.dockingStatus.style.width = '90%';
-    this.dockingStatus.style.borderRadius = '2px';
-    this.dockingStatus.style.display = 'none';
-    this.dockingStatus.style.whiteSpace = 'pre-line';
+    this.dockingStatus.className = 'docking-status';
     this.dockingStatus.textContent = 'DOCKING IN PROGRESS';
     // Ensure nav target panel can anchor absolutely positioned children
     if (this.navTargetUI && this.navTargetUI.navTargetPanel) {
@@ -350,29 +283,15 @@ export class UI {
 
     // Auto-aim cone indicator (for testing)
     this.autoAimCone = document.createElement('div');
-    this.autoAimCone.style.position = 'absolute';
-    this.autoAimCone.style.top = '50%';
-    this.autoAimCone.style.left = '50%';
-    this.autoAimCone.style.transform = 'translate(-50%, -50%)';
-    this.autoAimCone.style.width = '200px'; // Approximate size for 10 degrees
-    this.autoAimCone.style.height = '200px';
-    this.autoAimCone.style.border = '1px solid #ff0000';
-    this.autoAimCone.style.borderRadius = '50%';
-    this.autoAimCone.style.background = 'transparent';
-    this.autoAimCone.style.pointerEvents = 'none';
-    this.autoAimCone.style.opacity = '0.5';
+    this.autoAimCone.className = 'auto-aim-cone';
     this.uiContainer.appendChild(this.autoAimCone);
 
     // Radar (two concentric circles) anchored relative to cockpit (top-based)
     this.radarWrapper = document.createElement('div');
-    this.radarWrapper.style.position = 'absolute';
+    this.radarWrapper.className = 'radar-wrapper';
     this.radarWrapper.style.left = this._anchors.radar.left;
     this.radarWrapper.style.top = this._anchors.radar.top;
-    this.radarWrapper.style.bottom = '';
-    this.radarWrapper.style.transform = 'translate(-50%, -50%)';
-    this.radarWrapper.style.width = '140px';
     this.radarWrapper.style.height = '140px';
-    this.radarWrapper.style.pointerEvents = 'none';
     this.radarWrapper.style.opacity = '0.9';
     this.cockpitWrapper.appendChild(this.radarWrapper);
     const radarOuter = document.createElement('div');
