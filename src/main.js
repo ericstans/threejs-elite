@@ -563,9 +563,26 @@ class Game {
     let currentSpeed = this.spaceship.getSpeed();
     const maxSpeed = this.spaceship.maxSpeed;
 
-    // If docking, show docking speed instead of 0
-    if (this.spaceship.flags.isDocking && currentSpeed < 0.1) {
-      currentSpeed = this.spaceship.dockingSpeed;
+    // If docking or taking off, calculate actual movement speed based on position changes
+    // This handles the case where ship is being moved directly rather than through velocity
+    if (this.spaceship.flags.isDocking || this.spaceship.takeoffActive) {
+      // Calculate actual speed from position changes (now averaged over the last 30 frames)
+      const actualSpeed = this.spaceship.calculateActualSpeed();
+      
+      // During approach phase, show a speed value appropriate for the phase
+      if (this.spaceship.landingPhase === 'approach') {
+        // Use the smoothed average speed, but keep a minimum value for visibility
+        // During approach, we want to show higher speeds
+        currentSpeed = Math.max(actualSpeed, this.spaceship.dockingSpeed * 0.5);
+      } else if (this.spaceship.takeoffActive) {
+        // During takeoff, use the smoothed speed
+        // But ensure it's not too small to be visible
+        currentSpeed = Math.max(actualSpeed, 0.1);
+      } else {
+        // During other phases (descent, final), use the smoothed speed
+        // But ensure it's not too small to be visible
+        currentSpeed = Math.max(actualSpeed, 0.1);
+      }
     }
 
     this.ui.updateThrottle(targetSpeed, currentSpeed, maxSpeed);

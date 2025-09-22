@@ -18,6 +18,13 @@ export class Spaceship {
     this.rotation = new THREE.Euler(0, 0, 0);
     this.quaternion = new THREE.Quaternion();
     this.angularVelocity = new THREE.Vector3(0, 0, 0);
+    // Position tracking for speed calculation during docking
+    this.lastPosition = new THREE.Vector3(0, 0, 0);
+    this.lastUpdateTime = Date.now();
+    this.calculatedSpeed = 0;
+    // Speed history for averaging (reduces erratic display during docking)
+    this.speedHistory = [];
+    this.speedHistoryMaxLength = 30; // Store the last 30 frames
     // Movement properties from type
     this.maxSpeed = typeConfig.stats.maxSpeed;
     this.acceleration = typeConfig.stats.acceleration;
@@ -272,6 +279,11 @@ export class Spaceship {
   }
 
   update(deltaTime) {
+    // Store last position for speed calculation only during docking/takeoff sequences
+    if (this.flags.isDocking || this.takeoffActive) {
+      this.lastPosition.copy(this.position);
+    }
+    
     // Block all movement and control if destroyed
     if (this._controlsDisabled) {
       this.velocity.set(0, 0, 0);
@@ -795,12 +807,70 @@ export class Spaceship {
     return this.velocity.length();
   }
 
+  // Calculate actual movement speed based on position changes
+  // Used primarily during docking and takeoff when velocity doesn't reflect actual movement
+  calculateActualSpeed() {
+    // Only calculate position-based speed during automated sequences
+    if (!this.flags.isDocking && !this.takeoffActive) {
+      // During normal flight, return the regular velocity-based speed
+      return this.velocity.length();
+    }
+    
+    const now = Date.now();
+    const timeElapsed = (now - this.lastUpdateTime) / 1000; // Convert to seconds
+    
+    if (timeElapsed > 0) {
+      // Calculate distance moved since last update
+      const distance = this.position.distanceTo(this.lastPosition);
+      // Calculate speed (units per second)
+      const instantSpeed = distance / timeElapsed;
+      
+      // Only add to speed history if the value is reasonable
+      // Exclude values that exceed maxSpeed which are likely measurement errors
+      if (instantSpeed <= this.maxSpeed) {
+        this.speedHistory.push(instantSpeed);
+        
+        // Keep history within maximum length
+        if (this.speedHistory.length > this.speedHistoryMaxLength) {
+          this.speedHistory.shift(); // Remove oldest entry
+        }
+      }
+      
+      // Calculate average speed from history, filtering out any values that exceed maxSpeed
+      if (this.speedHistory.length > 0) {
+        const validSpeeds = this.speedHistory.filter(speed => speed <= this.maxSpeed);
+        if (validSpeeds.length > 0) {
+          const sum = validSpeeds.reduce((a, b) => a + b, 0);
+          this.calculatedSpeed = sum / validSpeeds.length;
+        } else {
+          // If all speeds were filtered out, use the minimum of instant speed and max speed
+          this.calculatedSpeed = Math.min(instantSpeed, this.maxSpeed);
+        }
+      } else {
+        // If history is empty, use the minimum of instant speed and max speed
+        this.calculatedSpeed = Math.min(instantSpeed, this.maxSpeed);
+      }
+      
+      // Update last position and time for next calculation
+      this.lastPosition.copy(this.position);
+      this.lastUpdateTime = now;
+    }
+    
+    return this.calculatedSpeed;
+  }
+
   getSpeedPerMinute() {
     return this.velocity.length() * 60; // Convert from units/second to units/minute
   }
 
   getSpeedPercentage() {
     return Math.min(this.getSpeed() / this.maxSpeed, 1.0);
+  }
+  
+  // Reset speed history when docking state changes
+  resetSpeedHistory() {
+    this.speedHistory = [];
+    this.calculatedSpeed = 0;
   }
 
   getPosition() {
@@ -835,6 +905,9 @@ export class Spaceship {
     this.landingPhase = 'approach';
     this.landingStartTime = Date.now() / 1000;
     this.isParentedToPlanet = false;
+
+    // Reset speed history for smooth docking display
+    this.resetSpeedHistory();
 
     // Store current position and rotation as starting points
     this.landingStartPosition.copy(this.position);
@@ -1005,6 +1078,9 @@ export class Spaceship {
     // Reset landing animation state
     this.landingPhase = 'approach';
     this.isParentedToPlanet = false;
+    
+    // Reset speed history for takeoff
+    this.resetSpeedHistory();
 
     // Keep parented initially; store parent for later reattachment if needed
     this.takeoffSceneParent = planet.mesh.parent || scene;
@@ -1037,6 +1113,9 @@ export class Spaceship {
 
     if (DEBUG) console.log('Station takeoff starting...');
     if (DEBUG) console.log('Ship world position:', this.position);
+    
+    // Reset speed history for takeoff
+    this.resetSpeedHistory();
 
     // Store parent for later reattachment if needed
     this.takeoffSceneParent = station.mesh.parent || scene;
@@ -1086,6 +1165,9 @@ export class Spaceship {
     this.flags.isDocked = false;
     this.flags.firingEnabled = true;
     this.landingPhase = null; 
+    
+    // Reset speed history when takeoff completes
+    this.resetSpeedHistory();
   }
 
   // Cash management methods
