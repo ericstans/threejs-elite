@@ -71,7 +71,7 @@ class Game {
       // Check if it's a known station
       const stations = this.environmentSystem?.stations || [];
       return targetName === 'Oceanus Station' ||
-             stations.some(station => station.getName && station.getName() === targetName);
+        stations.some(station => station.getName && station.getName() === targetName);
     });
 
     this.conversationSystem.setStationDockableHook((stationName) => {
@@ -212,7 +212,7 @@ class Game {
       getPlanets: () => this.planets,
       getStations: () => {
         const stations = this.environmentSystem.stations;
-        console.log('Main.js getStations callback: returning', stations.length, 'stations');
+        if (DEBUG) console.log('Main.js getStations callback: returning', stations.length, 'stations');
         return stations;
       },
       getResources: () => this.gameEngine.getResources()
@@ -227,7 +227,7 @@ class Game {
     this.navigationSystem.assignCamera(this.gameEngine.camera);
 
     // Docking manager initialization (after targeting system)
-    this.dockingManager = new DockingManager(/** @type {any} */ ({
+    this.dockingManager = new DockingManager(/** @type {any} */({
       ui: this.ui,
       getSpaceship: () => this.spaceship,
       getNavTarget: () => this.targetingSystem.getCurrentNavTarget(),
@@ -320,7 +320,7 @@ class Game {
             );
           };
           // Nav-target interface (not commable)
-          moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
+          moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2, 5)}`;
           moon.userData.navName = `${planet.getName()} Moon`;
           moon.userData.navMass = Math.pow(moonRadius, 3) * 800;
           moon.userData.isNavTargeted = false;
@@ -358,11 +358,11 @@ class Game {
       // fallback to old behavior if definition missing
       let existingField = this.sectorManager.getAsteroidFieldState(defaultSector.id);
       if (!existingField) {
-        this.environmentSystem.configureAsteroidField({ 
-          seed: 'seed' in defaultSector ? defaultSector.seed : (Date.now() & 0xffff), 
-          destroyedIds: [], 
-          center: defaultSector.center, 
-          size: defaultSector.size 
+        this.environmentSystem.configureAsteroidField({
+          seed: 'seed' in defaultSector ? defaultSector.seed : (Date.now() & 0xffff),
+          destroyedIds: [],
+          center: defaultSector.center,
+          size: defaultSector.size
         });
         this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
         existingField = this.environmentSystem.getAsteroidFieldState();
@@ -574,7 +574,7 @@ class Game {
     if (this.spaceship.flags.isDocking || this.spaceship.takeoffActive) {
       // Calculate actual speed from position changes (now averaged over the last 30 frames)
       const actualSpeed = this.spaceship.calculateActualSpeed();
-      
+
       // During approach phase, show a speed value appropriate for the phase
       if (this.spaceship.landingPhase === 'approach') {
         // Use the smoothed average speed, but keep a minimum value for visibility
@@ -698,19 +698,19 @@ class Game {
   }
 
   switchSector(sectorId) {
-    console.log('🔍 Main: switchSector called with', sectorId);
+    if (DEBUG) console.log('🔍 Main: switchSector called with', sectorId);
     if (this.sectorManager.currentSectorId === sectorId) return; // already there
-    
+
     // Check if portal system is already active
     if (this.portalSystem.isActive) {
-      console.log('🔍 Main: Portal system already active, skipping');
+      if (DEBUG) console.log('🔍 Main: Portal system already active, skipping');
       return;
     }
-    
-    console.log('🔍 Main: Starting portal animation for sector', sectorId);
+
+    if (DEBUG) console.log('🔍 Main: Starting portal animation for sector', sectorId);
     // Start portal animation
     this.portalSystem.createPortal(sectorId, () => {
-      console.log('🔍 Main: Portal animation complete, switching sector');
+      if (DEBUG) console.log('🔍 Main: Portal animation complete, switching sector');
       this.performSectorSwitch(sectorId);
     });
   }
@@ -791,7 +791,7 @@ class Game {
         for (let i = 0; i < count; i++) {
           if (!archetypes.length) break;
           const pSeed = hashSeed(hybridSeed, 'hybridExtra', i);
-          const prng = this.environmentSystem._rng ? this.environmentSystem._rng(pSeed) : (()=>Math.random());
+          const prng = this.environmentSystem._rng ? this.environmentSystem._rng(pSeed) : (() => Math.random());
           const a = archetypes[Math.floor(prng() * archetypes.length)];
           const radius = 40 + prng() * 55;
           const pos = new THREE.Vector3((prng() - 0.5) * spread, (prng() - 0.5) * spread * 0.5, -600 - prng() * spread);
@@ -826,11 +826,11 @@ class Game {
       this.environmentSystem.configureAsteroidField(fieldState);
     } else {
       const fallback = sMeta || { seed: Date.now() & 0xffff, center: { x: 0, y: 0, z: -800 }, size: 1200 };
-      this.environmentSystem.configureAsteroidField({ 
-        seed: 'seed' in fallback ? fallback.seed : (Date.now() & 0xffff), 
-        destroyedIds: [], 
-        center: fallback.center, 
-        size: fallback.size 
+      this.environmentSystem.configureAsteroidField({
+        seed: 'seed' in fallback ? fallback.seed : (Date.now() & 0xffff),
+        destroyedIds: [],
+        center: fallback.center,
+        size: fallback.size
       });
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
@@ -1193,19 +1193,19 @@ game.ui.cockpitWrapper.style.display = 'none';
 // Show title overlay at start
 setTimeout(() => {
   game.ui.showTitle();
-  
+
   // Set up audio start callback for clicks
   game.ui.setOnTitleStartAudio(() => {
-    console.log('Title clicked - starting audio context');
+    if (DEBUG) console.log('Title clicked - starting audio context');
     game.controls.startMusic();
   });
-  
+
   game.ui.setOnTitleDismiss(() => {
-    console.log('Title dismissed - game ready');
-    
+    if (DEBUG) console.log('Title dismissed - game ready');
+
     // Force-stop any title music and switch to ambient immediately
-    console.log('Switching to Aridus Prime soundtracks');
-  const mm = game.audioManager?.musicManager;
+    if (DEBUG) console.log('Switching to Aridus Prime soundtracks');
+    const mm = game.audioManager?.musicManager;
     if (mm) {
       // Hard stop any current playback (title queue, notes, timeouts)
       if (typeof mm.stopTrack === 'function') mm.stopTrack();
@@ -1215,7 +1215,7 @@ setTimeout(() => {
       if (typeof mm.playTrack === 'function') mm.playTrack('ambient');
       if (typeof mm.fadeIn === 'function') mm.fadeIn(1200);
     }
-    
+
     // Show UI and cockpit after title is dismissed
     game.ui.uiContainer.style.display = 'block';
     game.ui.cockpitWrapper.style.display = 'block';
