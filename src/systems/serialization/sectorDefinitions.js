@@ -7,10 +7,23 @@ export const availableSectors = [
   { id: 'sector-1', name: 'Aridus Sector', center: { x: -50, y: 50, z: -650 }, size: 1200 },
   { id: 'sector-2', name: 'Zephyrus Spur', center: { x: 400, y: 0, z: -1200 }, size: 1400 },
   { id: 'sector-3', name: 'Aberrant Sector', center: { x: -600, y: -100, z: -300 }, size: 5000 },
-  { id: 'sector-4', name: 'random(AAAA)', seed: 0xAAAA, center: { x: -600, y: -100, z: -300 }, size: 1000 },
-  { id: 'sector-5', name: 'random(1234)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 },
-  { id: 'sector-6', name: 'random(XXXX)', seed: 0x1234, center: { x: -200, y: 0, z: 0 }, size: 500 }
+  ...buildProceduralSectors(47)
 ];
+
+function buildProceduralSectors(count) {
+  const sectors = [];
+  for (let i = 0; i < count; i++) {
+    const seed = Math.floor(Math.random() * 0xFFFF);
+    sectors.push({
+      id: `sector-proc-${i}`,
+      name: `random(${seed.toString(16).toUpperCase().padStart(4, '0')})`,
+      seed,
+      center: { x: -200, y: 0, z: 0 },
+      size: 500
+    });
+  }
+  return sectors;
+}
 
 export const sectorDefinitions = {
   'sector-1': {

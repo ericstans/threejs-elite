@@ -277,7 +277,7 @@ export class ConversationSystem {
       const baseOptions = [
         { id: 'information', text: `Tell me about ${stationName}.` },
         dockable ? (
-          playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+          playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request takeoff' } :
             (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
               playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
         ) : { id: 'docking_unavailable', text: 'Docking unavailable' }
@@ -293,7 +293,7 @@ export class ConversationSystem {
       { id: 'information', text: `Tell me about ${stationName}.` },
       { id: 'services', text: 'What services are available?' },
       dockable ? (
-        playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request Takeoff Authorization' } :
+        playerFlags.isDocked === true ? { id: 'request_takeoff', text: 'Request takeoff' } :
           (playerFlags.commTargetInDockingRange === true && !playerFlags.isDocked ? { id: 'docking', text: 'Request docking' } :
             playerFlags.commTargetInDockingRange === false && !playerFlags.isDocked ? { id: 'docking_too_far', text: 'Request docking (too far away)' } : null)
       ) : { id: 'docking_unavailable', text: 'Docking unavailable' }

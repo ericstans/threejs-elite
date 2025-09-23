@@ -140,9 +140,8 @@ export class EnvironmentSystem {
       const sSeed = hashSeed(seed, 'station', s);
       const stRng = this._rng(sSeed);
   const services = computeStationServicesForSeed(sSeed, sWeights);
-      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (2 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3), services });
+      const station = new SpaceStation(pl, { orbitRadius: pl.radius * (3 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3), services });
       this.stations.push(station);
-      console.log('EnvironmentSystem: Created station:', station.getName?.(), 'Total stations:', this.stations.length);
       this.gameEngine.addEntity(station);
       this.gameEngine.scene.add(station.mesh);
     }
@@ -162,7 +161,6 @@ export class EnvironmentSystem {
     if (oceanus) {
       const station = new SpaceStation(oceanus, { orbitRadius: oceanus.radius * 2, size: oceanus.radius * 0.48 });
       this.stations.push(station);
-      console.log('EnvironmentSystem: Created initial station:', station.getName?.(), 'Total stations:', this.stations.length);
       this.gameEngine.addEntity(station);
       this.gameEngine.scene.add(station.mesh);
     }
