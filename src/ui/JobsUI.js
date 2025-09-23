@@ -1,3 +1,5 @@
+import { getShortestPath } from '../util/mapGraphGenerator.js';
+
 export class JobsUI {
   constructor(container) {
     this.container = container;
@@ -5,6 +7,7 @@ export class JobsUI {
     this.availableJobs = [];
     this.inProgressJobs = [];
     this.currentContext = { sectorId: null, locationName: null };
+    this.sectorMap = null; // Store sector map for distance calculations
     this.onAcceptJob = null;
     this.onCompleteJob = null;
     this.onClose = null; // Host-provided callback when Jobs closes
@@ -21,10 +24,10 @@ export class JobsUI {
     this.modal.style.height = '100%';
     this.modal.style.background = 'rgba(0, 0, 0, 0.8)';
     this.modal.style.display = 'none';
-  this.modal.style.zIndex = '10000';
+    this.modal.style.zIndex = '10000';
     this.modal.style.pointerEvents = 'auto';
-  // Attach to document.body to avoid pointer-events issues from parent containers
-  document.body.appendChild(this.modal);
+    // Attach to document.body to avoid pointer-events issues from parent containers
+    document.body.appendChild(this.modal);
 
     this.content = document.createElement('div');
     this.content.style.position = 'absolute';
@@ -41,9 +44,9 @@ export class JobsUI {
     this.content.style.fontFamily = 'PeaberryMono, monospace';
     this.content.style.color = '#00ff00';
     this.content.style.overflow = 'hidden';
-  // Ensure content receives pointer events explicitly
-  this.content.style.pointerEvents = 'auto';
-  this.modal.appendChild(this.content);
+    // Ensure content receives pointer events explicitly
+    this.content.style.pointerEvents = 'auto';
+    this.modal.appendChild(this.content);
 
     // Header
     const header = document.createElement('div');
@@ -62,7 +65,7 @@ export class JobsUI {
     this.title.style.fontWeight = 'bold';
     header.appendChild(this.title);
 
-  const closeBtn = document.createElement('button');
+    const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
     closeBtn.style.background = 'transparent';
     closeBtn.style.border = '1px solid #00ff00';
@@ -70,41 +73,41 @@ export class JobsUI {
     closeBtn.style.padding = '4px 10px';
     closeBtn.style.cursor = 'pointer';
     closeBtn.style.fontFamily = 'PeaberryMono, monospace';
-  closeBtn.addEventListener('click', () => this.hide());
+    closeBtn.addEventListener('click', () => this.hide());
     header.appendChild(closeBtn);
 
     // Columns
-  const columns = document.createElement('div');
+    const columns = document.createElement('div');
     columns.style.display = 'grid';
     columns.style.gridTemplateColumns = '1fr 1fr';
     columns.style.gap = '20px';
     columns.style.height = 'calc(100% - 60px)';
-  columns.style.pointerEvents = 'auto';
+    columns.style.pointerEvents = 'auto';
     this.content.appendChild(columns);
 
     // Left column - Available Jobs
-  const left = document.createElement('div');
-  left.style.pointerEvents = 'auto';
+    const left = document.createElement('div');
+    left.style.pointerEvents = 'auto';
     const leftTitle = document.createElement('h3');
     leftTitle.textContent = 'AVAILABLE JOBS';
     leftTitle.style.margin = '0 0 10px 0';
     left.appendChild(leftTitle);
-  this.availableList = document.createElement('div');
-  this.availableList.style.overflowY = 'auto';
-  this.availableList.style.pointerEvents = 'auto';
+    this.availableList = document.createElement('div');
+    this.availableList.style.overflowY = 'auto';
+    this.availableList.style.pointerEvents = 'auto';
     left.appendChild(this.availableList);
     columns.appendChild(left);
 
     // Right column - Jobs in Progress
-  const right = document.createElement('div');
-  right.style.pointerEvents = 'auto';
+    const right = document.createElement('div');
+    right.style.pointerEvents = 'auto';
     const rightTitle = document.createElement('h3');
     rightTitle.textContent = 'JOBS IN PROGRESS';
     rightTitle.style.margin = '0 0 10px 0';
     right.appendChild(rightTitle);
-  this.progressList = document.createElement('div');
-  this.progressList.style.overflowY = 'auto';
-  this.progressList.style.pointerEvents = 'auto';
+    this.progressList = document.createElement('div');
+    this.progressList.style.overflowY = 'auto';
+    this.progressList.style.pointerEvents = 'auto';
     right.appendChild(this.progressList);
     columns.appendChild(right);
 
@@ -182,10 +185,11 @@ export class JobsUI {
     this.modal.addEventListener('pointerdown', modalDelegatedHandler, true);
   }
 
-  show(availableJobs, inProgressJobs, context) {
+  show(availableJobs, inProgressJobs, context, sectorMap = null) {
     this.availableJobs = availableJobs || [];
     this.inProgressJobs = inProgressJobs || [];
     this.currentContext = context || this.currentContext;
+    this.sectorMap = sectorMap || this.sectorMap; // Update sector map if provided
     this._renderLists();
     this._updateColumnLayout(); // Apply column visibility settings
     this.modal.style.display = 'block';
@@ -196,7 +200,7 @@ export class JobsUI {
     this.modal.style.display = 'none';
     this.isVisible = false;
     if (typeof this.onClose === 'function') {
-      try { this.onClose(); } catch (_) {}
+      try { this.onClose(); } catch (_) { }
     }
   }
 
@@ -209,7 +213,7 @@ export class JobsUI {
     // Get references to the columns container and the left column (Available Jobs)
     const columns = this.content.querySelector('div[style*="grid-template-columns"]');
     const leftColumn = columns?.children[0];
-    
+
     if (columns && leftColumn) {
       if (this.showAvailableColumn) {
         // Show both columns
@@ -231,10 +235,11 @@ export class JobsUI {
     }
   }
 
-  update(availableJobs, inProgressJobs, context) {
+  update(availableJobs, inProgressJobs, context, sectorMap = null) {
     this.availableJobs = availableJobs ?? this.availableJobs;
     this.inProgressJobs = inProgressJobs ?? this.inProgressJobs;
     this.currentContext = context ?? this.currentContext;
+    this.sectorMap = sectorMap || this.sectorMap; // Update sector map if provided
     if (this.isVisible) this._renderLists();
   }
 
@@ -250,13 +255,13 @@ export class JobsUI {
   }
 
   _renderJobCard(job, listType) {
-  const card = document.createElement('div');
+    const card = document.createElement('div');
     card.style.border = '1px solid #00aa55';
     card.style.borderRadius = '4px';
     card.style.background = 'rgba(0, 170, 85, 0.1)';
     card.style.padding = '10px';
     card.style.marginBottom = '10px';
-  card.style.pointerEvents = 'auto';
+    card.style.pointerEvents = 'auto';
 
     const line = (label, value) => {
       const row = document.createElement('div');
@@ -277,10 +282,37 @@ export class JobsUI {
     card.appendChild(line('CARGO', `${job.cargoName} × ${job.cargoAmount}`));
     card.appendChild(line('DEST SECTOR', job.destination.sectorName));
     card.appendChild(line('DEST LOCATION', job.destination.locationName));
+
+    // Calculate and display distance/fuel cost
+    const currentSectorId = this.currentContext?.sectorId;
+    
+    // Use stored distance if available, otherwise calculate it
+    let distance = null;
+    let fuelCost = null;
+    
+    if (typeof job.distance === 'number') {
+      // Use pre-calculated distance from job generation
+      distance = job.distance;
+      fuelCost = distance; // Assume 1 fuel per jump for now
+    } else if (this.sectorMap && currentSectorId && job.destination?.sectorId) {
+      // Calculate distance dynamically
+      const pathInfo = getShortestPath(this.sectorMap, currentSectorId, job.destination.sectorId);
+      if (pathInfo) {
+        distance = pathInfo.path.length - 1; // Exclude starting sector
+        fuelCost = pathInfo.totalCost;
+      }
+    }
+    
+    if (distance !== null) {
+      card.appendChild(line('DISTANCE', `${distance} jump${distance !== 1 ? 's' : ''} (${fuelCost} fuel)`));
+    } else {
+      card.appendChild(line('DISTANCE', 'Unknown'));
+    }
+
     card.appendChild(line('REWARD', `$${job.reward.toLocaleString()}`));
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
+    const btn = document.createElement('button');
+    btn.type = 'button';
     btn.style.marginTop = '8px';
     btn.style.background = 'rgba(0, 255, 0, 0.2)';
     btn.style.border = '1px solid #00ff00';
@@ -289,9 +321,9 @@ export class JobsUI {
     btn.style.cursor = 'pointer';
     btn.style.fontFamily = 'PeaberryMono, monospace';
     btn.style.fontSize = '14px';
-  btn.style.position = 'relative';
-  btn.style.zIndex = '10001';
-  btn.style.pointerEvents = 'auto';
+    btn.style.position = 'relative';
+    btn.style.zIndex = '10001';
+    btn.style.pointerEvents = 'auto';
 
     // Fallback: clicking the card also triggers the action
     card.addEventListener('click', (e) => {

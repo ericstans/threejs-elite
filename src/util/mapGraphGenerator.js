@@ -334,3 +334,64 @@ export function getConnectedSectors(sectorMap, currentSectorId) {
     };
   });
 }
+
+// Calculate shortest path between two sectors using Dijkstra's algorithm
+export function getShortestPath(sectorMap, fromSectorId, toSectorId) {
+  if (!sectorMap || !fromSectorId || !toSectorId) return null;
+  if (fromSectorId === toSectorId) return { path: [fromSectorId], totalCost: 0 };
+  
+  const nodes = sectorMap.nodes;
+  const distances = {};
+  const previous = {};
+  const unvisited = new Set();
+  
+  // Initialize distances
+  nodes.forEach(node => {
+    distances[node.id] = node.id === fromSectorId ? 0 : Infinity;
+    previous[node.id] = null;
+    unvisited.add(node.id);
+  });
+  
+  while (unvisited.size > 0) {
+    // Find unvisited node with minimum distance
+    let current = null;
+    let minDistance = Infinity;
+    for (const nodeId of unvisited) {
+      if (distances[nodeId] < minDistance) {
+        minDistance = distances[nodeId];
+        current = nodeId;
+      }
+    }
+    
+    if (current === null || distances[current] === Infinity) break;
+    
+    unvisited.delete(current);
+    
+    // If we reached the destination, reconstruct path
+    if (current === toSectorId) {
+      const path = [];
+      let node = current;
+      while (node !== null) {
+        path.unshift(node);
+        node = previous[node];
+      }
+      return { path, totalCost: distances[current] };
+    }
+    
+    // Check neighbors
+    const currentNode = nodes.find(n => n.id === current);
+    if (currentNode) {
+      currentNode.connections.forEach(conn => {
+        if (unvisited.has(conn.id)) {
+          const alt = distances[current] + conn.fuelCost;
+          if (alt < distances[conn.id]) {
+            distances[conn.id] = alt;
+            previous[conn.id] = current;
+          }
+        }
+      });
+    }
+  }
+  
+  return null; // No path found
+}

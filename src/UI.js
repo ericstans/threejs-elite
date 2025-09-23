@@ -10,7 +10,8 @@ import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
 import { JobsUI } from './ui/JobsUI.js';
-import { pickRandomJobsDestination } from './systems/serialization/JobDestinationResolver.js';
+import { enumerateJobsServiceLocations } from './systems/serialization/JobDestinationResolver.js';
+import { getShortestPath } from './util/mapGraphGenerator.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
 import { TitleOverlay } from './ui/TitleOverlay.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -668,7 +669,10 @@ export class UI {
       // Ensure both columns are visible for the full jobs view
       this.jobsUI.setShowAvailableColumn(true);
       
-      this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+      // Get sector map for distance calculations
+      const sectorMap = this.mapUI?.sectorMap || null;
+      
+      this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx, sectorMap);
       this.debugFlagsUI.minimize();
     }
   }
@@ -709,8 +713,11 @@ export class UI {
       // Hide the Available Jobs column
       this.jobsUI.setShowAvailableColumn(false);
       
+      // Get sector map for distance calculations
+      const sectorMap = this.mapUI?.sectorMap || null;
+      
       // Show only in-progress jobs with empty available jobs
-      this.jobsUI.show([], this._jobsInProgress, ctx);
+      this.jobsUI.show([], this._jobsInProgress, ctx, sectorMap);
       this.debugFlagsUI.minimize();
     }
   }
@@ -718,7 +725,8 @@ export class UI {
   updateJobsContext() {
     if (!this.jobsUI?.isVisible) return;
     const ctx = this._getCurrentDockContext();
-    this.jobsUI.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);
+    const sectorMap = this.mapUI?.sectorMap || null;
+    this.jobsUI.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx, sectorMap);
   }
 
   _getCurrentDockContext() {
@@ -745,7 +753,7 @@ export class UI {
   }
 
   _generateJobsForLocation(ctx) {
-    // Generate 3 jobs using real sector definitions for destinations
+    // Generate jobs using real sector definitions for destinations
     const options = [
       'Iron Ore', 'Copper Ore', 'Gold Ore', 'Steel Ingots', 'Electronics', 'Energy Cells', 'Fuel Rods',
       'Food Rations', 'Medical Supplies', 'Data Chips'
@@ -753,31 +761,93 @@ export class UI {
     const pick = () => options[Math.floor(Math.random() * options.length)];
     const sectors = this.game?.availableSectors || [];
     const jobs = [];
+    const sectorMap = this.mapUI?.sectorMap || null;
 
-    const pickDestination = () => {
-      if (!sectors.length) {
-        return { sectorId: ctx.sectorId, sectorName: ctx.sectorName || 'Unknown Sector', locationName: ctx.locationName || 'Unknown' };
+    // Get all possible job destinations with their distances
+    const getAllDestinationsWithDistance = () => {
+      const destinations = [];
+      if (!sectors.length) return destinations;
+
+      // Get all valid job locations using the imported function
+      const allLocations = enumerateJobsServiceLocations(sectors);
+      
+      for (const loc of allLocations) {
+        // Skip current location
+        if (loc.sectorId === ctx.sectorId && loc.locationName === ctx.locationName) continue;
+        
+        let distance = 1; // Default distance if we can't calculate
+        if (sectorMap && ctx.sectorId) {
+          const pathInfo = getShortestPath(sectorMap, ctx.sectorId, loc.sectorId);
+          if (pathInfo) {
+            distance = pathInfo.path.length - 1; // Exclude starting sector
+          }
+        }
+        
+        destinations.push({ ...loc, distance });
       }
-      // Use resolver to only select locations that explicitly offer the 'jobs' service.
-      const dest = pickRandomJobsDestination(ctx, sectors);
-      if (dest) return dest;
-      // Fallback (should be rare): keep within current sector/location
-      return { sectorId: ctx.sectorId, sectorName: ctx.sectorName || 'Unknown Sector', locationName: ctx.locationName || 'Unknown' };
+      
+      return destinations;
     };
 
-    for (let i = 0; i < 3; i++) {
+    // Distance-weighted destination picker (favors closer destinations)
+    const pickDestinationByDistance = () => {
+      const destinations = getAllDestinationsWithDistance();
+      if (destinations.length === 0) {
+        return { 
+          sectorId: ctx.sectorId, 
+          sectorName: ctx.sectorName || 'Unknown Sector', 
+          locationName: ctx.locationName || 'Unknown',
+          distance: 0
+        };
+      }
+
+      // Create weights that favor closer destinations
+      // Weight = 1 / (distance^1.5) to make longer trips significantly less likely
+      const weights = destinations.map(dest => 1 / Math.pow(Math.max(dest.distance, 1), 1.5));
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      
+      // Pick destination based on weighted probability
+      let random = Math.random() * totalWeight;
+      for (let i = 0; i < destinations.length; i++) {
+        random -= weights[i];
+        if (random <= 0) {
+          return destinations[i];
+        }
+      }
+      
+      // Fallback to last destination
+      return destinations[destinations.length - 1];
+    };
+
+    // Generate fewer jobs for variety, but still ensure some are available
+    const jobCount = 2 + Math.floor(Math.random() * 2); // 2-3 jobs instead of always 3
+
+    for (let i = 0; i < jobCount; i++) {
       const cargoName = pick();
       const cargoAmount = 3 + Math.floor(Math.random() * 5); // 3-7 units
-      const dest = pickDestination();
-      const reward = 100 + Math.floor(Math.random() * 400) + cargoAmount * 20;
+      const dest = pickDestinationByDistance();
+      
+      // Distance-based reward calculation
+      const baseReward = 100 + Math.floor(Math.random() * 200); // Reduced base randomness
+      const cargoBonus = cargoAmount * 20;
+      const distanceBonus = dest.distance * 75; // 75 credits per jump
+      const distanceMultiplier = 1 + (dest.distance * 0.1); // 10% more per jump
+      
+      const reward = Math.floor((baseReward + cargoBonus + distanceBonus) * distanceMultiplier);
+      
       jobs.push({
         id: `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         type: 'cargo',
         cargoName,
         cargoAmount,
         reward,
+        distance: dest.distance, // Store distance in job object
         origin: { sectorId: ctx.sectorId, sectorName: ctx.sectorName, locationName: ctx.locationName },
-        destination: dest
+        destination: { 
+          sectorId: dest.sectorId, 
+          sectorName: dest.sectorName, 
+          locationName: dest.locationName 
+        }
       });
     }
     this._jobsAvailable = jobs;
