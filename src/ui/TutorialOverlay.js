@@ -250,7 +250,7 @@ export class TutorialOverlay {
       const bubbleRect = this.speechBubble.getBoundingClientRect();
       
       // Cowboy always appears to the right and below the speech bubble
-      const cowboyX = bubbleRect.right + 32;
+      const cowboyX = bubbleRect.right + 28;
       const cowboyY = bubbleRect.bottom + 8;
       this.cowboy.style.left = cowboyX + 'px';
       this.cowboy.style.top = cowboyY + 'px';
@@ -259,8 +259,8 @@ export class TutorialOverlay {
       // Pointer always points from bottom-right of bubble to cowboy
       const tailWidth = 32;
       const tailHeight = Math.max(48, cowboyY - bubbleRect.bottom);
-      this.speechTail.style.left = (bubbleRect.right - tailWidth / 2) + 'px';
-      this.speechTail.style.top = (bubbleRect.bottom - 8) + 'px';
+      this.speechTail.style.left = (bubbleRect.right - tailWidth / 2)-4 + 'px';
+      this.speechTail.style.top = (bubbleRect.bottom - 13) + 'px';
       this.speechTail.style.transform = 'none';
       this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';
       this.speechTail.style.borderRight = '0';
