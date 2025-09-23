@@ -1442,8 +1442,11 @@ export class UI {
     // Get current sector ID from game engine if available
     const currentSectorId = this.game?.sectorManager?.currentSectorId || null;
     
+    // Get job destination IDs from jobs in progress
+    const jobDestinationIds = this._jobsInProgress.map(job => job.destination?.sectorId || job.destination?.id || job.destinationId).filter(Boolean);
+    
     // Show the map using the MapUI component
-    this.mapUI.show(sectors, currentSectorId);
+    this.mapUI.show(sectors, currentSectorId, jobDestinationIds);
     this.debugFlagsUI.minimize();
   }
 

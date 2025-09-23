@@ -5,6 +5,104 @@ import { generateSectorMap, getConnectedSectors } from '../util/mapGraphGenerato
  */
 export class MapUI {
   /**
+   * Normalize node positions to fill the canvas with padding
+   * @private
+   * @param {Object} sectorMap - The sector map object with nodes
+   * @param {number} width - Canvas width
+   * @param {number} height - Canvas height
+   * @param {number} [pad=40] - Padding in pixels
+   */
+  _normalizeNodePositions(sectorMap, width, height, pad = 40) {
+    if (!sectorMap || !sectorMap.nodes || sectorMap.nodes.length === 0) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const node of sectorMap.nodes) {
+      if (node.x < minX) minX = node.x;
+      if (node.x > maxX) maxX = node.x;
+      if (node.y < minY) minY = node.y;
+      if (node.y > maxY) maxY = node.y;
+    }
+    const graphWidth = maxX - minX;
+    const graphHeight = maxY - minY;
+    const scale = Math.min(
+      (width - 2 * pad) / (graphWidth || 1),
+      (height - 2 * pad) / (graphHeight || 1)
+    );
+    // First, scale and pad
+    for (const node of sectorMap.nodes) {
+      node.x = ((node.x - minX) * scale) + pad;
+      node.y = ((node.y - minY) * scale) + pad;
+    }
+    // Then, center horizontally and vertically
+    let newMinX = Infinity, newMaxX = -Infinity, newMinY = Infinity, newMaxY = -Infinity;
+    for (const node of sectorMap.nodes) {
+      if (node.x < newMinX) newMinX = node.x;
+      if (node.x > newMaxX) newMaxX = node.x;
+      if (node.y < newMinY) newMinY = node.y;
+      if (node.y > newMaxY) newMaxY = node.y;
+    }
+    const actualWidth = newMaxX - newMinX;
+    const actualHeight = newMaxY - newMinY;
+    const offsetX = (width - actualWidth) / 2 - newMinX;
+    const offsetY = (height - actualHeight) / 2 - newMinY;
+    for (const node of sectorMap.nodes) {
+      node.x += offsetX;
+      node.y += offsetY;
+    }
+  }
+  
+  /**
+   * Generate a refined sector map with better spacing by creating extra nodes
+   * @private
+   * @param {Array} sectors - The actual sectors to map
+   * @returns {Object} - The sector map with refined positioning
+   */
+  _generateRefinedSectorMap(sectors) {
+    const extraSectors = 9;
+    // Create N+10 temporary sectors for spacing calculation (N = sectors.length)
+    const tempSectors = [...sectors];
+    for (let i = 0; i < extraSectors; i++) {
+      tempSectors.push({
+        id: `temp_${i}`,
+        name: `Temp ${i}`,
+        // Add any other properties that sectors might have
+      });
+    }
+    
+    // Generate map with extra nodes for better spacing
+    const tempMap = generateSectorMap(tempSectors, {
+      mapWidth: this.mapCanvas.width,
+      mapHeight: this.mapCanvas.height,
+      connectionRadius: 250,
+      seed: 12345,
+      padding: 60,
+      minConnections: 2,
+      maxConnections: 5,
+      fuelCostBase: 10,
+      fuelCostVariance: 5,
+      repulsionIterations: 80,
+      repulsionStrength: 1.0,
+      minNodeDistance: 50
+    });
+    
+    // Remove 10 random temp nodes, keeping only the original sectors
+    const finalNodes = tempMap.nodes.filter(node => 
+      !node.id.startsWith('temp_')
+    );
+    
+    // Clean up connections to removed nodes
+    finalNodes.forEach(node => {
+      node.connections = node.connections.filter(conn => 
+        !conn.id.startsWith('temp_')
+      );
+    });
+    
+    return {
+      ...tempMap,
+      nodes: finalNodes
+    };
+  }
+  
+  /**
    * Creates a new map UI component
    */
   constructor() {
@@ -13,25 +111,44 @@ export class MapUI {
     this.onSectorSelect = null;
     
     // Create map elements
-    this.mapModal = document.createElement('div');
-    this.mapModal.className = 'map-modal';
-    document.body.appendChild(this.mapModal);
 
-    this.mapContent = document.createElement('div');
-    this.mapContent.className = 'map-content';
-    this.mapModal.appendChild(this.mapContent);
+  this.mapModal = document.createElement('div');
+  this.mapModal.className = 'map-modal';
+  this.mapModal.style.display = 'none'; // Hide by default
+  document.body.appendChild(this.mapModal);
 
-    this.mapTitle = document.createElement('h2');
-    this.mapTitle.className = 'map-title';
-    this.mapTitle.textContent = 'SECTOR MAP';
-    this.mapContent.appendChild(this.mapTitle);
+  this.mapContent = document.createElement('div');
+  this.mapContent.className = 'map-content';
+  this.mapModal.appendChild(this.mapContent);
+
+  // Add close button
+  this.closeButton = document.createElement('button');
+  this.closeButton.className = 'map-close-btn';
+  this.closeButton.innerHTML = '&times;';
+  this.closeButton.title = 'Close';
+  this.closeButton.style.position = 'absolute';
+  this.closeButton.style.top = '18px';
+  this.closeButton.style.right = '24px';
+  this.closeButton.style.fontSize = '2rem';
+  this.closeButton.style.background = 'none';
+  this.closeButton.style.border = 'none';
+  this.closeButton.style.color = '#00ff00';
+  this.closeButton.style.cursor = 'pointer';
+  this.closeButton.style.zIndex = '10';
+  this.closeButton.addEventListener('click', () => this.hide());
+  this.mapContent.appendChild(this.closeButton);
+
+  this.mapTitle = document.createElement('h2');
+  this.mapTitle.className = 'map-title';
+  this.mapTitle.textContent = 'SECTOR MAP';
+  this.mapContent.appendChild(this.mapTitle);
     
     // Add canvas for the sector graph
-    this.mapCanvas = document.createElement('canvas');
-    this.mapCanvas.className = 'map-canvas';
-    this.mapCanvas.width = 800;
-    this.mapCanvas.height = 400;
-    this.mapContent.appendChild(this.mapCanvas);
+  this.mapCanvas = document.createElement('canvas');
+  this.mapCanvas.className = 'map-canvas';
+  this.mapCanvas.width = 960;
+  this.mapCanvas.height = 480;
+  this.mapContent.appendChild(this.mapCanvas);
     
     // Create tooltip element for sectors
     this.sectorTooltip = document.createElement('div');
@@ -72,8 +189,9 @@ export class MapUI {
    * Shows the map modal with all sectors
    * @param {Array} sectors - List of available sectors
    * @param {string} currentSectorId - ID of the current sector
+   * @param {Array} [jobDestinationIds=[]] - IDs of sectors that are job destinations
    */
-  show(sectors, currentSectorId) {
+  show(sectors, currentSectorId, jobDestinationIds = []) {
     // Clear previous content
     this.mapList.innerHTML = '';
     
@@ -82,20 +200,9 @@ export class MapUI {
     
     // Generate sector map if not already done or if sector count changed
     if (!this.sectorMap || this.sectorMap.nodes.length !== sectors.length) {
-      this.sectorMap = generateSectorMap(sectors, {
-        mapWidth: this.mapCanvas.width,
-        mapHeight: this.mapCanvas.height,
-        connectionRadius: 250,    // Increased connection radius to allow more connections after spreading
-        seed: 12345,              // Fixed seed for consistent generation
-        padding: 60,              // Increased padding for better appearance
-        minConnections: 2,
-        maxConnections: 5,
-        fuelCostBase: 10,
-        fuelCostVariance: 5,
-        repulsionIterations: 80,  // More iterations for better node distribution
-        repulsionStrength: 1.0,   // Stronger repulsion to push nodes apart
-        minNodeDistance: 50       // Keep nodes at least this far apart
-      });
+      this.sectorMap = this._generateRefinedSectorMap(sectors);
+      // Normalize node positions to fill the canvas
+      this._normalizeNodePositions(this.sectorMap, this.mapCanvas.width, this.mapCanvas.height, 40);
     }
     
     // Get list of connected sectors
@@ -106,7 +213,7 @@ export class MapUI {
     const connectedIds = connectedSectors.map(s => s.id);
     
     // Draw the map on canvas
-    this._drawSectorMap(currentSectorId, connectedIds);
+    this._drawSectorMap(currentSectorId, connectedIds, jobDestinationIds);
     
     // Add connected sectors to the list for selection
     if (connectedSectors.length > 0) {
@@ -147,7 +254,7 @@ export class MapUI {
       });
     }
     
-    this.mapModal.style.display = 'block';
+  this.mapModal.style.display = 'block';
     
     // Set up mouse move handler for tooltip
     this.mapCanvas.addEventListener('mousemove', this._boundMapMouseMove);
@@ -161,7 +268,7 @@ export class MapUI {
    * Hides the map modal
    */
   hide() {
-    this.mapModal.style.display = 'none';
+  this.mapModal.style.display = 'none';
     
     // Remove event listeners
     this.mapCanvas.removeEventListener('mousemove', this._boundMapMouseMove);
@@ -191,8 +298,9 @@ export class MapUI {
    * @private
    * @param {string} currentSectorId - ID of the current sector
    * @param {Array<string>} connectedIds - IDs of sectors connected to the current sector
+   * @param {Array<string>} jobDestinationIds - IDs of sectors that are job destinations
    */
-  _drawSectorMap(currentSectorId, connectedIds) {
+  _drawSectorMap(currentSectorId, connectedIds, jobDestinationIds = []) {
     const canvas = this.mapCanvas;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
@@ -223,31 +331,46 @@ export class MapUI {
       ctx.stroke();
     }
     
-    // Draw connections first (behind nodes)
+    // Draw all edges in grey first
+    ctx.save();
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 2;
+    for (const node of this.sectorMap.nodes) {
+      for (const conn of node.connections) {
+        const targetNode = this.sectorMap.nodes.find(n => n.id === conn.id);
+        if (targetNode && node.id < targetNode.id) { // avoid double-drawing
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(targetNode.x, targetNode.y);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
+
+    // Draw green edges for current/connected
+    ctx.save();
     ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
     ctx.lineWidth = 2;
-    
     for (const node of this.sectorMap.nodes) {
-      // Only draw connections from current node or connected nodes
       if (node.id === currentSectorId || connectedIds.includes(node.id)) {
         for (const conn of node.connections) {
-          // Find target node
           const targetNode = this.sectorMap.nodes.find(n => n.id === conn.id);
           if (targetNode) {
             ctx.beginPath();
             ctx.moveTo(node.x, node.y);
             ctx.lineTo(targetNode.x, targetNode.y);
             ctx.stroke();
-            
+
             // Draw the fuel cost on the connection
             const midX = (node.x + targetNode.x) / 2;
             const midY = (node.y + targetNode.y) / 2;
-            
+
             // Draw fuel cost with background for better readability
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             const textWidth = ctx.measureText(String(conn.fuelCost)).width;
             ctx.fillRect(midX - textWidth/2 - 5, midY - 9, textWidth + 10, 18);
-            
+
             ctx.fillStyle = 'rgba(0, 255, 255, 0.9)';
             ctx.font = 'bold 12px monospace';
             ctx.textAlign = 'center';
@@ -257,9 +380,10 @@ export class MapUI {
         }
       }
     }
+    ctx.restore();
     
     // Draw nodes
-    const nodeRadius = 12; // Increased node size
+  const nodeRadius = 14; // Slightly larger for bigger canvas
     
     // First pass - draw shadows/glows
     for (const node of this.sectorMap.nodes) {
@@ -296,29 +420,38 @@ export class MapUI {
       }
     }
     
-    // Second pass - draw node circles
+    // Second pass - draw node circles (always circles, border matches fill)
     for (const node of this.sectorMap.nodes) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
-      
-      // Color based on connectivity
+      let fill, border;
       if (node.id === currentSectorId) {
-        ctx.fillStyle = '#ffff00'; // Current sector: yellow
+        fill = border = '#ffff00';
       } else if (connectedIds.includes(node.id)) {
-        ctx.fillStyle = '#00ff00'; // Connected: green
+        fill = border = '#00ff00';
       } else {
-        ctx.fillStyle = '#444444'; // Not connected: gray
+        fill = border = '#444444';
       }
-      
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 3;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
     
-    // Third pass - draw labels for visible sectors
+    // Third pass - draw yellow dots for job destinations
     for (const node of this.sectorMap.nodes) {
-      if (node.id === currentSectorId || connectedIds.includes(node.id)) {
+      if (jobDestinationIds.includes(node.id)) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffff00';
+        ctx.fill();
+      }
+    }
+    
+    // Fourth pass - draw labels only for current sector
+    for (const node of this.sectorMap.nodes) {
+      if (node.id === currentSectorId) {
         // Calculate best position for label
         // Try different positions in order: below, above, right, left
         const positions = [
@@ -442,11 +575,7 @@ export class MapUI {
         ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
         
         // Draw label text
-        if (node.id === currentSectorId) {
-          ctx.fillStyle = '#ffff00'; // Current sector: yellow text
-        } else {
-          ctx.fillStyle = '#ffffff'; // Connected: white text
-        }
+        ctx.fillStyle = '#ffff00'; // Current sector: yellow text
         
         ctx.fillText(node.name, bestPosition.x, bestPosition.y);
       }
@@ -461,9 +590,12 @@ export class MapUI {
   _handleMapMouseMove(event) {
     if (!this.sectorMap) return;
     
-    const rect = this.mapCanvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+  const rect = this.mapCanvas.getBoundingClientRect();
+  // Scale mouse coordinates to canvas coordinate system
+  const scaleX = this.mapCanvas.width / rect.width;
+  const scaleY = this.mapCanvas.height / rect.height;
+  const x = (event.clientX - rect.left) * scaleX;
+  const y = (event.clientY - rect.top) * scaleY;
     
     // Check if mouse is over a sector node
     const nodeRadius = 12; // Match the drawing radius
@@ -490,20 +622,22 @@ export class MapUI {
       
       if (hoverNode.id !== currentSectorId && !connectedIds.includes(hoverNode.id)) {
         this.sectorTooltip.style.display = 'block';
-        this.sectorTooltip.style.left = `${event.clientX + 10}px`;
-        this.sectorTooltip.style.top = `${event.clientY + 10}px`;
+        this.sectorTooltip.style.left = `${event.pageX + 10}px`;
+        this.sectorTooltip.style.top = `${event.pageY + 10}px`;
         this.sectorTooltip.textContent = hoverNode.name;
-        
         // Change mouse cursor to pointer
         this.mapCanvas.style.cursor = 'pointer';
+      } else if (hoverNode.id !== currentSectorId && connectedIds.includes(hoverNode.id)) {
+        // Show tooltip for connected sectors too
+        this.sectorTooltip.style.display = 'block';
+        this.sectorTooltip.style.left = `${event.pageX + 10}px`;
+        this.sectorTooltip.style.top = `${event.pageY + 10}px`;
+        this.sectorTooltip.textContent = hoverNode.name;
+        this.mapCanvas.style.cursor = 'pointer';
       } else {
-        // Change cursor for connected sectors (clickable)
-        if (hoverNode.id !== currentSectorId && connectedIds.includes(hoverNode.id)) {
-          this.mapCanvas.style.cursor = 'pointer';
-        } else {
-          this.mapCanvas.style.cursor = 'default';
-        }
+        // Current sector - no tooltip but default cursor
         this.sectorTooltip.style.display = 'none';
+        this.mapCanvas.style.cursor = 'default';
       }
     } else {
       this.sectorTooltip.style.display = 'none';
