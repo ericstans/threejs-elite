@@ -446,6 +446,11 @@ export class GameEngine {
       
       const shipPos = this.spaceship.getPosition();
       
+      // Skip all collision checks if ship is docked inside a station
+      if (this.spaceship.flags && (this.spaceship.flags.isDocked || this.spaceship.flags.stationDocked)) {
+        return;
+      }
+      
       // Collision handling function to avoid duplicating code
       const handleCollision = (entity, collisionRadius) => {
         const entityPos = entity.getPosition();
@@ -454,11 +459,13 @@ export class GameEngine {
         // Prevent bounce/collision if ship is in landing animation phase
         const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
         
-        // Check if landing vector is being used for station docking
+        // Check if landing vector is being used for station docking or if ship is already docked inside station
         const isStationDocking = entity.getType && entity.getType() === 'station' && 
                                this.spaceship.flags && 
                                (this.spaceship.flags.dockingAuthorized || 
-                                this.spaceship.flags.landingVectorLocked);
+                                this.spaceship.flags.landingVectorLocked ||
+                                this.spaceship.flags.isDocked ||
+                                this.spaceship.flags.stationDocked);
         
         if (dist < collisionRadius + 1.5 && this.spaceship._planetBounceCooldown <= 0 && 
             !isLanding && !isStationDocking) { // 1.5 = ship radius fudge
@@ -549,11 +556,198 @@ export class GameEngine {
       // Find all stations
       const stations = this.entities.filter(e => e.getType && e.getType() === 'station');
       for (const station of stations) {
-        if (handleCollision(station, station.size)) {
+        // Use cylindrical collision detection for stations
+        if (this.handleStationCollision(station)) {
           break; // Stop checking after a collision is handled
         }
       }
     }
+  }
+  
+  // Specialized collision detection for cylindrical station shapes
+  handleStationCollision(station) {
+    if (!station || !this.spaceship) return false;
+    
+    const shipPos = this.spaceship.getPosition();
+    const stationPos = station.getPosition();
+    
+    // Prevent collision if ship is in landing animation or docking
+    const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
+    const isStationDocking = this.spaceship.flags && 
+                           (this.spaceship.flags.dockingAuthorized || 
+                            this.spaceship.flags.landingVectorLocked ||
+                            this.spaceship.flags.isDocked ||
+                            this.spaceship.flags.stationDocked);
+    
+    if (isLanding || isStationDocking || this.spaceship._planetBounceCooldown > 0) {
+      return false;
+    }
+    
+    // Get station dimensions from its properties
+    const coreRadius = station.size * 0.3; // Core cylinder radius based on station implementation
+    const height = station.size; // Height of the cylinder
+    const ringRadius = station.size * 0.45; // Outer ring radius
+    const ringThickness = station.size * 0.05; // Ring thickness
+    
+    // Create a vector on the XZ plane (horizontal) from station to ship
+    const horizontalDiff = new THREE.Vector3(
+      shipPos.x - stationPos.x,
+      0,
+      shipPos.z - stationPos.z
+    );
+    
+    // Distance to cylinder wall horizontally
+    const horizontalDist = horizontalDiff.length();
+    
+    // Vertical distance check - capped to half height in each direction from center
+    const verticalDist = Math.abs(shipPos.y - stationPos.y);
+    const halfHeight = height / 2;
+    
+    // Check collision with central cylinder
+    const inCylinderHorizontally = horizontalDist < coreRadius + 1.5;
+    const inCylinderVertically = verticalDist < halfHeight;
+    const cylinderCollision = inCylinderHorizontally && inCylinderVertically;
+    
+    // For ring collision, we need to check:
+    // 1. If the ship is near the middle of the station vertically (where the ring is)
+    // 2. If the ship's horizontal distance is near the ring radius
+    
+    // Ring vertical check (ring is relatively thin on y-axis)
+    const ringThicknessVertical = ringThickness * 1.2; // Slightly bigger for easier detection
+    const inRingVertically = verticalDist < ringThicknessVertical;
+    
+    // For horizontal ring check, we need to determine if ship is near the ring's outer perimeter
+    const distFromRingEdge = Math.abs(horizontalDist - ringRadius);
+    const inRingHorizontally = distFromRingEdge < ringThickness + 1.5;
+    
+    // Collision with ring only if both conditions are met
+    const ringCollision = inRingVertically && inRingHorizontally;
+    
+    if (cylinderCollision || ringCollision) {
+      // We've hit the station! Similar bounce handling as planets
+      
+      // Compute normal - depends on whether we hit cylinder or ring
+      let normal;
+      
+      if (cylinderCollision) {
+        // For cylinder walls, normal points outward horizontally
+        if (horizontalDist > 0.001) {
+          normal = horizontalDiff.normalize();
+        } else {
+          // Perfectly centered - pick arbitrary horizontal direction
+          normal = new THREE.Vector3(1, 0, 0);
+        }
+      } else if (ringCollision) {
+        // For ring collision, we need to determine if we're closer to inner or outer edge
+        const distToRingCenter = Math.abs(horizontalDist - ringRadius);
+        
+        // Use the distance to determine which edge we're closer to
+        // This creates a more accurate collision response
+        if (horizontalDist < ringRadius) {
+          // Inside ring radius - normal points outward
+          normal = horizontalDiff.clone().normalize();
+        } else {
+          // Outside ring radius - normal points inward
+          normal = horizontalDiff.clone().normalize().negate();
+        }
+      } else {
+        // Fallback just in case
+        normal = horizontalDiff.normalize();
+      }
+      
+      // Move ship just outside collision area
+      const bouncePos = stationPos.clone();
+      
+      if (cylinderCollision) {
+        // For cylinder collisions, bounce outward from center
+        bouncePos.add(normal.clone().multiplyScalar(coreRadius + 2.0));
+      } else if (ringCollision) {
+        // For ring collisions, bounce toward or away from ring radius
+        const dirToRing = horizontalDiff.clone().normalize();
+        
+        if (horizontalDist < ringRadius) {
+          // Inside ring, place slightly inside
+          bouncePos.add(dirToRing.multiplyScalar(ringRadius - ringThickness - 2.0));
+        } else {
+          // Outside ring, place slightly outside
+          bouncePos.add(dirToRing.multiplyScalar(ringRadius + ringThickness + 2.0)); 
+        }
+      }
+      
+      // Maintain vertical position
+      bouncePos.y = shipPos.y;
+      
+      this.spaceship.position.copy(bouncePos);
+      this.spaceship.mesh.position.copy(bouncePos);
+      
+      // Bounce: reflect velocity, preserve speed
+      const v = this.spaceship.velocity;
+      const vDotN = v.dot(normal);
+      const speed = v.length();
+      this.spaceship.velocity.sub(normal.clone().multiplyScalar(2 * vDotN));
+      this.spaceship.velocity.setLength(speed);
+      
+      // Hull damage
+      let hullDamage = Math.floor(10 + Math.random() * 15);
+      if (typeof this.spaceship.hullStrength === 'number') {
+        this.spaceship.hullStrength = Math.max(0, this.spaceship.hullStrength - hullDamage);
+      }
+      // If UI exists, update ShipHealthUI
+      if (this.ui && this.ui.shipHealthUI) {
+        this.ui.shipHealthUI.update(this.spaceship);
+      }
+      
+      // --- Synthesized crunch/bump sound ---
+      try {
+        const ctx = window.AudioContext ? new window.AudioContext() : null;
+        if (ctx) {
+          const osc = ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = 120 + Math.random() * 40;
+          const gain = ctx.createGain();
+          gain.gain.value = 0.3;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.18);
+          osc.stop(ctx.currentTime + 0.2);
+          osc.onended = () => ctx.close();
+        }
+      } catch (e) { /* ignore audio errors */ }
+      
+      // --- Flash screen red ---
+      try {
+        let flash = document.getElementById('planet-crunch-flash');
+        if (!flash) {
+          flash = document.createElement('div');
+          flash.id = 'planet-crunch-flash';
+          flash.style.position = 'fixed';
+          flash.style.left = '0';
+          flash.style.top = '0';
+          flash.style.width = '100vw';
+          flash.style.height = '100vh';
+          flash.style.background = 'rgba(255,0,0,0.35)';
+          flash.style.zIndex = '99999';
+          flash.style.pointerEvents = 'none';
+          flash.style.transition = 'opacity 0.2s';
+          flash.style.opacity = '1';
+          document.body.appendChild(flash);
+        } else {
+          flash.style.opacity = '1';
+        }
+        setTimeout(() => {
+          if (flash) flash.style.opacity = '0';
+        }, 180);
+      } catch (e) { /* ignore flash errors */ }
+      
+      // Set bounce cooldown
+      this.spaceship._planetBounceCooldown = 0.3;
+      
+      return true; // collision handled
+    }
+    
+    return false; // no collision
   }
 
   getResources() {
