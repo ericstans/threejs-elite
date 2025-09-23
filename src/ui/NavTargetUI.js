@@ -13,6 +13,7 @@ export class NavTargetUI {
   createNavTargetPanel() {
     // Nav target panel (initially hidden)
     this.navTargetPanel = document.createElement('div');
+    this.navTargetPanel.id = 'nav-target-panel'; // Add ID for tutorial targeting
     this.navTargetPanel.style.position = 'absolute';
     this.navTargetPanel.style.height = '20%';
     this.navTargetPanel.style.width = '10%';

@@ -55,6 +55,14 @@ export class TutorialOverlay {
         revealElement: 'targeting'
       },
       {
+        id: 'navtarget',
+        title: 'Nav Target Panel',
+        message: 'This is your nav target panel. It shows information about your current navigation target, such as planets and space stations. Use Y to select nav targets.',
+        position: 'navtarget',
+        showNext: true,
+        revealElement: 'navtarget'
+      },
+      {
         id: 'cargo',
         title: 'Cargo Display',
         message: 'This is the cargo bay. ' + (this.startWithCargo() ? 'Oh, you already have cargo? That\'s strange...' : 'It\'s empty right now!'),
@@ -205,6 +213,11 @@ export class TutorialOverlay {
         bubbleLeft = '75%';
         bubbleTop = '52%';
         break;
+      case 'navtarget':
+        // Position near nav target panel (center-left area)
+        bubbleLeft = '35%';
+        bubbleTop = '40%';
+        break;
       case 'cargo':
         // Position near cargo (bottom-right area)
         bubbleLeft = '80%';
@@ -289,6 +302,13 @@ export class TutorialOverlay {
       this._temporarilyShownElement = { element: targetElement, wasHidden: true };
     }
 
+    // Special handling for nav target panel - temporarily show it if hidden
+    if (elementId === 'navtarget' && targetElement.style.display === 'none') {
+      targetElement.style.display = 'block';
+      // Store reference to restore later
+      this._temporarilyShownElement = { element: targetElement, wasHidden: true };
+    }
+
     // Get element position and size
     const rect = targetElement.getBoundingClientRect();
     const padding = 20; // Extra padding around the element
@@ -321,6 +341,7 @@ export class TutorialOverlay {
       'radar': uiInstance.radarWrapper,
       'throttle': uiInstance.throttleUI?.throttleContainer,
       'targeting': uiInstance.targetUI?.targetPanel,
+      'navtarget': uiInstance.navTargetUI?.navTargetPanel,
       'cargo': uiInstance.cargoUI?.cargoPanel,
       'controls': uiInstance.controlsUI?.controlsHelp
     };
