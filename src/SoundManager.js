@@ -4,7 +4,7 @@ export class SoundManager {
   constructor() {
     this.audioContext = null;
     this.sounds = {};
-    this.masterVolume = 0.3; // Default volume level
+    this.masterVolume = 1; // Default volume level
     // Engine rumble - 3-layer system with phase diversity
     this._engine = {
       started: false,

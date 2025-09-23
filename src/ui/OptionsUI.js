@@ -73,7 +73,7 @@ export class OptionsUI {
     });
 
     // Sound effects volume control
-    this.createVolumeControl('Sound Effects Volume', 'soundVolume', 0.3, (value) => {
+    this.createVolumeControl('Sound Effects Volume', 'soundVolume', 0.80, (value) => {
       if (this.game && this.game.soundManager) {
         this.game.soundManager.setVolume(value);
       }
