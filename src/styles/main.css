@@ -2,6 +2,7 @@
 
 @import './base.css';
 @import './components/ui.css';
+@import './components/map.css';
 @import './ui/tutorial-overlay.css';
 @import './ui/title-overlay.css';
 @import './ui/ui-components.css';

@@ -41,6 +41,7 @@ class Game {
     this.controls = new Controls(this.spaceship, this);
     this.conversationSystem = new ConversationSystem();
     this.ui = new UI(this.conversationSystem);
+    this.ui.game = this; // Provide reference to game for UI to access current sector
     // Expose UI to engine for per-frame parallax callback
     /** @type {any} */ (this.gameEngine).ui = this.ui;
     // Provide dockable query hook for conversation system
@@ -357,7 +358,12 @@ class Game {
       // fallback to old behavior if definition missing
       let existingField = this.sectorManager.getAsteroidFieldState(defaultSector.id);
       if (!existingField) {
-        this.environmentSystem.configureAsteroidField({ seed: defaultSector.seed, destroyedIds: [], center: defaultSector.center, size: defaultSector.size });
+        this.environmentSystem.configureAsteroidField({ 
+          seed: 'seed' in defaultSector ? defaultSector.seed : (Date.now() & 0xffff), 
+          destroyedIds: [], 
+          center: defaultSector.center, 
+          size: defaultSector.size 
+        });
         this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
         existingField = this.environmentSystem.getAsteroidFieldState();
       } else {
@@ -368,7 +374,7 @@ class Game {
     for (let i = 1; i < this.availableSectors.length; i++) {
       const s = this.availableSectors[i];
       if (!this.sectorManager.getAsteroidFieldState(s.id)) {
-        this.sectorManager.sectors.set(s.id, { id: s.id, dynamic: { entities: [] }, asteroidField: { seed: s.seed, destroyedIds: [], center: s.center, size: s.size } });
+        this.sectorManager.sectors.set(s.id, { id: s.id, dynamic: { entities: [] }, asteroidField: { seed: 'seed' in s ? s.seed : (Date.now() & 0xffff), destroyedIds: [], center: s.center, size: s.size } });
       }
     }
     // Backwards compatibility references
@@ -438,7 +444,7 @@ class Game {
         return;
       }
 
-      if (this.ui.mapModal.style.display === 'block') {
+      if (this.ui.isMapModalVisible()) {
         this.ui.hideMapModal();
       } else {
         this.ui.showMapModal(this.availableSectors);
@@ -777,7 +783,7 @@ class Game {
       // Add procedural extras if specified
       if (def.hybridProceduralExtras) {
         const extrasCfg = def.hybridProceduralExtras;
-        const baseSeed = (sMeta ? sMeta.seed : (Date.now() & 0xffff));
+        const baseSeed = (sMeta ? ('seed' in sMeta ? sMeta.seed : (Date.now() & 0xffff)) : (Date.now() & 0xffff));
         const hybridSeed = baseSeed ^ (extrasCfg.seedOffset || 0x9e);
         const archetypes = this.environmentSystem._getPlanetArchetypes ? this.environmentSystem._getPlanetArchetypes() : [];
         const spread = sMeta ? sMeta.size : 1800;
@@ -814,13 +820,18 @@ class Game {
     } else {
       // Fully procedural for sectors without definitions
       this.environmentSystem.procedural = true;
-      this.environmentSystem.initProcedural(sMeta ? sMeta.seed : (Date.now() & 0xffff), sMeta ? sMeta.size : 1800);
+      this.environmentSystem.initProcedural(sMeta ? ('seed' in sMeta ? sMeta.seed : (Date.now() & 0xffff)) : (Date.now() & 0xffff), sMeta ? sMeta.size : 1800);
     }
     if (fieldState) {
       this.environmentSystem.configureAsteroidField(fieldState);
     } else {
       const fallback = sMeta || { seed: Date.now() & 0xffff, center: { x: 0, y: 0, z: -800 }, size: 1200 };
-      this.environmentSystem.configureAsteroidField({ seed: fallback.seed, destroyedIds: [], center: fallback.center, size: fallback.size });
+      this.environmentSystem.configureAsteroidField({ 
+        seed: 'seed' in fallback ? fallback.seed : (Date.now() & 0xffff), 
+        destroyedIds: [], 
+        center: fallback.center, 
+        size: fallback.size 
+      });
       this.sectorManager.saveAsteroidFieldState(this.environmentSystem.getAsteroidFieldState());
     }
     // Clear combat flag when switching sectors

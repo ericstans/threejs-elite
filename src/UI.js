@@ -18,6 +18,7 @@ import { GameOverOverlay } from './ui/GameOverOverlay.js';
 import cockpitImageSrc from './assets/png/cockpit.png';
 import * as THREE from 'three';
 import { ShipHealthUI } from './ui/ShipHealthUI.js';
+import { MapUI } from './ui/MapUI.js';
 
 export class UI {
   constructor(conversationSystem = null) {
@@ -26,6 +27,14 @@ export class UI {
     this.firstPersonMode = true; // start in cockpit view
     this._parallaxEnabled = true;
     this._parallaxState = { lastX: 0, lastY: 0 };
+    this.onCommsOptionClick = null;
+    this.onMapSelect = null;
+    
+    // Initialize MapUI
+    this.mapUI = new MapUI();
+    this.mapUI.setOnSectorSelect((sectorId) => {
+      this.onMapSelect && this.onMapSelect(sectorId);
+    });
     // Centralized anchor definitions for cockpit-relative panels (percent from top-left of cockpit image)
     this._anchors = {
       target: { left: '70.5%', top: '61%' },
@@ -48,22 +57,6 @@ export class UI {
     };
     // Build DOM after anchors so createUI can consume them
     this.createUI();
-    // Map modal (reuses comms styling for quick implementation)
-    this.mapModal = document.createElement('div');
-    this.mapModal.className = 'map-modal';
-    document.body.appendChild(this.mapModal);
-
-    this.mapContent = document.createElement('div');
-    this.mapContent.className = 'map-content';
-    this.mapModal.appendChild(this.mapContent);
-
-    this.mapTitle = document.createElement('h2');
-    this.mapTitle.className = 'map-title';
-    this.mapTitle.textContent = 'SECTOR MAP';
-    this.mapContent.appendChild(this.mapTitle);
-
-    this.mapList = document.createElement('div');
-    this.mapContent.appendChild(this.mapList);
   }
 
   createUI() {
@@ -1446,33 +1439,16 @@ export class UI {
   }
 
   showMapModal(sectors) {
-    this.mapList.innerHTML = '';
-    sectors.forEach((sector, index) => {
-      const el = document.createElement('div');
-      el.style.marginBottom = '10px';
-      el.style.padding = '8px';
-      el.style.border = '1px solid #00ff00';
-      el.style.cursor = 'pointer';
-      el.style.transition = 'all 0.2s ease';
-      el.innerHTML = `<span style="color:#ffff00;">${index + 1}.</span> ${sector.name}`;
-      el.dataset.sectorId = sector.id;
-      el.addEventListener('mouseenter', () => {
-        el.style.background = 'rgba(0,255,0,0.1)';
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.background = 'transparent';
-      });
-      el.addEventListener('click', () => {
-        this.onMapSelect && this.onMapSelect(el.dataset.sectorId);
-      });
-      this.mapList.appendChild(el);
-    });
-    this.mapModal.style.display = 'block';
+    // Get current sector ID from game engine if available
+    const currentSectorId = this.game?.sectorManager?.currentSectorId || null;
+    
+    // Show the map using the MapUI component
+    this.mapUI.show(sectors, currentSectorId);
     this.debugFlagsUI.minimize();
   }
 
   hideMapModal() {
-    this.mapModal.style.display = 'none';
+    this.mapUI.hide();
     this.debugFlagsUI.restore();
   }
 
@@ -1795,7 +1771,7 @@ export class UI {
   }
 
   isMapModalVisible() {
-    return this.mapModal.style.display === 'block';
+    return this.mapUI.isVisible();
   }
 
   setGame(game) {
