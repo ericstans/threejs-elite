@@ -1,7 +1,7 @@
 import { aridusPrimeConversation } from '../../conversations/planets/aridusPrime.js';
 import { oceanusConversation } from '../../conversations/planets/oceanus.js';
 import { getTradeableItems } from '../../data/CargoItemsData.js';
-
+import { GALAXY_NAMES } from '../../data/constants.js';
 // Available sectors configuration for the sector map
 export const availableSectors = [
   { id: 'sector-1', name: 'Aridus Sector', center: { x: -50, y: 50, z: -650 }, size: 1200 },
@@ -12,15 +12,20 @@ export const availableSectors = [
 
 function buildProceduralSectors(count) {
   const sectors = [];
+  // Make a copy so we can remove used names
+  const availableNames = [...GALAXY_NAMES];
   for (let i = 0; i < count; i++) {
     const seed = Math.floor(Math.random() * 0xFFFF);
+    const nameIndex = seed % availableNames.length;
+    const galaxyName = availableNames.splice(nameIndex, 1)[0] || `Unnamed Sector ${i}`;
     sectors.push({
       id: `sector-proc-${i}`,
-      name: `random(${seed.toString(16).toUpperCase().padStart(4, '0')})`,
+      name: galaxyName,
       seed,
       center: { x: -200, y: 0, z: 0 },
       size: 500
     });
+    if (availableNames.length === 0) break; // Stop if we run out of names
   }
   return sectors;
 }
