@@ -44,6 +44,11 @@ export function registerDefaultSerializers(sectorManager) {
       }
 
       if (npc.destroyed && npc.mesh.parent) npc.mesh.parent.remove(npc.mesh);
+      // Attach game context if sectorManager provided a hook
+      if (typeof sectorManager?.getGameEngine === 'function') {
+        const ge = sectorManager.getGameEngine();
+        npc.attachGameContext?.(ge, () => ge?.spaceship);
+      }
       return npc;
     }
   });

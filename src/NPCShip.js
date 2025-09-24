@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { getShipType } from './ShipTypes.js';
 import { replaceCockpitMaterials } from './util/shipMaterialUtils.js';
+import { Laser } from './Laser.js';
 
 const DEBUG = false;
 
@@ -27,6 +28,17 @@ export class NPCShip {
     this.patrolActive = false;
     this.targetPosition = new THREE.Vector3();
     this.targetRotation = new THREE.Euler();
+
+  // --- Combat / AI ---
+  this._gameEngine = null; // set via attachGameContext
+  this._getPlayerShip = null; // optional accessor
+  this.npcLasers = [];
+  this.fireCooldown = 1.2; // seconds between shots
+  this._fireTimer = 0;
+  this.engagementRange = 300; // match UI/CombatSystem range
+  this.preferredDistance = 180; // try to keep roughly this distance when hostile
+  this.fireConeRadians = Math.PI / 6; // ~30 degrees for reliability
+  this._aiTime = 0; // accumulator for smooth orbit/strafe
 
     // --- Ship type config ---
     this.shipType = shipType;
@@ -100,7 +112,7 @@ export class NPCShip {
     // Return the world position of the first visible mesh, or fallback to group position
     let meshCenter = null;
     this.mesh.traverse(child => {
-      if (!meshCenter && child.isMesh) {
+      if (!meshCenter && child instanceof THREE.Mesh) {
         meshCenter = new THREE.Vector3();
         child.getWorldPosition(meshCenter);
       }
@@ -119,7 +131,7 @@ export class NPCShip {
         }
         
         object.traverse(child => {
-          if (child.isMesh) {
+          if (child instanceof THREE.Mesh) {
             child.castShadow = false;
             child.receiveShadow = false;
             // Fallback: ensure all meshes have a visible material
@@ -175,12 +187,25 @@ export class NPCShip {
   }
 
   update(_deltaTime) {
-    if (!this.loaded || this.destroyed || !this.patrolActive) {
-      return;
+    if (!this.loaded || this.destroyed) return;
+
+    let willMove = false;
+
+    // Hostile behavior overrides patrol
+    if (this.isHostile()) {
+      const moved = this.updateHostileBehavior(_deltaTime);
+      willMove = willMove || moved;
+      // Update and simulate NPC-fired lasers
+      this.updateNPCLasers(_deltaTime);
+    } else if (this.patrolActive) {
+      this.updatePatrol(_deltaTime);
+      // When patrolling we have a movement target
+      willMove = true;
     }
 
-    this.updatePatrol(_deltaTime);
-    this.updateMovement(_deltaTime);
+    if (willMove) {
+      this.updateMovement(_deltaTime);
+    }
   }
 
   // Set patrol waypoints
@@ -227,10 +252,147 @@ export class NPCShip {
     }
   }
 
-  // Update target rotation to face the target position
-  updateTargetRotation() {
+  // Provide game engine and player access so NPC can shoot and affect the player
+  attachGameContext(gameEngine, getPlayerShipFn = null) {
+    this._gameEngine = gameEngine;
+    // For convenience, keep a direct reference to scene
+    this.scene = gameEngine?.scene;
+    if (typeof getPlayerShipFn === 'function') {
+      this._getPlayerShip = getPlayerShipFn;
+    } else {
+      this._getPlayerShip = () => gameEngine?.spaceship;
+    }
+  }
+
+  // Hostile AI: chase/strafe toward player and fire when in cone and range
+  updateHostileBehavior(deltaTime) {
+    const player = this._getPlayerShip ? this._getPlayerShip() : null;
+    if (!player) return false;
+
+    const playerPos = player.getPosition ? player.getPosition().clone() : null;
+    if (!playerPos) return false;
+
+    // Movement: orbit at preferred distance with a smooth lateral offset
+    this._aiTime += deltaTime;
+    const toPlayer = playerPos.clone().sub(this.position);
+    const distance = toPlayer.length();
+    const fromPlayerDir = this.position.clone().sub(playerPos).normalize();
+    // Base point on a ring around the player
+    const ringPoint = playerPos.clone().add(fromPlayerDir.clone().multiplyScalar(this.preferredDistance));
+    // Smooth lateral orbit using world up for a stable tangent
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    let lateral = new THREE.Vector3().crossVectors(worldUp, fromPlayerDir).normalize();
+    if (lateral.lengthSq() < 1e-4) {
+      // Degenerate when colinear with up: use arbitrary right
+      lateral = new THREE.Vector3(1, 0, 0);
+    }
+    const orbitAmplitude = 60; // max lateral offset
+    const orbitPhase = Math.sin(this._aiTime * 0.6);
+    let moveTarget = ringPoint.add(lateral.multiplyScalar(orbitAmplitude * orbitPhase));
+
+    // If far outside engagement, bias more toward the player to re-enter
+    if (distance > this.engagementRange * 1.2) {
+      moveTarget = playerPos.clone();
+    }
+
+  this.targetPosition.copy(moveTarget);
+  // Face the player while maneuvering toward the move target
+  this.updateTargetRotation(playerPos);
+
+    // Firing logic
+    this._fireTimer -= deltaTime;
+    if (distance <= this.engagementRange) {
+      // Check firing cone
+      const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion);
+      const dirToTarget = playerPos.clone().sub(this.position).normalize();
+      const angle = forwardDir.angleTo(dirToTarget);
+      if (angle <= this.fireConeRadians && this._fireTimer <= 0) {
+        this.fireAt(player);
+        this._fireTimer = this.fireCooldown * (0.8 + Math.random() * 0.4);
+      }
+    }
+
+    return true; // we set a movement target
+  }
+
+  fireAt(player) {
+    // Compute firing origin from world position, a bit in front of ship
+    const worldPos = this.getWorldPosition ? this.getWorldPosition().clone() : this.position.clone();
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.quaternion).normalize();
+    const muzzleOffset = Math.max(1.2, this.size * 0.8);
+    const start = worldPos.clone().add(forward.clone().multiplyScalar(muzzleOffset));
+
+    // Simple aim with minimal lead based on player velocity if present
+    let targetPos = player.getPosition ? player.getPosition().clone() : this.targetPosition.clone();
+    const playerVel = player.velocity ? player.velocity.clone() : new THREE.Vector3();
+    // Lead estimate: time = distance / laserSpeed
+    const laserSpeed = 100; // matches Laser default
+    const toTarget = targetPos.clone().sub(start);
+    const travelTime = Math.min(3, Math.max(0, toTarget.length() / laserSpeed));
+    targetPos.add(playerVel.multiplyScalar(travelTime));
+
+  const dir = targetPos.clone().sub(start).normalize();
+
+    const laser = new Laser(start, dir);
+    this.npcLasers.push(laser);
+    // Attach to scene so it renders
+    if (this._gameEngine) {
+      this._gameEngine.addEntity(laser);
+    } else if (this.scene) {
+      this.scene.add(laser.mesh);
+    }
+  }
+
+  updateNPCLasers(deltaTime) {
+    const player = this._getPlayerShip ? this._getPlayerShip() : null;
+    const playerPos = player?.getPosition ? player.getPosition() : null;
+    if (!player || !playerPos) return;
+
+    for (let i = this.npcLasers.length - 1; i >= 0; i--) {
+      const laser = this.npcLasers[i];
+      const expired = laser.update(deltaTime);
+
+      // Collision with player ship (simple sphere)
+      const radius = 1.5; // player ship approximate radius
+      const dist = laser.getPosition().distanceTo(playerPos);
+      if (dist < radius) {
+        // Apply hull damage
+        const damage = 4; // small per-hit damage
+        if (typeof player.hullStrength === 'number') {
+          player.hullStrength = Math.max(0, player.hullStrength - damage);
+          // Update ShipHealthUI if available
+          try {
+            this._gameEngine?.ui?.shipHealthUI?.update(player);
+          } catch (_) {}
+        }
+        // Screen damage flash
+        try { this._gameEngine?.flashDamage?.(150); } catch (_) {}
+        // Hit effect sound
+        this._gameEngine?.createSpatialLaserHit?.(playerPos.clone());
+        // Remove laser immediately
+        this._removeNPCLaserAt(i, laser);
+        continue;
+      }
+
+      if (expired) {
+        this._removeNPCLaserAt(i, laser);
+      }
+    }
+  }
+
+  _removeNPCLaserAt(index, laser) {
+    if (this._gameEngine) {
+      this._gameEngine.removeEntity(laser);
+    } else if (laser.mesh && this.scene) {
+      this.scene.remove(laser.mesh);
+    }
+    this.npcLasers.splice(index, 1);
+  }
+
+  // Update target rotation to face a specific world position (default: current targetPosition)
+  updateTargetRotation(lookAtPosition = this.targetPosition) {
     const direction = new THREE.Vector3();
-    direction.subVectors(this.targetPosition, this.position).normalize();
+    direction.subVectors(lookAtPosition, this.position).normalize();
 
     // Calculate rotation to face the target
     const targetQuaternion = new THREE.Quaternion();
@@ -240,19 +402,22 @@ export class NPCShip {
 
   // Update movement physics (similar to player ship)
   updateMovement(deltaTime) {
-    // Calculate direction to target
-    const direction = new THREE.Vector3();
-    direction.subVectors(this.targetPosition, this.position).normalize();
+  // Calculate direction to movement target
+  const moveDir = new THREE.Vector3();
+  moveDir.subVectors(this.targetPosition, this.position).normalize();
 
-    // Calculate desired velocity
-    const desiredVelocity = direction.clone().multiplyScalar(this.maxSpeed);
+  // Calculate desired velocity (accelerate toward move target)
+  const desiredVelocity = moveDir.clone().multiplyScalar(this.maxSpeed);
 
     // Calculate acceleration needed
     const velocityDifference = new THREE.Vector3();
     velocityDifference.subVectors(desiredVelocity, this.velocity);
 
     // Apply acceleration
-    const acceleration = velocityDifference.clone().multiplyScalar(this.acceleration * deltaTime);
+  // Slow down when close to target to avoid overshoot
+  const distToTarget = this.position.distanceTo(this.targetPosition);
+  const slowFactor = distToTarget < 80 ? THREE.MathUtils.clamp(distToTarget / 80, 0.2, 1) : 1;
+  const acceleration = velocityDifference.clone().multiplyScalar(this.acceleration * slowFactor * deltaTime);
     this.velocity.add(acceleration);
 
     // Limit velocity to max speed
@@ -263,16 +428,10 @@ export class NPCShip {
     // Update position
     this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
 
-    // Update rotation to face movement direction
-    if (this.velocity.length() > 0.1) {
-      const movementDirection = this.velocity.clone().normalize();
-      const targetQuaternion = new THREE.Quaternion();
-      targetQuaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), movementDirection);
-
-      // Smoothly rotate towards target rotation
-      this.quaternion.slerp(targetQuaternion, this.rotationSpeed * deltaTime);
-      this.rotation.setFromQuaternion(this.quaternion);
-    }
+    // Update rotation to face targetRotation (set by patrol or hostile aim)
+    const targetQuat = new THREE.Quaternion().setFromEuler(this.targetRotation);
+    this.quaternion.slerp(targetQuat, Math.min(1, this.rotationSpeed * deltaTime));
+    this.rotation.setFromQuaternion(this.quaternion);
 
     // Update mesh position and rotation
     this.mesh.position.copy(this.position);

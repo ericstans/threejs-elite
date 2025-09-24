@@ -1,4 +1,21 @@
 /* base.css - Common styles for Three.js Elite */
+/* Global damage flash overlay */
+#damage-flash {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 0, 0, 0.35);
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#damage-flash.visible {
+  opacity: 1;
+}
 
 /* ===== Common Colors ===== */
 :root {

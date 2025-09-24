@@ -204,7 +204,9 @@ export class EnvironmentSystem {
 
     for (const npcDef of npcShipDefinitions) {
       const position = new THREE.Vector3(npcDef.position.x, npcDef.position.y, npcDef.position.z);
-      const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
+  const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
+  // Provide game engine + player accessor so NPCs can behave in combat
+  npcShip.attachGameContext?.(this.gameEngine, () => this.gameEngine?.spaceship);
 
       // Set patrol waypoints if provided
       if (npcDef.patrolWaypoints && npcDef.patrolWaypoints.length > 0) {

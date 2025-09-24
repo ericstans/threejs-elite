@@ -13,6 +13,10 @@ export class SectorManager {
     this.sectors = new Map(); // id -> sector state object
   }
 
+  getGameEngine() {
+    return this.gameEngine;
+  }
+
   registerSerializer(type, handlers) {
     this.registry.register(type, handlers);
   }

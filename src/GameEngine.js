@@ -30,6 +30,15 @@ export class GameEngine {
     this.ui = null;
     /** @type {any} */
     this.portalSystem = null; // Will be set by the Game class
+
+    // Prepare global damage flash overlay element once
+    try {
+      if (!document.getElementById('damage-flash')) {
+        const el = document.createElement('div');
+        el.id = 'damage-flash';
+        document.body.appendChild(el);
+      }
+    } catch (_) { /* DOM not ready in some environments */ }
   }
 
   setupRenderer() {
@@ -513,29 +522,7 @@ export class GameEngine {
           } catch (e) { /* ignore audio errors */ }
 
           // --- Flash screen red ---
-          try {
-            let flash = document.getElementById('planet-crunch-flash');
-            if (!flash) {
-              flash = document.createElement('div');
-              flash.id = 'planet-crunch-flash';
-              flash.style.position = 'fixed';
-              flash.style.left = '0';
-              flash.style.top = '0';
-              flash.style.width = '100vw';
-              flash.style.height = '100vh';
-              flash.style.background = 'rgba(255,0,0,0.35)';
-              flash.style.zIndex = '99999';
-              flash.style.pointerEvents = 'none';
-              flash.style.transition = 'opacity 0.2s';
-              flash.style.opacity = '1';
-              document.body.appendChild(flash);
-            } else {
-              flash.style.opacity = '1';
-            }
-            setTimeout(() => {
-              if (flash) flash.style.opacity = '0';
-            }, 180);
-          } catch (e) { /* ignore flash errors */ }
+          this.flashDamage(180);
           // Set bounce cooldown (0.3s)
           this.spaceship._planetBounceCooldown = 0.3;
           
@@ -639,9 +626,7 @@ export class GameEngine {
         }
       } else if (ringCollision) {
         // For ring collision, we need to determine if we're closer to inner or outer edge
-        const distToRingCenter = Math.abs(horizontalDist - ringRadius);
-        
-        // Use the distance to determine which edge we're closer to
+  // Use the distance to determine which edge we're closer to
         // This creates a more accurate collision response
         if (horizontalDist < ringRadius) {
           // Inside ring radius - normal points outward
@@ -717,29 +702,7 @@ export class GameEngine {
       } catch (e) { /* ignore audio errors */ }
       
       // --- Flash screen red ---
-      try {
-        let flash = document.getElementById('planet-crunch-flash');
-        if (!flash) {
-          flash = document.createElement('div');
-          flash.id = 'planet-crunch-flash';
-          flash.style.position = 'fixed';
-          flash.style.left = '0';
-          flash.style.top = '0';
-          flash.style.width = '100vw';
-          flash.style.height = '100vh';
-          flash.style.background = 'rgba(255,0,0,0.35)';
-          flash.style.zIndex = '99999';
-          flash.style.pointerEvents = 'none';
-          flash.style.transition = 'opacity 0.2s';
-          flash.style.opacity = '1';
-          document.body.appendChild(flash);
-        } else {
-          flash.style.opacity = '1';
-        }
-        setTimeout(() => {
-          if (flash) flash.style.opacity = '0';
-        }, 180);
-      } catch (e) { /* ignore flash errors */ }
+      this.flashDamage(180);
       
       // Set bounce cooldown
       this.spaceship._planetBounceCooldown = 0.3;
@@ -748,6 +711,20 @@ export class GameEngine {
     }
     
     return false; // no collision
+  }
+
+  // Show a brief screen flash to indicate player damage
+  flashDamage(durationMs = 180) {
+    try {
+      let el = document.getElementById('damage-flash');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'damage-flash';
+        document.body.appendChild(el);
+      }
+      el.classList.add('visible');
+      setTimeout(() => el && el.classList.remove('visible'), durationMs);
+    } catch (_) { /* ignore DOM issues */ }
   }
 
   getResources() {
