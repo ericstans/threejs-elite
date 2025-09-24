@@ -323,12 +323,28 @@ export class Controls {
         await this.game.audioManager?.musicManager?.init();
         if (DEBUG) console.log('startMusic: Music manager initialized successfully');
 
-        // Start with title soundtrack
-        if (DEBUG) console.log('startMusic: Playing title track');
-        this.game.audioManager?.musicManager?.switchSoundtracksImmediate(['title']);
-        this.game.audioManager?.musicManager?.playTrack('ambient');
-        if (DEBUG) console.log('startMusic: Starting fade in');
-        this.game.audioManager?.musicManager?.fadeIn(3000); // 3 second fade in
+        // Decide initial soundtrack based on title visibility / gameStarted flag
+        const ui = this.game.ui;
+        const gsm = this.game.gameStateManager;
+        const titleVisible = typeof ui?.isTitleVisible === 'function' ? ui.isTitleVisible() : false;
+        const alreadyStarted = typeof gsm?.getGlobalFlag === 'function' ? gsm.getGlobalFlag('gameStarted') : false;
+
+        // If title is still visible and game hasn't been started by dismissal yet, use 'title' soundtrack.
+        // Otherwise, respect current sector soundtracks (default ['ambient']).
+        if (!alreadyStarted && titleVisible) {
+          if (DEBUG) console.log('startMusic: Title visible -> using title soundtrack');
+          this.game.audioManager?.musicManager?.switchSoundtracksImmediate(['title']);
+          this.game.audioManager?.musicManager?.playTrack('ambient');
+          if (DEBUG) console.log('startMusic: Starting fade in (title)');
+          this.game.audioManager?.musicManager?.fadeIn(3000); // 3 second fade in for title
+        } else {
+          const currentSoundtracks = typeof gsm?.getCurrentSoundtracks === 'function' ? gsm.getCurrentSoundtracks() : ['ambient'];
+          if (DEBUG) console.log('startMusic: Title dismissed or game started -> using current soundtracks:', currentSoundtracks);
+          this.game.audioManager?.musicManager?.switchSoundtracksImmediate(currentSoundtracks);
+          this.game.audioManager?.musicManager?.playTrack('ambient');
+          if (DEBUG) console.log('startMusic: Starting fade in (game)');
+          this.game.audioManager?.musicManager?.fadeIn(1200); // quicker fade when entering game
+        }
         if (DEBUG) console.log('startMusic: Music system started successfully');
 
         // Immediately kick engine rumble so it starts exactly with the music

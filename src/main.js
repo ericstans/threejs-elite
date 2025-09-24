@@ -1206,6 +1206,8 @@ setTimeout(() => {
     // Force-stop any title music and switch to ambient immediately
     if (DEBUG) console.log('Switching to Aridus Prime soundtracks');
     const mm = game.audioManager?.musicManager;
+    // Mark game as started so subsequent startMusic() calls don't re-select title
+    try { game.gameStateManager?.setGlobalFlag('gameStarted', true); } catch (_) {}
     if (mm) {
       // Hard stop any current playback (title queue, notes, timeouts)
       if (typeof mm.stopTrack === 'function') mm.stopTrack();

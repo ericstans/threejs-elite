@@ -386,6 +386,11 @@ export class MusicManager {
 
   fadeIn(duration = 2000) {
     if (!this._masterGain) return;
+    // If a fadeOut scheduled a stop, clear it to avoid unintended stop right after fadeIn starts
+    if (this._pendingStopTimeout) {
+      clearTimeout(this._pendingStopTimeout);
+      this._pendingStopTimeout = null;
+    }
     const now = this._audioCtx.currentTime;
     this._masterGain.gain.cancelScheduledValues(now);
     this._masterGain.gain.setValueAtTime(0, now);
@@ -398,7 +403,11 @@ export class MusicManager {
     this._masterGain.gain.cancelScheduledValues(now);
     this._masterGain.gain.setValueAtTime(current, now);
     this._masterGain.gain.linearRampToValueAtTime(0, now + duration / 1000);
-    setTimeout(() => this.stopTrack(), duration + 100);
+    // Remember timeout so fadeIn can cancel it if needed
+    this._pendingStopTimeout = setTimeout(() => {
+      this.stopTrack();
+      this._pendingStopTimeout = null;
+    }, duration + 100);
   }
 
   crossfadeToTrack(name, duration = 1000) {
