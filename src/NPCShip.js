@@ -3,6 +3,7 @@ import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { getShipType } from './ShipTypes.js';
 import { replaceCockpitMaterials } from './util/shipMaterialUtils.js';
 import { Laser } from './Laser.js';
+import { LASER_SPEED } from './data/constants.js';
 
 const DEBUG = false;
 
@@ -326,7 +327,7 @@ export class NPCShip {
     let targetPos = player.getPosition ? player.getPosition().clone() : this.targetPosition.clone();
     const playerVel = player.velocity ? player.velocity.clone() : new THREE.Vector3();
     // Lead estimate: time = distance / laserSpeed
-    const laserSpeed = 100; // matches Laser default
+  const laserSpeed = LASER_SPEED; // matches Laser default/reticle math
     const toTarget = targetPos.clone().sub(start);
     const travelTime = Math.min(3, Math.max(0, toTarget.length() / laserSpeed));
     targetPos.add(playerVel.multiplyScalar(travelTime));
@@ -477,6 +478,27 @@ export class NPCShip {
     this.destroyed = true;
     if (this.mesh.parent) {
       this.mesh.parent.remove(this.mesh);
+    }
+  }
+
+  // Reset NPC state after player destruction: clear hostility and active lasers
+  resetAfterPlayerDestroyed() {
+    // Revert to non-hostile behavior
+    try { this.setNPCFlag('isHostile', false); } catch (_) {}
+    this._fireTimer = 0;
+    // Remove any NPC-fired lasers from the scene/engine
+    if (Array.isArray(this.npcLasers) && this.npcLasers.length > 0) {
+      for (let i = this.npcLasers.length - 1; i >= 0; i--) {
+        const laser = this.npcLasers[i];
+        try {
+          if (this._gameEngine) {
+            this._gameEngine.removeEntity(laser);
+          } else if (this.scene && laser?.mesh) {
+            this.scene.remove(laser.mesh);
+          }
+        } catch (_) {}
+        this.npcLasers.splice(i, 1);
+      }
     }
   }
 }

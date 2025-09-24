@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { LASER_SPEED } from './data/constants.js';
 
 export class Laser {
-  constructor(position, direction, speed = 100) {
+  constructor(position, direction, speed = LASER_SPEED) {
     this.speed = speed;
     this.lifetime = 3.0; // 3 seconds
     this.age = 0;

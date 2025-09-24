@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LASER_RANGE } from '../data/constants.js';
 
 export class TargetUI {
   createOffscreenArrow() {
@@ -20,6 +21,7 @@ export class TargetUI {
     this._lowResScale = 0.7; // match nav target low-res factor
     this.createTargetPanel();
     this.createTargetIndicator();
+    this._createLeadReticle();
     this.createOffscreenArrow();
   }
 
@@ -130,7 +132,7 @@ export class TargetUI {
     this.targetPanel.appendChild(this.previewWrapper);
     // Elevate text above underlay
     for (const child of this.targetPanel.children) {
-      if (child !== this.previewWrapper) {
+      if (child !== this.previewWrapper && child instanceof HTMLElement) {
         child.style.position = child.style.position || 'relative';
         child.style.zIndex = '1';
       }
@@ -148,6 +150,14 @@ export class TargetUI {
     this.targetIndicator.style.display = 'none'; // Initially hidden
     this.targetIndicator.style.zIndex = '1000';
     this.container.appendChild(this.targetIndicator);
+  }
+
+  _createLeadReticle() {
+    // Predictive lead reticle (small hollow circle)
+    this.leadReticle = document.createElement('div');
+    this.leadReticle.className = 'lead-reticle';
+    this.leadReticle.style.display = 'none';
+    this.container.appendChild(this.leadReticle);
   }
 
   updateTargetInfo(targetInfo, targetPosition, camera) {
@@ -198,8 +208,8 @@ export class TargetUI {
     // Set ammo count (infinity for laser)
     this.weaponAmmo.innerHTML = '<i class="fas fa-infinity" style="color: #00ff00;"></i>';
 
-    // Set weapon range (300u for laser)
-    this.weaponRange.innerHTML = '<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>300u';
+  // Set weapon range (from constant)
+  this.weaponRange.innerHTML = `<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>${LASER_RANGE}u`;
   }
 
   // Method to test weapons panel display
@@ -212,6 +222,7 @@ export class TargetUI {
     if (!targetPosition || !camera) {
       this.targetIndicator.style.display = 'none';
       this.offscreenArrow.style.display = 'none';
+      if (this.leadReticle) this.leadReticle.style.display = 'none';
       return;
     }
 
@@ -265,10 +276,34 @@ export class TargetUI {
     this.offscreenArrow.style.display = 'none';
   }
 
+  updateLeadReticle(leadWorldPosition, camera) {
+    if (!this.leadReticle) return;
+    if (!leadWorldPosition || !camera) {
+      this.leadReticle.style.display = 'none';
+      return;
+    }
+    const vec = leadWorldPosition.clone();
+    vec.project(camera);
+    const off = vec.z > 1 || vec.x < -1 || vec.x > 1 || vec.y < -1 || vec.y > 1;
+    if (off) {
+      this.leadReticle.style.display = 'none';
+      return;
+    }
+    const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (vec.y * -0.5 + 0.5) * window.innerHeight;
+    const size = 12; // px diameter
+    this.leadReticle.style.display = 'block';
+    this.leadReticle.style.left = `${x - size/2}px`;
+    this.leadReticle.style.top = `${y - size/2}px`;
+    this.leadReticle.style.width = `${size}px`;
+    this.leadReticle.style.height = `${size}px`;
+  }
+
   clearTargetInfo() {
     this.targetPanel.style.display = 'none';
     this.targetIndicator.style.display = 'none';
     this.targetCommableIndicator.style.display = 'none';
+    if (this.leadReticle) this.leadReticle.style.display = 'none';
     this._clearPreview();
   }
 
@@ -343,11 +378,19 @@ export class TargetUI {
 
   _clearPreview() {
     if (this._previewObject) {
-      this._previewObject.traverse?.(o => {
-        if (o.geometry) o.geometry.dispose?.();
-        if (o.material) {
-          if (Array.isArray(o.material)) o.material.forEach(m => m.dispose?.());
-          else o.material.dispose?.();
+      this._previewObject.traverse?.((o) => {
+        // Only meshes have geometry/material. Use duck typing in JS.
+        const anyObj = /** @type {*} */ (o);
+        if (anyObj && anyObj.isMesh) {
+          const mesh = anyObj;
+          const g = mesh.geometry;
+          if (g && typeof g.dispose === 'function') g.dispose();
+          const m = mesh.material;
+          if (Array.isArray(m)) {
+            m.forEach((mm) => typeof mm.dispose === 'function' && mm.dispose());
+          } else if (m && typeof m.dispose === 'function') {
+            m.dispose();
+          }
         }
       });
       this.previewScene.remove(this._previewObject);

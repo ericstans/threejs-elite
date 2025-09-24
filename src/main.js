@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import './assets/fonts/peaberry.css';
 import './styles/main.css';
+import { LASER_RANGE } from './data/constants.js';
 import { GameEngine } from './GameEngine.js';
 import { Spaceship } from './Spaceship.js';
 import { Planet } from './Planet.js';
@@ -619,13 +620,22 @@ class Game {
     // Update target info (combat) via targeting system
     this.targetingSystem.updateTargetInfo();
 
-    // --- Update auto-aim cone color (homing radius indicator) ---
-    // Default: green (not in range)
-    const homingActive = this.targetingSystem.computeHomingState();
-    if (homingActive) {
-      this.ui.autoAimCone.style.border = '1px solid #ff0000'; // Red if homing active
-    } else {
-      this.ui.autoAimCone.style.border = '1px solid #00ff00'; // Green if not
+    // --- Update predictive lead reticle (only within laser range) ---
+    if (this.ui?.updateLeadReticle && this.targetingSystem?.calculateLeadTarget) {
+      const currentTarget = this.targetingSystem.getCurrentCombatTarget?.();
+      if (currentTarget && currentTarget.isAlive && currentTarget.isAlive()) {
+        const shipPos = this.spaceship.getPosition();
+        const targetPos = currentTarget.getPosition();
+        const distance = shipPos.distanceTo(targetPos);
+  if (distance <= LASER_RANGE) {
+          const leadPos = this.targetingSystem.calculateLeadTarget();
+          this.ui.updateLeadReticle(leadPos, this.gameEngine.camera);
+        } else {
+          this.ui.updateLeadReticle(null, this.gameEngine.camera);
+        }
+      } else {
+        this.ui.updateLeadReticle(null, this.gameEngine.camera);
+      }
     }
 
     this.targetingSystem.updateNavTargetInfo();
@@ -669,6 +679,28 @@ class Game {
       this.ui.updateRadar(playerPos, playerQuat, targets);
     }
 
+    // If the player ship has just been destroyed, immediately stop music and reset NPC hostility once
+    const playerJustDestroyed = (typeof this.spaceship.hullStrength === 'number') && this.spaceship.hullStrength <= 0 && !this._handledPlayerDeath;
+    if (playerJustDestroyed) {
+      this._handledPlayerDeath = true;
+      // Stop any music instantly (no fade)
+      try { this.audioManager?.musicManager?.stopTrack(); } catch (_) {}
+      // Clear combat flag
+      try { this.spaceship.flags.isInCombat = false; } catch (_) {}
+      // Reset all NPCs to previous status (non-hostile) and clear their active lasers
+      try {
+        if (Array.isArray(this.npcShips)) {
+          for (const npc of this.npcShips) {
+            if (npc && typeof npc.resetAfterPlayerDestroyed === 'function') {
+              npc.resetAfterPlayerDestroyed();
+            } else if (npc && typeof npc.setNPCFlag === 'function') {
+              npc.setNPCFlag('isHostile', false);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     // Update camera to follow spaceship position and rotation exactly
     const spaceshipPos = this.spaceship.getPosition();
     const spaceshipRot = this.spaceship.getRotation();
@@ -687,13 +719,12 @@ class Game {
     // Update engine rumble based on throttle & docking (station or planet)
     this.audioManager.updateEngineRumble(this.spaceship);
     // (landing vector lock handled by navigationSystem)
-    // Hide crosshair and auto-aim cone if firing is disabled
+    // Hide crosshair if firing is disabled
     if (!this.spaceship.flags.firingEnabled) {
       this.ui.crosshair.style.display = 'none';
-      this.ui.autoAimCone.style.display = 'none';
+      this.ui.updateLeadReticle?.(null, this.gameEngine.camera);
     } else {
       this.ui.crosshair.style.display = 'block';
-      this.ui.autoAimCone.style.display = 'block';
     }
   }
 

@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { Laser } from '../Laser.js';
+import { LASER_SPEED } from '../data/constants.js';
 import { Explosion } from '../Explosion.js';
 import { Resource } from '../Resource.js';
+// Note: laser speed/range are centralized in data/constants if needed in future here
 
 /**
  * CombatSystem encapsulates laser firing, projectile & explosion lifecycles,
@@ -63,30 +65,8 @@ export class CombatSystem {
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(spaceshipRot);
 
-    // Auto-aim towards current target within 10 degrees AND within range
-    let laserDirection = forward.clone(); // Clone to avoid modifying the original
-    const currentTarget = this.getCurrentTarget?.();
-
-    if (currentTarget && currentTarget.isAlive()) {
-      const targetPos = currentTarget.getPosition();
-      const distance = spaceshipPos.distanceTo(targetPos);
-      const laserRange = 300; // Match the range from TargetUI.js
-
-      // Only apply auto-aim if target is within range
-      if (distance <= laserRange) {
-        const targetDirection = targetPos.clone().sub(spaceshipPos).normalize();
-        const angle = forward.angleTo(targetDirection);
-        const maxAngle = Math.PI / 18; // 10 degrees
-        if (angle <= maxAngle) {
-          // Use lead targeting for moving targets
-          const leadPos = this.calculateLeadTarget(currentTarget, spaceshipPos);
-          if (leadPos) {
-            const leadDirection = leadPos.clone().sub(spaceshipPos).normalize();
-            laserDirection = leadDirection;
-          }
-        }
-      }
-    }
+    // Auto-aim disabled: always fire straight ahead
+    let laserDirection = forward.clone();
 
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
 
@@ -277,33 +257,19 @@ export class CombatSystem {
       targetVelocity = target.getVelocity();
     }
 
-    // Get player ship velocity
-    const ship = this.getSpaceship();
-    let playerVelocity = new THREE.Vector3(0, 0, 0);
-    if (ship && ship.velocity) {
-      playerVelocity = ship.velocity.clone();
-    } else if (ship && ship.getVelocity) {
-      playerVelocity = ship.getVelocity();
-    }
-
-    // If neither target nor player is moving significantly, return current position
-    if (targetVelocity.length() < 0.1 && playerVelocity.length() < 0.1) {
+    // If target isn't moving significantly, return current position
+    if (targetVelocity.length() < 0.1) {
       return targetPos.clone();
     }
 
-    // Calculate relative velocity (target velocity - player velocity)
-    const relativeVelocity = targetVelocity.clone().sub(playerVelocity);
-
-    // If relative velocity is very small, return current position
-    if (relativeVelocity.length() < 0.1) {
-      return targetPos.clone();
-    }
+    // Lasers don't inherit ship velocity; use target velocity directly
+    const relativeVelocity = targetVelocity.clone();
 
     // Solve for intersection time using quadratic formula
     // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
     // This simplifies to solving: |relativePos + relativeVel*t| = laserSpeed * t
-    const relativePos = targetPos.clone().sub(spaceshipPos);
-    const laserSpeed = 100; // From Laser.js constructor
+  const relativePos = targetPos.clone().sub(spaceshipPos);
+  const laserSpeed = LASER_SPEED;
 
     // Quadratic equation: a*t^2 + b*t + c = 0
     // where: a = |relativeVel|^2 - laserSpeed^2

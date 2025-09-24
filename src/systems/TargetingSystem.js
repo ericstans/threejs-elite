@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { LASER_SPEED, LASER_RANGE } from '../data/constants.js';
 
 /**
  * TargetingSystem handles:
  *  - Selecting nearest combat target (asteroids + NPC ship stub) to crosshair
  *  - Selecting nearest nav target (planets + station)
  *  - Updating target & nav target info panels
- *  - Determining homing / auto-aim eligibility (returns homingActive flag)
+ *  - Determining homing eligibility (legacy); firing no longer auto-aims
  *
  * It owns no world objects; it queries via supplied getter callbacks.
  */
@@ -84,6 +85,8 @@ export class TargetingSystem {
               });
               return currentMeshCenter || meshCenter; // fallback to original if calculation fails
             },
+            // Expose velocity so lead calculation can use actual NPC motion
+            getVelocity: () => (npc.velocity ? npc.velocity.clone() : new THREE.Vector3()),
             isAlive: () => npc.isAlive(),
             setTargeted: (v) => { npc.mesh.userData.targeted = v; },
             getId: () => `npcship-${i}`,
@@ -143,11 +146,11 @@ export class TargetingSystem {
     }
   }
 
-  // Returns whether homing (auto-aim) is active for current target
+  // Returns whether homing (legacy cone) would be active for current target
   computeHomingState() {
     if (!(this.currentTarget && this.currentTarget.isAlive())) return false;
-    const ship = this.getSpaceship();
-    const spaceshipPos = ship.getPosition();
+  const ship = this.getSpaceship();
+  const spaceshipPos = ship.getPosition();
     const targetPos = this.currentTarget.getPosition();
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(ship.getRotation());
@@ -155,11 +158,9 @@ export class TargetingSystem {
     const angle = forward.angleTo(toTarget);
     const maxAngle = Math.PI / 18;
 
-    // Check if target is within angle AND within laser range (300 units)
+  // Check if target is within angle AND within laser range
     const distance = spaceshipPos.distanceTo(targetPos);
-    const laserRange = 300;
-
-    return angle <= maxAngle && distance <= laserRange;
+  return angle <= maxAngle && distance <= LASER_RANGE;
   }
 
   // --- Nav Targeting ---
@@ -347,6 +348,8 @@ export class TargetingSystem {
               });
               return currentMeshCenter || meshCenter; // fallback to original if calculation fails
             },
+            // Expose velocity so lead calculation can use actual NPC motion
+            getVelocity: () => (npc.velocity ? npc.velocity.clone() : new THREE.Vector3()),
             isAlive: () => npc.isAlive(),
             setTargeted: (v) => { npc.mesh.userData.targeted = v; },
             getId: () => `npcship-${i}`,
@@ -430,32 +433,23 @@ export class TargetingSystem {
       targetVelocity = this.currentTarget.getVelocity();
     }
 
-    // Get player ship velocity
-    let playerVelocity = new THREE.Vector3(0, 0, 0);
-    if (ship && ship.velocity) {
-      playerVelocity = ship.velocity.clone();
-    } else if (ship && ship.getVelocity) {
-      playerVelocity = ship.getVelocity();
-    }
-
-    // If neither target nor player is moving significantly, return current position
-    if (targetVelocity.length() < 0.1 && playerVelocity.length() < 0.1) {
+    // If target isn't moving significantly, return current position
+    if (targetVelocity.length() < 0.1) {
       return targetPos.clone();
     }
 
-    // Calculate relative velocity (target velocity - player velocity)
-    const relativeVelocity = targetVelocity.clone().sub(playerVelocity);
-
-    // If relative velocity is very small, return current position
-    if (relativeVelocity.length() < 0.1) {
-      return targetPos.clone();
-    }
+    // Lasers don't inherit ship velocity; use target velocity directly
+    const relativeVelocity = targetVelocity.clone();
 
     // Solve for intersection time using quadratic formula
     // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
-    // This simplifies to solving: |relativePos + relativeVel*t| = laserSpeed * t
-    const relativePos = targetPos.clone().sub(spaceshipPos);
-    const laserSpeed = 100; // From Laser.js constructor
+    // With shooter velocity not applied to projectile, this simplifies to:
+    // |relativePos + targetVel*t| = laserSpeed * t
+  // Match the actual laser spawn position (2 units forward from ship)
+  const forward = new THREE.Vector3(0, 0, -1).applyEuler(ship.getRotation());
+  const fireOrigin = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
+  const relativePos = targetPos.clone().sub(fireOrigin);
+  const laserSpeed = LASER_SPEED;
 
     // Quadratic equation: a*t^2 + b*t + c = 0
     // where: a = |relativeVel|^2 - laserSpeed^2

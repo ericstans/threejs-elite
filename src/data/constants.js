@@ -1,3 +1,7 @@
+// Gameplay constants
+export const LASER_SPEED = 100; // units per second
+export const LASER_RANGE = 300; // units
+
 /**
  * A comprehensive list of 1000 real-life Sector names
  * Sources include NASA, ESA, and astronomical databases

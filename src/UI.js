@@ -275,10 +275,7 @@ export class UI {
       this.uiContainer.appendChild(this.dockingStatus);
     }
 
-    // Auto-aim cone indicator (for testing)
-    this.autoAimCone = document.createElement('div');
-    this.autoAimCone.className = 'auto-aim-cone';
-    this.uiContainer.appendChild(this.autoAimCone);
+  // Predictive lead reticle is handled inside TargetUI; no auto-aim cone
 
     // Radar (two concentric circles) anchored relative to cockpit (top-based)
     this.radarWrapper = document.createElement('div');
@@ -589,6 +586,12 @@ export class UI {
 
   updateTargetInfo(targetInfo, targetPosition, camera) {
     this.targetUI.updateTargetInfo(targetInfo, targetPosition, camera);
+  }
+
+  updateLeadReticle(leadWorldPosition, camera) {
+    if (this.targetUI?.updateLeadReticle) {
+      this.targetUI.updateLeadReticle(leadWorldPosition, camera);
+    }
   }
 
   clearTargetInfo() {
