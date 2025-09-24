@@ -48,6 +48,19 @@
   width: 180px;
 }
 
+/* Availability lines under Nav Target info */
+.nav-availability-line {
+  margin-top: 4px;
+  color: #00ff00;
+  font-family: PeaberryMono, monospace;
+}
+.nav-availability-line.docking::before {
+  content: "";
+}
+.nav-availability-line.services::before {
+  content: "";
+}
+
 .target-label {
   display: flex;
   justify-content: space-between;

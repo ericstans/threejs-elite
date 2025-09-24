@@ -44,9 +44,20 @@ export class NavTargetUI {
     this.navTargetMass.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetMass);
 
-    this.navTargetDistance = document.createElement('div');
-    this.navTargetDistance.style.fontFamily = 'PeaberryMono, monospace';
-    this.navTargetPanel.appendChild(this.navTargetDistance);
+  this.navTargetDistance = document.createElement('div');
+  this.navTargetDistance.style.fontFamily = 'PeaberryMono, monospace';
+  this.navTargetPanel.appendChild(this.navTargetDistance);
+
+  // Availability lines (docking/landing + services)
+  this.navDockingAvailability = document.createElement('div');
+  this.navDockingAvailability.className = 'nav-availability-line docking';
+  this.navDockingAvailability.style.display = 'none';
+  this.navTargetPanel.appendChild(this.navDockingAvailability);
+
+  this.navServicesAvailableLabel = document.createElement('div');
+  this.navServicesAvailableLabel.className = 'nav-availability-line services';
+  this.navServicesAvailableLabel.style.display = 'none';
+  this.navTargetPanel.appendChild(this.navServicesAvailableLabel);
 
     // Nav target commable indicator
     this.navCommableIndicator = document.createElement('div');
@@ -82,8 +93,10 @@ export class NavTargetUI {
 
     // Elevate text above
     for (const child of this.navTargetPanel.children) {
-      if (child !== this.previewWrapper) child.style.position = child.style.position || 'relative';
-      if (child !== this.previewWrapper) child.style.zIndex = '1';
+      if (child !== this.previewWrapper && child instanceof HTMLElement) {
+        child.style.position = child.style.position || 'relative';
+        child.style.zIndex = '1';
+      }
     }
 
     this._initPreviewScene();
@@ -138,6 +151,39 @@ export class NavTargetUI {
       this.navServicesIndicator.innerHTML = '<i class="fas fa-bell-concierge" style="color: #00ff00;margin-right:0.5rem;"></i>S';
     } else {
       this.navServicesIndicator.style.display = 'none';
+    }
+
+    // Availability text lines
+    const ref = navTargetInfo.__ref;
+    let type = null;
+    try { type = ref?.getType?.(); } catch (_) { type = null; }
+    // Docking/Landing availability
+    let dockingText = '';
+    let hasDockingOrLanding = false;
+    if (type === 'station') {
+      dockingText = 'Docking Available';
+      hasDockingOrLanding = true;
+    } else if (type === 'planet') {
+      const dockable = !!(ref && 'dockable' in ref ? ref.dockable : true);
+      if (dockable) {
+        dockingText = 'Landing Available';
+        hasDockingOrLanding = true;
+      }
+    }
+    if (hasDockingOrLanding) {
+      this.navDockingAvailability.textContent = dockingText;
+      this.navDockingAvailability.style.display = 'block';
+    } else {
+      this.navDockingAvailability.style.display = 'none';
+    }
+
+    // Services availability (show as a text line if any services exist)
+    const hasServices = Array.isArray(navTargetInfo.services) && navTargetInfo.services.length > 0;
+    if (hasServices) {
+      this.navServicesAvailableLabel.textContent = 'Services Available';
+      this.navServicesAvailableLabel.style.display = 'block';
+    } else {
+      this.navServicesAvailableLabel.style.display = 'none';
     }
 
     // Update nav target indicator position
@@ -207,6 +253,8 @@ export class NavTargetUI {
     this.navTargetIndicator.style.display = 'none';
     this.navCommableIndicator.style.display = 'none';
     this.navServicesIndicator.style.display = 'none';
+    if (this.navDockingAvailability) this.navDockingAvailability.style.display = 'none';
+    if (this.navServicesAvailableLabel) this.navServicesAvailableLabel.style.display = 'none';
     if (this.offscreenArrow) this.offscreenArrow.style.display = 'none';
     this._clearPreview();
   }
@@ -290,12 +338,13 @@ export class NavTargetUI {
 
   _clearPreview() {
     if (this._previewObject) {
-      // Recursively dispose
+      // Recursively dispose mesh resources only
       this._previewObject.traverse(obj => {
-        if (obj.geometry) obj.geometry.dispose?.();
-        if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose?.());
-          else obj.material.dispose?.();
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose?.();
+          const mat = obj.material;
+          if (Array.isArray(mat)) mat.forEach(m => m?.dispose?.());
+          else mat?.dispose?.();
         }
       });
       this.previewScene.remove(this._previewObject);
