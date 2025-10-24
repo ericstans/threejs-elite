@@ -161,11 +161,15 @@ export class NavTargetUI {
     let dockingText = '';
     let hasDockingOrLanding = false;
     if (type === 'station') {
-      dockingText = 'Docking Available';
-      hasDockingOrLanding = true;
+      // Only show docking available if not already docked with this station
+      if (!navTargetInfo.isDockedWithTarget) {
+        dockingText = 'Docking Available';
+        hasDockingOrLanding = true;
+      }
     } else if (type === 'planet') {
       const dockable = !!(ref && 'dockable' in ref ? ref.dockable : true);
-      if (dockable) {
+      // Only show landing available if planet is dockable AND not already landed on it
+      if (dockable && !navTargetInfo.isDockedWithTarget) {
         dockingText = 'Landing Available';
         hasDockingOrLanding = true;
       }
