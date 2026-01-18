@@ -8,7 +8,15 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "tsc --noEmit --watch"
+    "type-check:watch": "tsc --noEmit --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "agent:workflow": "node scripts/agent-workflow.js",
+    "agent:checks": "npm run lint && npm run type-check && npm test && npm run build",
+    "agent:validate": "node scripts/validate-agent-setup.js",
+    "pre-commit": "node scripts/pre-commit.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
@@ -18,8 +26,11 @@
   },
   "devDependencies": {
     "@types/three": "^0.180.0",
+    "@vitest/ui": "^4.0.17",
     "eslint": "^9.35.0",
+    "happy-dom": "^20.3.1",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4"
+    "vite": "^7.1.4",
+    "vitest": "^4.0.17"
   }
 }
