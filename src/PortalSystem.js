@@ -21,15 +21,15 @@ export class PortalSystem {
     this.sectorDefinition = null;
     this.availableSectors = null;
     this.getSectorDefinition = null;
-    
+
     // Stencil buffer materials for portal effect
     this.portalStencilMaterial = null;
-    
+
     // Render target for portal view
     this.renderTarget = null;
     this.portalCamera = null;
     this.portalView = null;
-    
+
     this.createStencilMaterials();
     this.setupRenderTarget();
   }
@@ -60,7 +60,7 @@ export class PortalSystem {
 
     // Position portal in front of ship
     this.positionPortalInFrontOfShip();
-    
+
     // Hide portal during ship stopping phase
     this.portal.visible = false;
   }
@@ -94,7 +94,7 @@ export class PortalSystem {
       depthWrite: false
     });
     const innerPortal = new THREE.Mesh(innerGeometry, innerMaterial);
-    
+
     // Store reference to inner portal for operations
     this.innerPortal = innerPortal;
 
@@ -107,7 +107,7 @@ export class PortalSystem {
     this.createSwirlingEnergy();
 
     this.scene.add(this.portal);
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Portal mesh created with render target texture');
   }
 
@@ -135,7 +135,7 @@ export class PortalSystem {
     // Create particle system for swirling portal effects
     const particleCount = 200;
     const geometry = new THREE.BufferGeometry();
-    
+
     const positions = new Float32Array(particleCount * 3);
     const velocities = new Float32Array(particleCount * 3);
     const lifetimes = new Float32Array(particleCount);
@@ -147,7 +147,7 @@ export class PortalSystem {
       const i3 = i * 3;
       const angle = (i / particleCount) * Math.PI * 2;
       const radius = this.maxPortalSize * (0.5 + Math.random() * 0.5);
-      
+
       positions[i3] = Math.cos(angle) * radius;
       positions[i3 + 1] = Math.sin(angle) * radius;
       positions[i3 + 2] = (Math.random() - 0.5) * 2; // Slight Z variation
@@ -190,17 +190,17 @@ export class PortalSystem {
 
   preCacheSectorGeometry(sectorId) {
     if (DEBUG) console.log('🔍 PortalSystem: Pre-caching sector geometry for', sectorId);
-    
+
     // Get sector definition
     this.sectorDefinition = this.getSectorDefinition ? this.getSectorDefinition(sectorId) : null;
     const sectorMeta = this.availableSectors ? this.availableSectors.find(s => s.id === sectorId) : null;
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Sector definition:', this.sectorDefinition);
     if (DEBUG) console.log('🔍 PortalSystem: Sector meta:', sectorMeta);
     if (DEBUG) console.log('🔍 PortalSystem: Available sectors:', this.availableSectors);
-    
+
     this.cachedSectorObjects = new THREE.Group();
-    
+
     if (this.sectorDefinition) {
       if (DEBUG) console.log('🔍 PortalSystem: Creating planets from definition');
       // Create planets from definition
@@ -215,10 +215,10 @@ export class PortalSystem {
       if (DEBUG) console.log('🔍 PortalSystem: No sector definition or meta found, creating fallback');
       this.createProceduralPreview();
     }
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Cached objects children count:', this.cachedSectorObjects.children.length);
     if (DEBUG) console.log('🔍 PortalSystem: Cached objects:', this.cachedSectorObjects);
-    
+
     // Position the cached objects relative to the portal
     this.cachedSectorObjects.position.z = -this.maxPortalSize * 0.5;
   }
@@ -228,12 +228,12 @@ export class PortalSystem {
       if (DEBUG) console.log('🔍 PortalSystem: No planets in sector definition');
       return;
     }
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Creating', this.sectorDefinition.planets.length, 'planets from definition');
-    
+
     for (const planetDef of this.sectorDefinition.planets) {
       if (DEBUG) console.log('🔍 PortalSystem: Creating planet:', planetDef.name, 'at', planetDef.position, 'radius:', planetDef.radius);
-      
+
       const geometry = new THREE.SphereGeometry(planetDef.radius * 0.5, 8, 6); // Scale down for preview
       const material = new THREE.MeshLambertMaterial({
         color: planetDef.color,
@@ -241,11 +241,11 @@ export class PortalSystem {
         // Add emissive to make colors more vibrant in the portal
         emissive: new THREE.Color(planetDef.color).multiplyScalar(0.1)
       });
-      
+
       if (DEBUG) console.log('🔍 PortalSystem: Planet color for', planetDef.name, ':', planetDef.color, 'hex:', planetDef.color.toString(16));
-      
+
       const planet = new THREE.Mesh(geometry, material);
-      
+
       // Position relative to ship spawn point, with 50% zoom out
       const spawnPoint = this.getSectorSpawnPoint();
       const relativePos = new THREE.Vector3(
@@ -253,30 +253,30 @@ export class PortalSystem {
         (planetDef.position.y - spawnPoint.y) * 0.2,
         (planetDef.position.z - spawnPoint.z) * 0.2 - 5 // Move closer to portal
       );
-      
+
       planet.position.copy(relativePos);
       if (DEBUG) console.log('🔍 PortalSystem: Planet positioned at:', planet.position, 'spawn point:', spawnPoint);
-      
+
       this.cachedSectorObjects.add(planet);
     }
   }
 
   createStationsFromDefinition() {
     if (!this.sectorDefinition.stations) return;
-    
+
     for (const stationDef of this.sectorDefinition.stations) {
       // Find the planet this station orbits
       const planet = this.sectorDefinition.planets.find(p => p.name === stationDef.planetName);
       if (!planet) continue;
-      
+
       const geometry = new THREE.BoxGeometry(stationDef.size * 0.25, stationDef.size * 0.25, stationDef.size * 0.25);
       const material = new THREE.MeshLambertMaterial({
         color: 0x888888,
         flatShading: true
       });
-      
+
       const station = new THREE.Mesh(geometry, material);
-      
+
       // Position relative to planet, using spawn point and 50% zoom out
       const spawnPoint = this.getSectorSpawnPoint();
       const planetPos = new THREE.Vector3(
@@ -284,7 +284,7 @@ export class PortalSystem {
         (planet.position.y - spawnPoint.y) * 0.2,
         (planet.position.z - spawnPoint.z) * 0.2 - 5
       );
-      
+
       // Add orbit offset
       const orbitAngle = Math.random() * Math.PI * 2;
       station.position.set(
@@ -292,7 +292,7 @@ export class PortalSystem {
         planetPos.y,
         planetPos.z + Math.sin(orbitAngle) * stationDef.orbitRadius * 0.2
       );
-      
+
       this.cachedSectorObjects.add(station);
     }
   }
@@ -300,7 +300,7 @@ export class PortalSystem {
   createProceduralPreview() {
     // Create a few random planets for procedural sectors
     const planetCount = 2 + Math.floor(Math.random() * 3);
-    
+
     for (let i = 0; i < planetCount; i++) {
       const radius = 0.5 + Math.random() * 1.0;
       const geometry = new THREE.SphereGeometry(radius, 8, 6);
@@ -308,9 +308,9 @@ export class PortalSystem {
         color: new THREE.Color().setHSL(Math.random(), 0.7, 0.5),
         flatShading: true
       });
-      
+
       const planet = new THREE.Mesh(geometry, material);
-      
+
       // Position randomly within sector bounds
       const angle = (i / planetCount) * Math.PI * 2 + Math.random() * 0.5;
       const distance = 2 + Math.random() * 3;
@@ -319,7 +319,7 @@ export class PortalSystem {
         Math.sin(angle) * distance,
         -3 - Math.random() * 2
       );
-      
+
       this.cachedSectorObjects.add(planet);
     }
   }
@@ -330,12 +330,12 @@ export class PortalSystem {
     if (sectorMeta && sectorMeta.center) {
       // This matches the spawn logic in performSectorSwitch
       return new THREE.Vector3(
-        sectorMeta.center.x, 
-        sectorMeta.center.y, 
+        sectorMeta.center.x,
+        sectorMeta.center.y,
         sectorMeta.center.z + 150 // offset slightly in front
       );
     }
-    
+
     if (this.sectorDefinition && this.sectorDefinition.planets && this.sectorDefinition.planets.length > 0) {
       // Use first planet as reference point with offset
       return new THREE.Vector3(
@@ -344,19 +344,19 @@ export class PortalSystem {
         this.sectorDefinition.planets[0].position.z + 150
       );
     }
-    
+
     return new THREE.Vector3(0, 0, -650); // Default spawn point
   }
 
   createDestinationPreview() {
     if (DEBUG) console.log('🔍 PortalSystem: Creating destination preview for portal view');
-    
+
     // Create objects for the portal view scene
     if (!this.portalView) {
       if (DEBUG) console.log('🔍 PortalSystem: Cannot create destination preview - portalView not initialized');
       return;
     }
-    
+
     // Create a starfield background for the portal
     const starfieldGeometry = new THREE.SphereGeometry(100, 16, 16);
     const starfieldMaterial = new THREE.MeshBasicMaterial({
@@ -369,27 +369,27 @@ export class PortalSystem {
     // Add the cached sector objects to the portal view scene
     if (this.cachedSectorObjects) {
       if (DEBUG) console.log('🔍 PortalSystem: Adding cached sector objects to portal view, count:', this.cachedSectorObjects.children.length);
-      
+
       // Create a clone of the cached sector objects for the portal view
       this.destinationPreview = this.cachedSectorObjects.clone();
-      
+
       // Position the destination preview
       this.destinationPreview.position.z = -20;
-      
+
       // Add to the portal view scene
       this.portalView.add(this.destinationPreview);
     } else {
       if (DEBUG) console.log('🔍 PortalSystem: No cached sector objects to add');
-      
+
       // Create a fallback preview
       this.destinationPreview = new THREE.Group();
       this.portalView.add(this.destinationPreview);
     }
-    
+
     // Add some preview stars for depth
     this.createPreviewStars();
-    
-    if (DEBUG) console.log('🔍 PortalSystem: Destination preview created for portal view with', 
+
+    if (DEBUG) console.log('🔍 PortalSystem: Destination preview created for portal view with',
       this.destinationPreview ? this.destinationPreview.children.length : 0, 'children');
   }
 
@@ -406,16 +406,16 @@ export class PortalSystem {
       if (child instanceof THREE.Mesh) {
         const objectPosition = child.position.clone();
         const direction = objectPosition.clone().normalize();
-        
+
         // Check if object is within FOV cone
         const dotProduct = direction.dot(portalNormal);
         const angle = Math.acos(Math.max(-1, Math.min(1, dotProduct)));
         const distance = objectPosition.length();
-        
+
         // Show object if it's within FOV and distance
         const isVisible = angle <= fovAngle && distance <= maxDistance;
         child.visible = isVisible;
-        
+
         if (DEBUG) console.log('🔍 PortalSystem: Object', child.type, 'at distance', distance.toFixed(2), 'angle', (angle * 180 / Math.PI).toFixed(2), 'visible:', isVisible);
       }
     });
@@ -427,36 +427,36 @@ export class PortalSystem {
     const starCount = 50;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(starCount * 3);
-    
+
     for (let i = 0; i < starCount; i++) {
       const i3 = i * 3;
       // Random positions within a sphere
       const radius = 20 + Math.random() * 40;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      
+
       positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i3 + 2] = radius * Math.cos(phi) - 20; // Offset back
     }
-    
+
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
+
     const material = new THREE.PointsMaterial({
       color: 0xffffff,
       size: 0.5,
       sizeAttenuation: true
     });
-    
+
     const stars = new THREE.Points(geometry, material);
-    
+
     // Add stars to the portal view scene
     if (this.portalView) {
       this.portalView.add(stars);
     } else if (this.destinationPreview) {
       this.destinationPreview.add(stars);
     }
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Preview stars created');
   }
 
@@ -466,13 +466,13 @@ export class PortalSystem {
     // Position portal 50 units in front of ship
     const shipPosition = this.spaceship.getPosition();
     const shipDirection = new THREE.Vector3(0, 0, -1);
-    
+
     // Apply ship rotation to direction
     shipDirection.applyQuaternion(this.spaceship.mesh.quaternion);
-    
+
     const portalPosition = shipPosition.clone().add(shipDirection.multiplyScalar(50));
     this.portal.position.copy(portalPosition);
-    
+
     // Orient portal to face the ship
     this.portal.lookAt(shipPosition);
   }
@@ -484,22 +484,22 @@ export class PortalSystem {
     if (this.shipStopping) {
       this.shipStoppingTime += deltaTime;
       const stoppingProgress = Math.min(this.shipStoppingTime / this.shipStoppingDuration, 1.0);
-      
+
       // Gradually reduce ship velocity to zero
       if (this.spaceship) {
         const currentVelocity = this.spaceship.velocity.clone();
         const targetVelocity = new THREE.Vector3(0, 0, 0);
         const newVelocity = currentVelocity.lerp(targetVelocity, stoppingProgress);
         this.spaceship.velocity.copy(newVelocity);
-        
+
         // Also reduce throttle to zero
         const currentThrottle = this.spaceship.getThrottle();
         const newThrottle = currentThrottle * (1 - stoppingProgress);
         this.spaceship.setThrottle(newThrottle);
-        
+
         if (DEBUG) console.log('🔍 PortalSystem: Ship stopping progress:', (stoppingProgress * 100).toFixed(1) + '%', 'velocity:', this.spaceship.velocity.length().toFixed(2), 'throttle:', this.spaceship.getThrottle().toFixed(2));
       }
-      
+
       // When ship has stopped, start portal animation
       if (stoppingProgress >= 1.0) {
         this.shipStopping = false;
@@ -507,7 +507,7 @@ export class PortalSystem {
         this.portal.visible = true; // Make portal visible when animation starts
         if (DEBUG) console.log('🔍 PortalSystem: Ship stopped, starting portal animation');
       }
-      
+
       return; // Don't animate portal until ship has stopped
     }
 
@@ -523,20 +523,20 @@ export class PortalSystem {
     if (this.gameEngine && this.gameEngine.camera) {
       // Update the portal's rotation to face the camera
       this.portal.lookAt(this.gameEngine.camera.position);
-      
+
       // Update the portal camera position and rotation based on the main camera
       if (this.portalCamera) {
         // Position the portal camera behind the portal facing inward
         const portalPosition = this.portal.position.clone();
         const cameraPosition = this.gameEngine.camera.position.clone();
-        
+
         // Get the direction from the camera to the portal
         const portalToCameraDir = cameraPosition.clone().sub(portalPosition).normalize();
-        
+
         // Position the portal camera slightly behind the portal in the opposite direction
         const portalCameraPosition = portalPosition.clone().sub(portalToCameraDir.multiplyScalar(5));
         this.portalCamera.position.copy(portalCameraPosition);
-        
+
         // Make the portal camera look at the destination preview
         if (this.destinationPreview) {
           const lookAtPoint = this.destinationPreview.position.clone();
@@ -555,7 +555,7 @@ export class PortalSystem {
       if (this.destinationPreview) {
         this.destinationPreview.rotation.y += deltaTime * 0.1; // Slow rotation effect
       }
-      
+
       // Render the portal view to the render target
       const currentRenderTarget = this.gameEngine.renderer.getRenderTarget();
       this.gameEngine.renderer.setRenderTarget(this.renderTarget);
@@ -597,7 +597,7 @@ export class PortalSystem {
 
     for (let i = 0; i < positions.length; i += 3) {
       const particleIndex = i / 3;
-      
+
       // Update lifetime
       lifetimes[particleIndex] -= deltaTime;
 
@@ -605,7 +605,7 @@ export class PortalSystem {
         // Reset particle
         const angle = Math.random() * Math.PI * 2;
         const radius = this.portalSize * (0.5 + Math.random() * 0.5);
-        
+
         positions[i] = Math.cos(angle) * radius;
         positions[i + 1] = Math.sin(angle) * radius;
         positions[i + 2] = (Math.random() - 0.5) * 2;
@@ -635,28 +635,28 @@ export class PortalSystem {
 
     const shipPosition = this.spaceship.getPosition();
     const portalPosition = this.portal.position;
-    
+
     // Calculate direction from ship to portal
     const direction = portalPosition.clone().sub(shipPosition).normalize();
-    
+
     // Move ship towards portal
     const travelSpeed = 25; // units per second
     const movement = direction.multiplyScalar(travelSpeed * deltaTime);
     this.spaceship.position.add(movement);
-    
+
     // Update camera position
     this.gameEngine.camera.position.copy(this.spaceship.position);
   }
 
   completeAnimation() {
     this.isActive = false;
-    
+
     // Clean up portal
     if (this.portal) {
       this.scene.remove(this.portal);
       this.portal = null;
     }
-    
+
     if (this.particles) {
       this.particles = null;
     }
@@ -678,7 +678,7 @@ export class PortalSystem {
           if (child.geometry) {
             child.geometry.dispose();
           }
-          
+
           // If we stored original materials, restore them before disposal
           if (child.userData.originalMaterial) {
             // Dispose of the cloned material
@@ -699,14 +699,14 @@ export class PortalSystem {
       });
       this.cachedSectorObjects = null;
     }
-    
+
     // Clean up portal view scene
     if (this.portalView) {
       // Clear the scene
       while (this.portalView.children.length > 0) {
         const child = this.portalView.children[0];
         this.portalView.remove(child);
-        
+
         // Dispose resources
         if (child instanceof THREE.Mesh) {
           if (child.geometry) {
@@ -722,10 +722,10 @@ export class PortalSystem {
         }
       }
     }
-    
+
     // Clean up destination preview
     this.destinationPreview = null;
-    
+
     // Dispose of stencil materials
     if (this.portalStencilMaterial) {
       this.portalStencilMaterial.dispose();
@@ -741,18 +741,18 @@ export class PortalSystem {
       this.scene.remove(this.portal);
       this.portal = null;
     }
-    
+
     // Clean up render target
     if (this.renderTarget) {
       this.renderTarget.dispose();
       this.renderTarget = null;
     }
-    
+
     // Clean up portal camera
     if (this.portalCamera) {
       this.portalCamera = null;
     }
-    
+
     // Clean up portal view
     if (this.portalView) {
       while (this.portalView.children.length > 0) {
@@ -760,16 +760,16 @@ export class PortalSystem {
       }
       this.portalView = null;
     }
-    
+
     this.isActive = false;
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Resources destroyed');
   }
 
   // Create materials used for stencil buffer operations
   createStencilMaterials() {
     // Material that will write to the stencil buffer but not to the color or depth buffer
-    this.portalStencilMaterial = new THREE.MeshBasicMaterial({ 
+    this.portalStencilMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000,
       colorWrite: false,
       depthWrite: false,
@@ -779,7 +779,7 @@ export class PortalSystem {
       stencilZPass: THREE.ReplaceStencilOp
     });
   }
-  
+
   // Set up render target for portal view
   setupRenderTarget() {
     // Create a render target for the portal view
@@ -792,44 +792,44 @@ export class PortalSystem {
       stencilBuffer: false,  // Don't need stencil in the render target
       depthBuffer: true
     });
-    
+
     // Create a camera for rendering the portal view
     this.portalCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    
+
     // Create a scene for the portal view
     this.portalView = new THREE.Scene();
     this.portalView.background = new THREE.Color(0x000011);  // Dark blue background
-    
+
     // Add ambient light for the portal view
     const ambientLight = new THREE.AmbientLight(0x333333);
     this.portalView.add(ambientLight);
-    
+
     // Add directional light for the portal view
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 1);
     this.portalView.add(directionalLight);
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Render target set up for portal view');
   }
 
   // Set up stencil rendering state for portal contents
   setupStencilForPortalContents(renderer) {
     if (DEBUG) console.log('🔍 PortalSystem: Setting up stencil for portal contents');
-    
+
     // Clear the stencil buffer first
     renderer.state.buffers.stencil.setClear(0);
     renderer.clearStencil();
-    
+
     // Configure renderer to only render where stencil buffer is set
     renderer.state.buffers.stencil.setTest(true);
     renderer.state.buffers.stencil.setFunc(THREE.EqualStencilFunc, 1, 0xff);
     renderer.state.buffers.stencil.setOp(THREE.KeepStencilOp, THREE.KeepStencilOp, THREE.KeepStencilOp);
-    
+
     // Make sure all objects in the destination preview have the stencil test enabled
     if (this.destinationPreview) {
       if (DEBUG) console.log('🔍 PortalSystem: Setting stencil properties on destination preview objects');
       let meshCount = 0;
-      
+
       this.destinationPreview.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material) {
           meshCount++;
@@ -851,7 +851,7 @@ export class PortalSystem {
           }
         }
       });
-      
+
       if (DEBUG) console.log(`🔍 PortalSystem: Updated stencil properties on ${meshCount} meshes`);
     } else {
       if (DEBUG) console.log('🔍 PortalSystem: No destination preview to update');
@@ -861,15 +861,15 @@ export class PortalSystem {
   // Clear stencil state after rendering portal contents
   clearStencilState(renderer) {
     if (DEBUG) console.log('🔍 PortalSystem: Clearing stencil state');
-    
+
     // Disable stencil test
     renderer.state.buffers.stencil.setTest(false);
-    
+
     // Reset stencil settings on all destination preview materials
     if (this.destinationPreview) {
       if (DEBUG) console.log('🔍 PortalSystem: Resetting stencil properties on destination preview objects');
       let meshCount = 0;
-      
+
       this.destinationPreview.traverse((child) => {
         if (child instanceof THREE.Mesh && child.material) {
           meshCount++;
@@ -884,7 +884,7 @@ export class PortalSystem {
           }
         }
       });
-      
+
       if (DEBUG) console.log(`🔍 PortalSystem: Reset stencil properties on ${meshCount} meshes`);
     }
   }
@@ -893,45 +893,45 @@ export class PortalSystem {
   renderPortalToStencil(renderer) {
     // Only if portal is active
     if (!this.isActive || !this.portal || !this.innerPortal) {
-      if (DEBUG) console.log('🔍 PortalSystem: Cannot render to stencil - missing components', { 
-        isActive: this.isActive, 
-        hasPortal: !!this.portal, 
-        hasInnerPortal: !!this.innerPortal 
+      if (DEBUG) console.log('🔍 PortalSystem: Cannot render to stencil - missing components', {
+        isActive: this.isActive,
+        hasPortal: !!this.portal,
+        hasInnerPortal: !!this.innerPortal
       });
       return;
     }
 
     if (DEBUG) console.log('🔍 PortalSystem: Rendering portal to stencil buffer');
-    
+
     // Clear the stencil buffer before writing to it
     renderer.state.buffers.stencil.setClear(0);
     renderer.clearStencil();
 
     // Save original material
     const originalMaterial = /** @type {THREE.Mesh} */(this.innerPortal).material;
-    
+
     // Configure the stencil material to write to the stencil buffer
     this.portalStencilMaterial.stencilWrite = true;
     this.portalStencilMaterial.stencilRef = 1;
     this.portalStencilMaterial.stencilFunc = THREE.AlwaysStencilFunc;
     this.portalStencilMaterial.stencilZPass = THREE.ReplaceStencilOp;
     this.portalStencilMaterial.needsUpdate = true;
-    
+
     // Use stencil material to write to stencil buffer
     /** @type {THREE.Mesh} */(this.innerPortal).material = this.portalStencilMaterial;
-    
+
     // Enable stencil operations
     renderer.state.buffers.stencil.setTest(true);
     renderer.state.buffers.stencil.setMask(0xff);
     renderer.state.buffers.stencil.setFunc(THREE.AlwaysStencilFunc, 1, 0xff);
     renderer.state.buffers.stencil.setOp(THREE.KeepStencilOp, THREE.KeepStencilOp, THREE.ReplaceStencilOp);
-    
+
     // Render portal to stencil buffer only
     renderer.render(this.portal, this.gameEngine.camera);
-    
+
     // Restore original material
     /** @type {THREE.Mesh} */(this.innerPortal).material = originalMaterial;
-    
+
     if (DEBUG) console.log('🔍 PortalSystem: Portal rendered to stencil buffer');
   }
 }

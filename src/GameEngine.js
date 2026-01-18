@@ -9,7 +9,7 @@ export class GameEngine {
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, DRAW_DISTANCE);
-    this.renderer = new THREE.WebGLRenderer({ 
+    this.renderer = new THREE.WebGLRenderer({
       antialias: false,
       stencil: true // Enable stencil buffer for portal effects
     });
@@ -179,8 +179,8 @@ export class GameEngine {
 
   generateSpatialAudioBuffers() {
     // Create audio context for generating procedural sounds
-  const AudioCtx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
-  const audioContext = new AudioCtx();
+    const AudioCtx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+    const audioContext = new AudioCtx();
 
     // Generate laser hit sound buffer
     this.audioBuffers.laserHit = this.generateLaserHitBuffer(audioContext);
@@ -286,10 +286,10 @@ export class GameEngine {
             canvas.height = window.innerHeight;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             // Draw animated cracks (simple radial lines)
-            const centerX = canvas.width/2, centerY = canvas.height/2;
-            for (let i=0; i<16; i++) {
-              const angle = (Math.PI*2) * (i/16) + Math.random()*0.2;
-              const len = 180 + Math.random()*600;
+            const centerX = canvas.width / 2, centerY = canvas.height / 2;
+            for (let i = 0; i < 16; i++) {
+              const angle = (Math.PI * 2) * (i / 16) + Math.random() * 0.2;
+              const len = 180 + Math.random() * 600;
               ctx.save();
               ctx.translate(centerX, centerY);
               ctx.rotate(angle);
@@ -305,7 +305,7 @@ export class GameEngine {
             }
           }
         }
-      } catch(e) {}
+      } catch (e) {}
       // Overlay cracks on Target/Nav for first-person even if panels are hidden; keep Radar panel behavior
       if (this.spaceship && this.spaceship.thirdPersonMode === false) {
         try { this.ui && this.ui.showTargetNavCracksOverlay && this.ui.showTargetNavCracksOverlay(); } catch (_) {}
@@ -322,10 +322,10 @@ export class GameEngine {
             svg.style.top = '0';
             svg.style.pointerEvents = 'none';
             svg.style.zIndex = '9999';
-            for (let i=0; i<8; i++) {
-              const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
-              const x2 = 60+Math.cos(angle)*40;
-              const y2 = 30+Math.sin(angle)*20;
+            for (let i = 0; i < 8; i++) {
+              const angle = (Math.PI * 2) * (i / 8) + Math.random() * 0.2;
+              const x2 = 60 + Math.cos(angle) * 40;
+              const y2 = 30 + Math.sin(angle) * 20;
               const line = document.createElementNS('http://www.w3.org/2000/svg','line');
               line.setAttribute('x1','60');
               line.setAttribute('y1','30');
@@ -355,10 +355,10 @@ export class GameEngine {
             svg.style.top = '0';
             svg.style.pointerEvents = 'none';
             svg.style.zIndex = '9999';
-            for (let i=0; i<8; i++) {
-              const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
-              const x2 = 60+Math.cos(angle)*40;
-              const y2 = 30+Math.sin(angle)*20;
+            for (let i = 0; i < 8; i++) {
+              const angle = (Math.PI * 2) * (i / 8) + Math.random() * 0.2;
+              const x2 = 60 + Math.cos(angle) * 40;
+              const y2 = 30 + Math.sin(angle) * 20;
               const line = document.createElementNS('http://www.w3.org/2000/svg','line');
               line.setAttribute('x1','60');
               line.setAttribute('y1','30');
@@ -378,7 +378,7 @@ export class GameEngine {
         if (ctx) {
           const osc = ctx.createOscillator();
           osc.type = 'triangle';
-          osc.frequency.value = 80 + Math.random()*40;
+          osc.frequency.value = 80 + Math.random() * 40;
           const gain = ctx.createGain();
           gain.gain.value = 0.5;
           osc.connect(gain);
@@ -389,7 +389,7 @@ export class GameEngine {
           osc.stop(ctx.currentTime + 0.6);
           osc.onended = () => ctx.close();
         }
-      } catch(e){}
+      } catch (e){}
       // Show 3D explosions (asteroid style) at ship position for 3 seconds
       if (!this._shipExplosionLoopActive) {
         this._shipExplosionLoopActive = true;
@@ -397,8 +397,8 @@ export class GameEngine {
         const spawnExplosion = () => {
           if (this.spaceship && loopTime < 3.0) {
             const pos = this.spaceship.getPosition();
-            const size = 1.2 + Math.random()*0.7;
-            const exp = new Explosion(pos.clone(), size, 0.5 + Math.random()*0.3);
+            const size = 1.2 + Math.random() * 0.7;
+            const exp = new Explosion(pos.clone(), size, 0.5 + Math.random() * 0.3);
             console.log('DEBUG: About to create explosion at', pos.toArray());
             this.entities.push(exp);
             console.log('DEBUG: Explosion object pushed to entities', exp);
@@ -408,7 +408,7 @@ export class GameEngine {
               if (ctx) {
                 const osc = ctx.createOscillator();
                 osc.type = 'sawtooth';
-                osc.frequency.value = 180 + Math.random()*60;
+                osc.frequency.value = 180 + Math.random() * 60;
                 const gain = ctx.createGain();
                 gain.gain.value = 0.08;
                 osc.connect(gain);
@@ -419,7 +419,7 @@ export class GameEngine {
                 osc.stop(ctx.currentTime + 0.3);
                 osc.onended = () => ctx.close();
               }
-            } catch(e){}
+            } catch (e){}
             loopTime += 0.18;
             setTimeout(spawnExplosion, 180);
           } else {
@@ -433,7 +433,7 @@ export class GameEngine {
         if (this.spaceship && this.spaceship.thirdPersonLoaded && this.spaceship.thirdPersonGroup) {
           this.shipDestructionSystem.start(this.spaceship);
         }
-      } catch(_) {}
+      } catch (_) {}
     }
     this.entities.forEach(entity => {
       if (entity.update) {
@@ -452,33 +452,33 @@ export class GameEngine {
       if (this.spaceship._planetBounceCooldown > 0) {
         this.spaceship._planetBounceCooldown -= deltaTime;
       }
-      
+
       const shipPos = this.spaceship.getPosition();
-      
+
       // Skip all collision checks if ship is docked inside a station
       if (this.spaceship.flags && (this.spaceship.flags.isDocked || this.spaceship.flags.stationDocked)) {
         return;
       }
-      
+
       // Collision handling function to avoid duplicating code
       const handleCollision = (entity, collisionRadius) => {
         const entityPos = entity.getPosition();
         const dist = shipPos.distanceTo(entityPos);
-        
+
         // Prevent bounce/collision if ship is in landing animation phase
         const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
-        
+
         // Check if landing vector is being used for station docking or if ship is already docked inside station
-        const isStationDocking = entity.getType && entity.getType() === 'station' && 
-                               this.spaceship.flags && 
-                               (this.spaceship.flags.dockingAuthorized || 
+        const isStationDocking = entity.getType && entity.getType() === 'station' &&
+                               this.spaceship.flags &&
+                               (this.spaceship.flags.dockingAuthorized ||
                                 this.spaceship.flags.landingVectorLocked ||
                                 this.spaceship.flags.isDocked ||
                                 this.spaceship.flags.stationDocked);
-        
-        if (dist < collisionRadius + 1.5 && this.spaceship._planetBounceCooldown <= 0 && 
+
+        if (dist < collisionRadius + 1.5 && this.spaceship._planetBounceCooldown <= 0 &&
             !isLanding && !isStationDocking) { // 1.5 = ship radius fudge
-          
+
           // Collision! Bounce off
           const normal = shipPos.clone().sub(entityPos).normalize();
           // Move ship just outside entity
@@ -493,7 +493,7 @@ export class GameEngine {
           this.spaceship.velocity.setLength(speed);
 
           // Hull damage
-          let hullDamage = Math.floor(10 + Math.random() * 15);
+          const hullDamage = Math.floor(10 + Math.random() * 15);
           if (typeof this.spaceship.hullStrength === 'number') {
             this.spaceship.hullStrength = Math.max(0, this.spaceship.hullStrength - hullDamage);
           }
@@ -525,13 +525,13 @@ export class GameEngine {
           this.flashDamage(180);
           // Set bounce cooldown (0.3s)
           this.spaceship._planetBounceCooldown = 0.3;
-          
+
           return true; // collision handled
         }
-        
+
         return false; // no collision
       };
-      
+
       // Find all planets
       const planets = this.entities.filter(e => e.getType && e.getType() === 'planet');
       for (const planet of planets) {
@@ -539,7 +539,7 @@ export class GameEngine {
           break; // Stop checking after a collision is handled
         }
       }
-      
+
       // Find all stations
       const stations = this.entities.filter(e => e.getType && e.getType() === 'station');
       for (const station of stations) {
@@ -550,72 +550,72 @@ export class GameEngine {
       }
     }
   }
-  
+
   // Specialized collision detection for cylindrical station shapes
   handleStationCollision(station) {
     if (!station || !this.spaceship) return false;
-    
+
     const shipPos = this.spaceship.getPosition();
     const stationPos = station.getPosition();
-    
+
     // Prevent collision if ship is in landing animation or docking
     const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
-    const isStationDocking = this.spaceship.flags && 
-                           (this.spaceship.flags.dockingAuthorized || 
+    const isStationDocking = this.spaceship.flags &&
+                           (this.spaceship.flags.dockingAuthorized ||
                             this.spaceship.flags.landingVectorLocked ||
                             this.spaceship.flags.isDocked ||
                             this.spaceship.flags.stationDocked);
-    
+
     if (isLanding || isStationDocking || this.spaceship._planetBounceCooldown > 0) {
       return false;
     }
-    
+
     // Get station dimensions from its properties
     const coreRadius = station.size * 0.3; // Core cylinder radius based on station implementation
     const height = station.size; // Height of the cylinder
     const ringRadius = station.size * 0.45; // Outer ring radius
     const ringThickness = station.size * 0.05; // Ring thickness
-    
+
     // Create a vector on the XZ plane (horizontal) from station to ship
     const horizontalDiff = new THREE.Vector3(
       shipPos.x - stationPos.x,
       0,
       shipPos.z - stationPos.z
     );
-    
+
     // Distance to cylinder wall horizontally
     const horizontalDist = horizontalDiff.length();
-    
+
     // Vertical distance check - capped to half height in each direction from center
     const verticalDist = Math.abs(shipPos.y - stationPos.y);
     const halfHeight = height / 2;
-    
+
     // Check collision with central cylinder
     const inCylinderHorizontally = horizontalDist < coreRadius + 1.5;
     const inCylinderVertically = verticalDist < halfHeight;
     const cylinderCollision = inCylinderHorizontally && inCylinderVertically;
-    
+
     // For ring collision, we need to check:
     // 1. If the ship is near the middle of the station vertically (where the ring is)
     // 2. If the ship's horizontal distance is near the ring radius
-    
+
     // Ring vertical check (ring is relatively thin on y-axis)
     const ringThicknessVertical = ringThickness * 1.2; // Slightly bigger for easier detection
     const inRingVertically = verticalDist < ringThicknessVertical;
-    
+
     // For horizontal ring check, we need to determine if ship is near the ring's outer perimeter
     const distFromRingEdge = Math.abs(horizontalDist - ringRadius);
     const inRingHorizontally = distFromRingEdge < ringThickness + 1.5;
-    
+
     // Collision with ring only if both conditions are met
     const ringCollision = inRingVertically && inRingHorizontally;
-    
+
     if (cylinderCollision || ringCollision) {
       // We've hit the station! Similar bounce handling as planets
-      
+
       // Compute normal - depends on whether we hit cylinder or ring
       let normal;
-      
+
       if (cylinderCollision) {
         // For cylinder walls, normal points outward horizontally
         if (horizontalDist > 0.001) {
@@ -626,7 +626,7 @@ export class GameEngine {
         }
       } else if (ringCollision) {
         // For ring collision, we need to determine if we're closer to inner or outer edge
-  // Use the distance to determine which edge we're closer to
+        // Use the distance to determine which edge we're closer to
         // This creates a more accurate collision response
         if (horizontalDist < ringRadius) {
           // Inside ring radius - normal points outward
@@ -639,41 +639,41 @@ export class GameEngine {
         // Fallback just in case
         normal = horizontalDiff.normalize();
       }
-      
+
       // Move ship just outside collision area
       const bouncePos = stationPos.clone();
-      
+
       if (cylinderCollision) {
         // For cylinder collisions, bounce outward from center
         bouncePos.add(normal.clone().multiplyScalar(coreRadius + 2.0));
       } else if (ringCollision) {
         // For ring collisions, bounce toward or away from ring radius
         const dirToRing = horizontalDiff.clone().normalize();
-        
+
         if (horizontalDist < ringRadius) {
           // Inside ring, place slightly inside
           bouncePos.add(dirToRing.multiplyScalar(ringRadius - ringThickness - 2.0));
         } else {
           // Outside ring, place slightly outside
-          bouncePos.add(dirToRing.multiplyScalar(ringRadius + ringThickness + 2.0)); 
+          bouncePos.add(dirToRing.multiplyScalar(ringRadius + ringThickness + 2.0));
         }
       }
-      
+
       // Maintain vertical position
       bouncePos.y = shipPos.y;
-      
+
       this.spaceship.position.copy(bouncePos);
       this.spaceship.mesh.position.copy(bouncePos);
-      
+
       // Bounce: reflect velocity, preserve speed
       const v = this.spaceship.velocity;
       const vDotN = v.dot(normal);
       const speed = v.length();
       this.spaceship.velocity.sub(normal.clone().multiplyScalar(2 * vDotN));
       this.spaceship.velocity.setLength(speed);
-      
+
       // Hull damage
-      let hullDamage = Math.floor(10 + Math.random() * 15);
+      const hullDamage = Math.floor(10 + Math.random() * 15);
       if (typeof this.spaceship.hullStrength === 'number') {
         this.spaceship.hullStrength = Math.max(0, this.spaceship.hullStrength - hullDamage);
       }
@@ -681,7 +681,7 @@ export class GameEngine {
       if (this.ui && this.ui.shipHealthUI) {
         this.ui.shipHealthUI.update(this.spaceship);
       }
-      
+
       // --- Synthesized crunch/bump sound ---
       try {
         const ctx = window.AudioContext ? new window.AudioContext() : null;
@@ -700,16 +700,16 @@ export class GameEngine {
           osc.onended = () => ctx.close();
         }
       } catch (e) { /* ignore audio errors */ }
-      
+
       // --- Flash screen red ---
       this.flashDamage(180);
-      
+
       // Set bounce cooldown
       this.spaceship._planetBounceCooldown = 0.3;
-      
+
       return true; // collision handled
     }
-    
+
     return false; // no collision
   }
 
@@ -734,7 +734,7 @@ export class GameEngine {
   render() {
     // With the render target approach, we don't need special rendering in GameEngine
     // The portal system handles rendering its content to the render target in its update method
-    
+
     // Just do the normal render
     this.renderer.render(this.scene, this.camera);
   }

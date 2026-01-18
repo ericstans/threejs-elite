@@ -30,16 +30,16 @@ export class NPCShip {
     this.targetPosition = new THREE.Vector3();
     this.targetRotation = new THREE.Euler();
 
-  // --- Combat / AI ---
-  this._gameEngine = null; // set via attachGameContext
-  this._getPlayerShip = null; // optional accessor
-  this.npcLasers = [];
-  this.fireCooldown = 1.2; // seconds between shots
-  this._fireTimer = 0;
-  this.engagementRange = 300; // match UI/CombatSystem range
-  this.preferredDistance = 180; // try to keep roughly this distance when hostile
-  this.fireConeRadians = Math.PI / 6; // ~30 degrees for reliability
-  this._aiTime = 0; // accumulator for smooth orbit/strafe
+    // --- Combat / AI ---
+    this._gameEngine = null; // set via attachGameContext
+    this._getPlayerShip = null; // optional accessor
+    this.npcLasers = [];
+    this.fireCooldown = 1.2; // seconds between shots
+    this._fireTimer = 0;
+    this.engagementRange = 300; // match UI/CombatSystem range
+    this.preferredDistance = 180; // try to keep roughly this distance when hostile
+    this.fireConeRadians = Math.PI / 6; // ~30 degrees for reliability
+    this._aiTime = 0; // accumulator for smooth orbit/strafe
 
     // --- Ship type config ---
     this.shipType = shipType;
@@ -130,7 +130,7 @@ export class NPCShip {
         if (this.modelFile === 'ship2.fbx') {
           replaceCockpitMaterials(object);
         }
-        
+
         object.traverse(child => {
           if (child instanceof THREE.Mesh) {
             child.castShadow = false;
@@ -296,9 +296,9 @@ export class NPCShip {
       moveTarget = playerPos.clone();
     }
 
-  this.targetPosition.copy(moveTarget);
-  // Face the player while maneuvering toward the move target
-  this.updateTargetRotation(playerPos);
+    this.targetPosition.copy(moveTarget);
+    // Face the player while maneuvering toward the move target
+    this.updateTargetRotation(playerPos);
 
     // Firing logic
     this._fireTimer -= deltaTime;
@@ -324,15 +324,15 @@ export class NPCShip {
     const start = worldPos.clone().add(forward.clone().multiplyScalar(muzzleOffset));
 
     // Simple aim with minimal lead based on player velocity if present
-    let targetPos = player.getPosition ? player.getPosition().clone() : this.targetPosition.clone();
+    const targetPos = player.getPosition ? player.getPosition().clone() : this.targetPosition.clone();
     const playerVel = player.velocity ? player.velocity.clone() : new THREE.Vector3();
     // Lead estimate: time = distance / laserSpeed
-  const laserSpeed = LASER_SPEED; // matches Laser default/reticle math
+    const laserSpeed = LASER_SPEED; // matches Laser default/reticle math
     const toTarget = targetPos.clone().sub(start);
     const travelTime = Math.min(3, Math.max(0, toTarget.length() / laserSpeed));
     targetPos.add(playerVel.multiplyScalar(travelTime));
 
-  const dir = targetPos.clone().sub(start).normalize();
+    const dir = targetPos.clone().sub(start).normalize();
 
     const laser = new Laser(start, dir);
     this.npcLasers.push(laser);
@@ -404,21 +404,21 @@ export class NPCShip {
   // Update movement physics (similar to player ship)
   updateMovement(deltaTime) {
   // Calculate direction to movement target
-  const moveDir = new THREE.Vector3();
-  moveDir.subVectors(this.targetPosition, this.position).normalize();
+    const moveDir = new THREE.Vector3();
+    moveDir.subVectors(this.targetPosition, this.position).normalize();
 
-  // Calculate desired velocity (accelerate toward move target)
-  const desiredVelocity = moveDir.clone().multiplyScalar(this.maxSpeed);
+    // Calculate desired velocity (accelerate toward move target)
+    const desiredVelocity = moveDir.clone().multiplyScalar(this.maxSpeed);
 
     // Calculate acceleration needed
     const velocityDifference = new THREE.Vector3();
     velocityDifference.subVectors(desiredVelocity, this.velocity);
 
     // Apply acceleration
-  // Slow down when close to target to avoid overshoot
-  const distToTarget = this.position.distanceTo(this.targetPosition);
-  const slowFactor = distToTarget < 80 ? THREE.MathUtils.clamp(distToTarget / 80, 0.2, 1) : 1;
-  const acceleration = velocityDifference.clone().multiplyScalar(this.acceleration * slowFactor * deltaTime);
+    // Slow down when close to target to avoid overshoot
+    const distToTarget = this.position.distanceTo(this.targetPosition);
+    const slowFactor = distToTarget < 80 ? THREE.MathUtils.clamp(distToTarget / 80, 0.2, 1) : 1;
+    const acceleration = velocityDifference.clone().multiplyScalar(this.acceleration * slowFactor * deltaTime);
     this.velocity.add(acceleration);
 
     // Limit velocity to max speed

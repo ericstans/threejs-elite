@@ -208,8 +208,8 @@ export class TargetUI {
     // Set ammo count (infinity for laser)
     this.weaponAmmo.innerHTML = '<i class="fas fa-infinity" style="color: #00ff00;"></i>';
 
-  // Set weapon range (from constant)
-  this.weaponRange.innerHTML = `<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>${LASER_RANGE}u`;
+    // Set weapon range (from constant)
+    this.weaponRange.innerHTML = `<i class="fas fa-ruler-horizontal" style="color: #00ff00;"></i>${LASER_RANGE}u`;
   }
 
   // Method to test weapons panel display
@@ -293,8 +293,8 @@ export class TargetUI {
     const y = (vec.y * -0.5 + 0.5) * window.innerHeight;
     const size = 12; // px diameter
     this.leadReticle.style.display = 'block';
-    this.leadReticle.style.left = `${x - size/2}px`;
-    this.leadReticle.style.top = `${y - size/2}px`;
+    this.leadReticle.style.left = `${x - size / 2}px`;
+    this.leadReticle.style.top = `${y - size / 2}px`;
     this.leadReticle.style.width = `${size}px`;
     this.leadReticle.style.height = `${size}px`;
   }

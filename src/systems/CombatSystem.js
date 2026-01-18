@@ -66,7 +66,7 @@ export class CombatSystem {
     forward.applyEuler(spaceshipRot);
 
     // Auto-aim disabled: always fire straight ahead
-    let laserDirection = forward.clone();
+    const laserDirection = forward.clone();
 
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
 
@@ -268,8 +268,8 @@ export class CombatSystem {
     // Solve for intersection time using quadratic formula
     // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
     // This simplifies to solving: |relativePos + relativeVel*t| = laserSpeed * t
-  const relativePos = targetPos.clone().sub(spaceshipPos);
-  const laserSpeed = LASER_SPEED;
+    const relativePos = targetPos.clone().sub(spaceshipPos);
+    const laserSpeed = LASER_SPEED;
 
     // Quadratic equation: a*t^2 + b*t + c = 0
     // where: a = |relativeVel|^2 - laserSpeed^2

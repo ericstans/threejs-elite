@@ -285,11 +285,11 @@ export class JobsUI {
 
     // Calculate and display distance/fuel cost
     const currentSectorId = this.currentContext?.sectorId;
-    
+
     // Use stored distance if available, otherwise calculate it
     let distance = null;
     let fuelCost = null;
-    
+
     if (typeof job.distance === 'number') {
       // Use pre-calculated distance from job generation
       distance = job.distance;
@@ -302,7 +302,7 @@ export class JobsUI {
         fuelCost = pathInfo.totalCost;
       }
     }
-    
+
     if (distance !== null) {
       card.appendChild(line('DISTANCE', `${distance} jump${distance !== 1 ? 's' : ''} (${fuelCost} fuel)`));
     } else {

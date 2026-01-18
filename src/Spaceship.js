@@ -31,9 +31,9 @@ export class Spaceship {
     this.rotationSpeed = typeConfig.stats.rotationSpeed;
     this.throttle = 0;
     this.maxThrottle = 1;
-  // Hull stats
-  this.maxHullStrength = typeof typeConfig.hullStrength === 'number' ? typeConfig.hullStrength : 100;
-  this.hullStrength = this.maxHullStrength;
+    // Hull stats
+    this.maxHullStrength = typeof typeConfig.hullStrength === 'number' ? typeConfig.hullStrength : 100;
+    this.hullStrength = this.maxHullStrength;
     // Docking system
     this.dockingTarget = null;
     this.dockingProgress = 0;
@@ -83,12 +83,12 @@ export class Spaceship {
     this.rotationAlignTimer = 0;
     this.rotationTargetQuaternion = null;
     this.rotationSlerpSpeed = 2.0;
-  // Smooth rotation lock tween (between ALIGNMENT and ROTATION lock)
-  this.rotationLockTweenInProgress = false;
-  this.rotationLockTweenTimer = 0;
-  this.rotationLockTweenDuration = 2; // seconds
-  this.rotationLockStartQuat = new THREE.Quaternion();
-  this.rotationLockTargetQuat = new THREE.Quaternion();
+    // Smooth rotation lock tween (between ALIGNMENT and ROTATION lock)
+    this.rotationLockTweenInProgress = false;
+    this.rotationLockTweenTimer = 0;
+    this.rotationLockTweenDuration = 2; // seconds
+    this.rotationLockStartQuat = new THREE.Quaternion();
+    this.rotationLockTargetQuat = new THREE.Quaternion();
     this.postRotationTimer = 0;
     this.autoInsertionDelay = 2.0;
     this.insertionInProgress = false;
@@ -148,13 +148,13 @@ export class Spaceship {
         const planetPos = this.dockingTarget.getPosition();
         const rotatedLandingPoint = this.dockingPosition.clone().applyQuaternion(this.dockingTarget.mesh.quaternion);
         const worldPos = planetPos.clone().add(rotatedLandingPoint);
-        
+
         // Apply visual offset if needed
         if (this.thirdPersonVisualOffset) {
           const rotatedOffset = this.thirdPersonVisualOffset.clone().applyQuaternion(this.quaternion);
           worldPos.add(rotatedOffset);
         }
-        
+
         this.thirdPersonGroup.position.copy(worldPos);
         this.thirdPersonGroup.quaternion.copy(this.quaternion);
         this.thirdPersonGroup.visible = true;
@@ -212,16 +212,16 @@ export class Spaceship {
 
     // Main body - using MeshPhysicalMaterial for better appearance
     const bodyGeometry = new THREE.ConeGeometry(0.3, 2, 8);
-    
+
     // Generate a vibrant random color for the ship body
     const randomHue = Math.random() * 360;
     const saturation = 0.9;  // Very high saturation for vibrant colors
     const lightness = 0.5;   // Medium lightness for good visibility
     const shipColor = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
-    
+
     // Create emissive color based on the ship color for subtle glow
     const emissiveColor = shipColor.clone().multiplyScalar(0.3);
-    
+
     const bodyMaterial = new THREE.MeshStandardMaterial({
       color: shipColor,
       metalness: 0.2,         // Lower metalness to show more base color
@@ -230,7 +230,7 @@ export class Spaceship {
       emissiveIntensity: 0.3,  // Increased glow intensity
       flatShading: true
     });
-    
+
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.rotation.x = Math.PI / 2;
     group.add(body);
@@ -246,7 +246,7 @@ export class Spaceship {
       emissiveIntensity: 0.3,
       flatShading: true
     });
-    
+
     const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
     leftWing.position.set(-0.5, 0, 0);
     group.add(leftWing);
@@ -270,7 +270,7 @@ export class Spaceship {
       reflectivity: 0.9,
       flatShading: true
     });
-    
+
     const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
     cockpit.position.set(0, 0.2, 0.5);
     group.add(cockpit);
@@ -283,7 +283,7 @@ export class Spaceship {
     if (this.flags.isDocking || this.takeoffActive) {
       this.lastPosition.copy(this.position);
     }
-    
+
     // Block all movement and control if destroyed
     if (this._controlsDisabled) {
       this.velocity.set(0, 0, 0);
@@ -414,7 +414,7 @@ export class Spaceship {
 
         // Get current station position and rotation (accounting for orbital movement)
         const currentStationPos = station.mesh.getWorldPosition(new THREE.Vector3());
-  // const _currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion()); // unused
+        // const _currentStationQuat = station.mesh.getWorldQuaternion(new THREE.Quaternion()); // unused
 
         // Calculate current forward direction from station's current rotation
         // For takeoff, we want to move AWAY from the station (positive landing vector direction)
@@ -815,27 +815,27 @@ export class Spaceship {
       // During normal flight, return the regular velocity-based speed
       return this.velocity.length();
     }
-    
+
     const now = Date.now();
     const timeElapsed = (now - this.lastUpdateTime) / 1000; // Convert to seconds
-    
+
     if (timeElapsed > 0) {
       // Calculate distance moved since last update
       const distance = this.position.distanceTo(this.lastPosition);
       // Calculate speed (units per second)
       const instantSpeed = distance / timeElapsed;
-      
+
       // Only add to speed history if the value is reasonable
       // Exclude values that exceed maxSpeed which are likely measurement errors
       if (instantSpeed <= this.maxSpeed) {
         this.speedHistory.push(instantSpeed);
-        
+
         // Keep history within maximum length
         if (this.speedHistory.length > this.speedHistoryMaxLength) {
           this.speedHistory.shift(); // Remove oldest entry
         }
       }
-      
+
       // Calculate average speed from history, filtering out any values that exceed maxSpeed
       if (this.speedHistory.length > 0) {
         const validSpeeds = this.speedHistory.filter(speed => speed <= this.maxSpeed);
@@ -850,12 +850,12 @@ export class Spaceship {
         // If history is empty, use the minimum of instant speed and max speed
         this.calculatedSpeed = Math.min(instantSpeed, this.maxSpeed);
       }
-      
+
       // Update last position and time for next calculation
       this.lastPosition.copy(this.position);
       this.lastUpdateTime = now;
     }
-    
+
     return this.calculatedSpeed;
   }
 
@@ -866,7 +866,7 @@ export class Spaceship {
   getSpeedPercentage() {
     return Math.min(this.getSpeed() / this.maxSpeed, 1.0);
   }
-  
+
   // Reset speed history when docking state changes
   resetSpeedHistory() {
     this.speedHistory = [];
@@ -943,7 +943,7 @@ export class Spaceship {
       return;
     }
 
-  const currentTime = Date.now() / 1000;
+    const currentTime = Date.now() / 1000;
     const planetPos = this.dockingTarget.getPosition();
     const planetRadius = this.dockingTarget.radius;
 
@@ -1054,7 +1054,7 @@ export class Spaceship {
       if (distanceFromCenter < planetRadius) {
         // Ship is inside planet - push it back to surface
         console.log('Ship inside planet - end landing');
-        forceComplete = true
+        forceComplete = true;
       }
 
       // Check if descent is complete
@@ -1078,7 +1078,7 @@ export class Spaceship {
     // Reset landing animation state
     this.landingPhase = 'approach';
     this.isParentedToPlanet = false;
-    
+
     // Reset speed history for takeoff
     this.resetSpeedHistory();
 
@@ -1113,7 +1113,7 @@ export class Spaceship {
 
     if (DEBUG) console.log('Station takeoff starting...');
     if (DEBUG) console.log('Ship world position:', this.position);
-    
+
     // Reset speed history for takeoff
     this.resetSpeedHistory();
 
@@ -1164,8 +1164,8 @@ export class Spaceship {
     this.flags.isDocking = false;
     this.flags.isDocked = false;
     this.flags.firingEnabled = true;
-    this.landingPhase = null; 
-    
+    this.landingPhase = null;
+
     // Reset speed history when takeoff completes
     this.resetSpeedHistory();
   }

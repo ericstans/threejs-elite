@@ -96,12 +96,12 @@ export class EnvironmentSystem {
       this.planetClusterStardust = null;
     }
     this._stardustTime = 0;
-  const planetTypes = this._getPlanetArchetypes();
-  // Try to pull weighting from sector definition if available
-  const currentId = this.gameEngine?.sectorManager?.currentSectorId || this.gameEngine?.sectorManager?.currentSectorId;
-  const def = currentId ? getSectorDefinition(currentId) : null;
-  const pWeights = def?.planetServiceWeights;
-  const sWeights = def?.stationServiceWeights;
+    const planetTypes = this._getPlanetArchetypes();
+    // Try to pull weighting from sector definition if available
+    const currentId = this.gameEngine?.sectorManager?.currentSectorId || this.gameEngine?.sectorManager?.currentSectorId;
+    const def = currentId ? getSectorDefinition(currentId) : null;
+    const pWeights = def?.planetServiceWeights;
+    const sWeights = def?.stationServiceWeights;
     const radiusRange = [35, 110];
     const spread = sectorSize;
     const countRng = this._rng(hashSeed(seed, 'planetCount'));
@@ -117,7 +117,7 @@ export class EnvironmentSystem {
         (prng() - 0.5) * spread * 0.6,
         -400 - prng() * spread
       );
-  const services = computePlanetServicesForSeed(pSeed, pWeights);
+      const services = computePlanetServicesForSeed(pSeed, pWeights);
       const planet = new Planet(radius, pos, archetype.color, archetype.name, archetype.greeting, services);
       planet.rotationSpeed = 0.02 + prng() * 0.15;
       planet.dockable = prng() < 0.55;
@@ -139,7 +139,7 @@ export class EnvironmentSystem {
       const pl = chosen[idx];
       const sSeed = hashSeed(seed, 'station', s);
       const stRng = this._rng(sSeed);
-  const services = computeStationServicesForSeed(sSeed, sWeights);
+      const services = computeStationServicesForSeed(sSeed, sWeights);
       const station = new SpaceStation(pl, { orbitRadius: pl.radius * (3 + stRng() * 1.5), size: pl.radius * (0.3 + stRng() * 0.3), services });
       this.stations.push(station);
       this.gameEngine.addEntity(station);
@@ -204,9 +204,9 @@ export class EnvironmentSystem {
 
     for (const npcDef of npcShipDefinitions) {
       const position = new THREE.Vector3(npcDef.position.x, npcDef.position.y, npcDef.position.z);
-  const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
-  // Provide game engine + player accessor so NPCs can behave in combat
-  npcShip.attachGameContext?.(this.gameEngine, () => this.gameEngine?.spaceship);
+      const npcShip = new NPCShip(position, npcDef.name || 'Derelict Cruiser', npcDef.conversation || null);
+      // Provide game engine + player accessor so NPCs can behave in combat
+      npcShip.attachGameContext?.(this.gameEngine, () => this.gameEngine?.spaceship);
 
       // Set patrol waypoints if provided
       if (npcDef.patrolWaypoints && npcDef.patrolWaypoints.length > 0) {
@@ -276,18 +276,18 @@ export class EnvironmentSystem {
       );
     };
     // Provide  nav-target interface (moons are nav-targetable but NOT commable)
-  moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
-  moon.userData.navName = `${planet.getName()} Moon`;
-  moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
-  moon.userData.isNavTargeted = false;
-  moon.userData.isCommable = false; // explicitly not commable
-  /** @type {any} */ (moon).getId = () => moon.userData.navId;
-  /** @type {any} */ (moon).getName = () => moon.userData.navName;
-  /** @type {any} */ (moon).getMass = () => moon.userData.navMass;
-  /** @type {any} */ (moon).setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
-  /** @type {any} */ (moon).isNavTarget = () => moon.userData.isNavTargeted;
-  /** @type {any} */ (moon).getPosition = () => moon.position.clone();
-  /** @type {any} */ (moon).getType = () => 'moon';
+    moon.userData.navId = `${planet.id}-moon-${Math.random().toString(36).substr(2,5)}`;
+    moon.userData.navName = `${planet.getName()} Moon`;
+    moon.userData.navMass = Math.pow(moonRadius, 3) * 800; // arbitrary mass scaling
+    moon.userData.isNavTargeted = false;
+    moon.userData.isCommable = false; // explicitly not commable
+    /** @type {any} */ (moon).getId = () => moon.userData.navId;
+    /** @type {any} */ (moon).getName = () => moon.userData.navName;
+    /** @type {any} */ (moon).getMass = () => moon.userData.navMass;
+    /** @type {any} */ (moon).setNavTargeted = (v) => { moon.userData.isNavTargeted = v; };
+    /** @type {any} */ (moon).isNavTarget = () => moon.userData.isNavTargeted;
+    /** @type {any} */ (moon).getPosition = () => moon.position.clone();
+    /** @type {any} */ (moon).getType = () => 'moon';
     this.gameEngine.scene.add(moon);
     planet.moon = moon;
   }

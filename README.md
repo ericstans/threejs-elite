@@ -2,6 +2,29 @@
 
 Simple prototype for an Elite- or Privateer-esque game
 
+# Space Simulator
+
+Simple prototype for an Elite- or Privateer-esque game
+
+## 🤖 For AI Agents - START HERE! 
+
+👉 **[START_HERE.md](START_HERE.md)** - Complete setup in 30 seconds! ⭐
+
+**Or jump directly to:**
+- [**Running Agents in VS Code**](.github/RUNNING_AGENTS_IN_VSCODE.md) - Practical guide
+- [Agent Setup Guide](.github/AGENT_SETUP.md) - Complete workflow
+- [Quick Visual Guide](.github/QUICK_START_VISUAL.md) - Visual workflow
+- [Agent Board](.github/AGENT_BOARD.md) - Task coordination
+
+**Quick commands:**
+```bash
+npm run agent:validate    # Verify setup
+npm run agent:workflow    # Interactive helper
+npm run agent:checks      # Quality checks before PR
+```
+
+---
+
 ### 🎮 Controls
 - **WASD** - Pitch and yaw controls
 - **Q/E** - Roll controls  

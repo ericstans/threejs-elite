@@ -94,7 +94,7 @@ export class ThirdPersonCamera {
       (object) => {
         // Replace Cockpit materials with glassy blue appearance
         replaceCockpitMaterials(object);
-        
+
         // Center & scale similar to NPCShip
         const box = new THREE.Box3().setFromObject(object);
         const center = new THREE.Vector3();

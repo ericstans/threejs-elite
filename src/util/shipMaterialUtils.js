@@ -39,11 +39,11 @@ export function createShipBodyMaterial(color = null) {
     const lightness = 0.5;   // Medium lightness for good visibility
     color = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
   }
-  
+
   // Create emissive color that's 30% of the base color for enhanced glow
   const baseColor = color instanceof THREE.Color ? color : new THREE.Color(color);
   const emissiveColor = baseColor.clone().multiplyScalar(0.3);
-  
+
   return new THREE.MeshStandardMaterial({
     color: baseColor,       // Random or provided color
     metalness: 0.2,         // Lower metalness to show more base color
@@ -100,14 +100,14 @@ export function replaceCockpitMaterials(model) {
   const saturation = 0.9;  // Very high saturation for vibrant colors
   const lightness = 0.5;   // Medium lightness for good visibility
   const shipColor = new THREE.Color().setHSL(randomHue / 360, saturation, lightness);
-  
+
   model.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       // Handle array of materials
       if (Array.isArray(child.material)) {
         child.material.forEach((material, index) => {
           if (DEBUG) console.log(`Found material: "${material.name}" at index ${index}`);
-          
+
           if (material.name === 'Cockpit') {
             child.material[index] = createGlassyCockpitMaterial();
             if (DEBUG) console.log(`Replaced Cockpit material at index ${index} with glassy blue material`);
@@ -122,11 +122,11 @@ export function replaceCockpitMaterials(model) {
             if (DEBUG) console.log(`Replaced Engine material at index ${index} with dark metallic material`);
           }
         });
-      } 
+      }
       // Handle single material
       else if (child.material) {
         if (DEBUG) console.log(`Found single material: "${child.material.name}"`);
-        
+
         if (child.material.name === 'Cockpit') {
           child.material = createGlassyCockpitMaterial();
           if (DEBUG) console.log('Replaced single Cockpit material with glassy blue material');

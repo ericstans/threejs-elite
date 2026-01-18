@@ -203,7 +203,7 @@ export class RefuelRepairUI {
     this.progressInner.style.width = `${pct}%`;
     this.costText.textContent = `Cost to full: $${cost.toLocaleString()}`;
     this.cashText.textContent = `Cash: $${this.cash.toLocaleString()}`;
-  this.repairBtn.textContent = `Repair to ${this.maxHull} ($${cost.toLocaleString()})`;
+    this.repairBtn.textContent = `Repair to ${this.maxHull} ($${cost.toLocaleString()})`;
     const canRepair = missing > 0 && this.cash >= cost;
     this.repairBtn.disabled = !canRepair;
     this.repairBtn.style.opacity = canRepair ? '1' : '0.5';

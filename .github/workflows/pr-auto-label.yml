@@ -1,0 +1,88 @@
+name: PR Auto-Label
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  label:
+    name: Auto Label PRs
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Label based on branch name
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const labels = [];
+            
+            // Agent PRs
+            if (branchName.startsWith('agent/')) {
+              labels.push('agent-pr');
+            }
+            
+            // Hotfixes
+            if (branchName.startsWith('hotfix/')) {
+              labels.push('hotfix', 'priority-high');
+            }
+            
+            // Feature branches
+            if (branchName.includes('feat')) {
+              labels.push('enhancement');
+            }
+            
+            // Bug fixes
+            if (branchName.includes('fix') || branchName.includes('bug')) {
+              labels.push('bug');
+            }
+            
+            // Refactoring
+            if (branchName.includes('refactor')) {
+              labels.push('refactoring');
+            }
+            
+            // Add labels based on files changed
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+            
+            const changedFiles = files.data.map(f => f.filename);
+            
+            // UI changes
+            if (changedFiles.some(f => f.includes('/ui/') || f.includes('.css'))) {
+              labels.push('ui');
+            }
+            
+            // System changes
+            if (changedFiles.some(f => f.includes('/systems/'))) {
+              labels.push('systems');
+            }
+            
+            // Documentation
+            if (changedFiles.some(f => f.endsWith('.md'))) {
+              labels.push('documentation');
+            }
+            
+            // Workflow changes
+            if (changedFiles.some(f => f.includes('.github/workflows'))) {
+              labels.push('workflow');
+            }
+            
+            // Add all labels
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: labels
+              });
+            }

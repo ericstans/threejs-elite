@@ -44,20 +44,20 @@ export class NavTargetUI {
     this.navTargetMass.style.fontFamily = 'PeaberryMono, monospace';
     this.navTargetPanel.appendChild(this.navTargetMass);
 
-  this.navTargetDistance = document.createElement('div');
-  this.navTargetDistance.style.fontFamily = 'PeaberryMono, monospace';
-  this.navTargetPanel.appendChild(this.navTargetDistance);
+    this.navTargetDistance = document.createElement('div');
+    this.navTargetDistance.style.fontFamily = 'PeaberryMono, monospace';
+    this.navTargetPanel.appendChild(this.navTargetDistance);
 
-  // Availability lines (docking/landing + services)
-  this.navDockingAvailability = document.createElement('div');
-  this.navDockingAvailability.className = 'nav-availability-line docking';
-  this.navDockingAvailability.style.display = 'none';
-  this.navTargetPanel.appendChild(this.navDockingAvailability);
+    // Availability lines (docking/landing + services)
+    this.navDockingAvailability = document.createElement('div');
+    this.navDockingAvailability.className = 'nav-availability-line docking';
+    this.navDockingAvailability.style.display = 'none';
+    this.navTargetPanel.appendChild(this.navDockingAvailability);
 
-  this.navServicesAvailableLabel = document.createElement('div');
-  this.navServicesAvailableLabel.className = 'nav-availability-line services';
-  this.navServicesAvailableLabel.style.display = 'none';
-  this.navTargetPanel.appendChild(this.navServicesAvailableLabel);
+    this.navServicesAvailableLabel = document.createElement('div');
+    this.navServicesAvailableLabel.className = 'nav-availability-line services';
+    this.navServicesAvailableLabel.style.display = 'none';
+    this.navTargetPanel.appendChild(this.navServicesAvailableLabel);
 
     // Nav target commable indicator
     this.navCommableIndicator = document.createElement('div');

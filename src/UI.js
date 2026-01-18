@@ -30,7 +30,7 @@ export class UI {
     this._parallaxState = { lastX: 0, lastY: 0 };
     this.onCommsOptionClick = null;
     this.onMapSelect = null;
-    
+
     // Initialize MapUI
     this.mapUI = new MapUI();
     this.mapUI.setOnSectorSelect((sectorId) => {
@@ -275,7 +275,7 @@ export class UI {
       this.uiContainer.appendChild(this.dockingStatus);
     }
 
-  // Predictive lead reticle is handled inside TargetUI; no auto-aim cone
+    // Predictive lead reticle is handled inside TargetUI; no auto-aim cone
 
     // Radar (two concentric circles) anchored relative to cockpit (top-based)
     this.radarWrapper = document.createElement('div');
@@ -668,13 +668,13 @@ export class UI {
           this._returnToServices();
         }
       };
-      
+
       // Ensure both columns are visible for the full jobs view
       this.jobsUI.setShowAvailableColumn(true);
-      
+
       // Get sector map for distance calculations
       const sectorMap = this.mapUI?.sectorMap || null;
-      
+
       this.jobsUI.show(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx, sectorMap);
       this.debugFlagsUI.minimize();
     }
@@ -696,7 +696,7 @@ export class UI {
     const gsm = this.game?.gameStateManager;
     const hasGsm = !!gsm;
     const hasGetInProg = hasGsm && typeof gsm.getJobsInProgress === 'function';
-    
+
     if (hasGetInProg) {
       try {
         this._jobsInProgress = gsm.getJobsInProgress() || [];
@@ -704,21 +704,21 @@ export class UI {
         console.warn('GameStateManager.getJobsInProgress threw; continuing with local state', e);
       }
     }
-    
+
     if (this.jobsUI) {
       // Only provide the complete job callback since this view is read-only for jobs in progress
       this.jobsUI.onCompleteJob = (job) => this._completeJob(job);
       this.jobsUI.onClose = null; // No special behavior on close
-      
+
       // Get current dock context for completion eligibility checking
       const ctx = this._getCurrentDockContext();
-      
+
       // Hide the Available Jobs column
       this.jobsUI.setShowAvailableColumn(false);
-      
+
       // Get sector map for distance calculations
       const sectorMap = this.mapUI?.sectorMap || null;
-      
+
       // Show only in-progress jobs with empty available jobs
       this.jobsUI.show([], this._jobsInProgress, ctx, sectorMap);
       this.debugFlagsUI.minimize();
@@ -773,11 +773,11 @@ export class UI {
 
       // Get all valid job locations using the imported function
       const allLocations = enumerateJobsServiceLocations(sectors);
-      
+
       for (const loc of allLocations) {
         // Skip current location
         if (loc.sectorId === ctx.sectorId && loc.locationName === ctx.locationName) continue;
-        
+
         let distance = 1; // Default distance if we can't calculate
         if (sectorMap && ctx.sectorId) {
           const pathInfo = getShortestPath(sectorMap, ctx.sectorId, loc.sectorId);
@@ -785,10 +785,10 @@ export class UI {
             distance = pathInfo.path.length - 1; // Exclude starting sector
           }
         }
-        
+
         destinations.push({ ...loc, distance });
       }
-      
+
       return destinations;
     };
 
@@ -796,9 +796,9 @@ export class UI {
     const pickDestinationByDistance = () => {
       const destinations = getAllDestinationsWithDistance();
       if (destinations.length === 0) {
-        return { 
-          sectorId: ctx.sectorId, 
-          sectorName: ctx.sectorName || 'Unknown Sector', 
+        return {
+          sectorId: ctx.sectorId,
+          sectorName: ctx.sectorName || 'Unknown Sector',
           locationName: ctx.locationName || 'Unknown',
           distance: 0
         };
@@ -808,7 +808,7 @@ export class UI {
       // Weight = 1 / (distance^1.5) to make longer trips significantly less likely
       const weights = destinations.map(dest => 1 / Math.pow(Math.max(dest.distance, 1), 1.5));
       const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-      
+
       // Pick destination based on weighted probability
       let random = Math.random() * totalWeight;
       for (let i = 0; i < destinations.length; i++) {
@@ -817,7 +817,7 @@ export class UI {
           return destinations[i];
         }
       }
-      
+
       // Fallback to last destination
       return destinations[destinations.length - 1];
     };
@@ -829,15 +829,15 @@ export class UI {
       const cargoName = pick();
       const cargoAmount = 3 + Math.floor(Math.random() * 5); // 3-7 units
       const dest = pickDestinationByDistance();
-      
+
       // Distance-based reward calculation
       const baseReward = 100 + Math.floor(Math.random() * 200); // Reduced base randomness
       const cargoBonus = cargoAmount * 20;
       const distanceBonus = dest.distance * 75; // 75 credits per jump
       const distanceMultiplier = 1 + (dest.distance * 0.1); // 10% more per jump
-      
+
       const reward = Math.floor((baseReward + cargoBonus + distanceBonus) * distanceMultiplier);
-      
+
       jobs.push({
         id: `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         type: 'cargo',
@@ -846,10 +846,10 @@ export class UI {
         reward,
         distance: dest.distance, // Store distance in job object
         origin: { sectorId: ctx.sectorId, sectorName: ctx.sectorName, locationName: ctx.locationName },
-        destination: { 
-          sectorId: dest.sectorId, 
-          sectorName: dest.sectorName, 
-          locationName: dest.locationName 
+        destination: {
+          sectorId: dest.sectorId,
+          sectorName: dest.sectorName,
+          locationName: dest.locationName
         }
       });
     }
@@ -1078,10 +1078,10 @@ export class UI {
       svg.style.top = '0';
       svg.style.pointerEvents = 'none';
       svg.style.zIndex = '1';
-      for (let i=0; i<8; i++) {
-        const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
-        const x2 = 60+Math.cos(angle)*40;
-        const y2 = 30+Math.sin(angle)*20;
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2) * (i / 8) + Math.random() * 0.2;
+        const x2 = 60 + Math.cos(angle) * 40;
+        const y2 = 30 + Math.sin(angle) * 20;
         const line = document.createElementNS('http://www.w3.org/2000/svg','line');
         line.setAttribute('x1','60');
         line.setAttribute('y1','30');
@@ -1116,10 +1116,10 @@ export class UI {
       svg.style.top = '0';
       svg.style.pointerEvents = 'none';
       svg.style.zIndex = '1';
-      for (let i=0; i<8; i++) {
-        const angle = (Math.PI*2)*(i/8)+Math.random()*0.2;
-        const x2 = 60+Math.cos(angle)*40;
-        const y2 = 30+Math.sin(angle)*20;
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2) * (i / 8) + Math.random() * 0.2;
+        const x2 = 60 + Math.cos(angle) * 40;
+        const y2 = 30 + Math.sin(angle) * 20;
         const line = document.createElementNS('http://www.w3.org/2000/svg','line');
         line.setAttribute('x1','60');
         line.setAttribute('y1','30');
@@ -1514,10 +1514,10 @@ export class UI {
   showMapModal(sectors) {
     // Get current sector ID from game engine if available
     const currentSectorId = this.game?.sectorManager?.currentSectorId || null;
-    
+
     // Get job destination IDs from jobs in progress
     const jobDestinationIds = this._jobsInProgress.map(job => job.destination?.sectorId || job.destination?.id || job.destinationId).filter(Boolean);
-    
+
     // Show the map using the MapUI component
     this.mapUI.show(sectors, currentSectorId, jobDestinationIds);
     this.debugFlagsUI.minimize();

@@ -28,10 +28,10 @@ export class ShipDestructionSystem {
     this.group.name = 'ShipDebrisGroup';
     this.scene.add(this.group);
 
-  // Hide intact third-person model so debris replacement is visible
+    // Hide intact third-person model so debris replacement is visible
     try { spaceship.thirdPersonGroup.visible = false; } catch (_) {}
-  // Also hide cockpit mesh if visible to avoid orphaned geometry in view
-  try { if (spaceship.mesh) spaceship.mesh.visible = false; } catch (_) {}
+    // Also hide cockpit mesh if visible to avoid orphaned geometry in view
+    try { if (spaceship.mesh) spaceship.mesh.visible = false; } catch (_) {}
 
     // Collect mesh parts from the third-person model
     const meshes = [];
@@ -42,7 +42,7 @@ export class ShipDestructionSystem {
     const MAX_DEBRIS = options.maxDebris || 24;
     const step = Math.max(1, Math.floor(meshes.length / Math.max(1, Math.min(meshes.length, MAX_DEBRIS))));
 
-  const shipWorldPos = spaceship.thirdPersonGroup.getWorldPosition(new THREE.Vector3());
+    const shipWorldPos = spaceship.thirdPersonGroup.getWorldPosition(new THREE.Vector3());
 
     for (let i = 0; i < meshes.length; i += step) {
       const src = meshes[i];
@@ -69,16 +69,16 @@ export class ShipDestructionSystem {
 
       // Determine initial outward velocity based on position relative to ship center, with jitter
       const dir = wPos.clone().sub(shipWorldPos).normalize();
-      if (!isFinite(dir.x)) dir.set(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
-      dir.add(new THREE.Vector3((Math.random()-0.5)*0.4, (Math.random()-0.5)*0.4, (Math.random()-0.5)*0.4)).normalize();
+      if (!isFinite(dir.x)) dir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+      dir.add(new THREE.Vector3((Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.4)).normalize();
       const speed = 20 + Math.random() * 25; // units/sec
       const velocity = dir.multiplyScalar(speed);
 
       // Random angular velocity (radians/sec)
       const angVel = new THREE.Vector3(
-        (Math.random()-0.5) * 6,
-        (Math.random()-0.5) * 6,
-        (Math.random()-0.5) * 6
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 6
       );
 
       const lifetime = 3.5 + Math.random() * 2.0;

@@ -627,7 +627,7 @@ class Game {
         const shipPos = this.spaceship.getPosition();
         const targetPos = currentTarget.getPosition();
         const distance = shipPos.distanceTo(targetPos);
-  if (distance <= LASER_RANGE) {
+        if (distance <= LASER_RANGE) {
           const leadPos = this.targetingSystem.calculateLeadTarget();
           this.ui.updateLeadReticle(leadPos, this.gameEngine.camera);
         } else {

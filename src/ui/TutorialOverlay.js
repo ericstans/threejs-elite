@@ -196,51 +196,51 @@ export class TutorialOverlay {
   positionElements(position) {
     // Position speech bubble based on the position parameter
     let bubbleLeft, bubbleTop;
-    
+
     switch (position) {
-      case 'radar':
-        // Position near radar (top-right area)
-        bubbleLeft = '75%';
-        bubbleTop = '25%';
-        break;
-      case 'throttle':
-        // Position near throttle (bottom-left area)
-        bubbleLeft = '60%';
-        bubbleTop = '60%';
-        break;
-      case 'targeting':
-        // Position near targeting (top-left area)
-        bubbleLeft = '75%';
-        bubbleTop = '52%';
-        break;
-      case 'navtarget':
-        // Position near nav target panel (center-left area)
-        bubbleLeft = '35%';
-        bubbleTop = '40%';
-        break;
-      case 'cargo':
-        // Position near cargo (bottom-right area)
-        bubbleLeft = '80%';
-        bubbleTop = '70%';
-        break;
-      case 'controls':
-        bubbleLeft = '80%';
-        bubbleTop = '15%';
-        break;
-      case 'center':
-      default:
-        // Default center position
-        bubbleLeft = '60%';
-        bubbleTop = '60%';
-        break;
+    case 'radar':
+      // Position near radar (top-right area)
+      bubbleLeft = '75%';
+      bubbleTop = '25%';
+      break;
+    case 'throttle':
+      // Position near throttle (bottom-left area)
+      bubbleLeft = '60%';
+      bubbleTop = '60%';
+      break;
+    case 'targeting':
+      // Position near targeting (top-left area)
+      bubbleLeft = '75%';
+      bubbleTop = '52%';
+      break;
+    case 'navtarget':
+      // Position near nav target panel (center-left area)
+      bubbleLeft = '35%';
+      bubbleTop = '40%';
+      break;
+    case 'cargo':
+      // Position near cargo (bottom-right area)
+      bubbleLeft = '80%';
+      bubbleTop = '70%';
+      break;
+    case 'controls':
+      bubbleLeft = '80%';
+      bubbleTop = '15%';
+      break;
+    case 'center':
+    default:
+      // Default center position
+      bubbleLeft = '60%';
+      bubbleTop = '60%';
+      break;
     }
-    
+
     // Adjust for small screens
     if (window.innerWidth < 700) {
       bubbleLeft = '50%';
       bubbleTop = '70%';
     }
-    
+
     this.speechBubble.style.left = bubbleLeft;
     this.speechBubble.style.top = bubbleTop;
     this.speechBubble.style.transform = 'translate(-50%, -50%)';
@@ -248,7 +248,7 @@ export class TutorialOverlay {
     // After rendering, position cowboy and pointer consistently
     setTimeout(() => {
       const bubbleRect = this.speechBubble.getBoundingClientRect();
-      
+
       // Cowboy always appears to the right and below the speech bubble
       const cowboyX = bubbleRect.right + 28;
       const cowboyY = bubbleRect.bottom + 8;
@@ -259,7 +259,7 @@ export class TutorialOverlay {
       // Pointer always points from bottom-right of bubble to cowboy
       const tailWidth = 32;
       const tailHeight = Math.max(48, cowboyY - bubbleRect.bottom);
-      this.speechTail.style.left = (bubbleRect.right - tailWidth / 2)-4 + 'px';
+      this.speechTail.style.left = (bubbleRect.right - tailWidth / 2) - 4 + 'px';
       this.speechTail.style.top = (bubbleRect.bottom - 13) + 'px';
       this.speechTail.style.transform = 'none';
       this.speechTail.style.borderLeft = tailWidth + 'px solid transparent';

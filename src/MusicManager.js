@@ -350,7 +350,7 @@ export class MusicManager {
     if (!this.isInitialized) return;
     // Force-stop any currently playing MIDI track
     this._cancelCurrentPlayback();
-    
+
     if (name === 'ambient') {
       this.stopTrack();
       this.currentTrack = 'ambient';
@@ -413,7 +413,7 @@ export class MusicManager {
   crossfadeToTrack(name, duration = 1000) {
     // Force-stop any currently playing MIDI track when doing a crossfade
     this._cancelCurrentPlayback();
-    
+
     if (name === 'ambient' && this.currentTrack !== 'ambient') {
       this.fadeOut(duration / 2);
       setTimeout(() => {
@@ -574,7 +574,7 @@ export class MusicManager {
     }
     this._activeNotes.forEach(stopFn => { try { stopFn(); } catch (_) { /* Note stop failed */ } });
     this._activeNotes.clear();
-    
+
     // Clear next scheduled timeout
     if (this._scheduledNextTimeout) {
       clearTimeout(this._scheduledNextTimeout);

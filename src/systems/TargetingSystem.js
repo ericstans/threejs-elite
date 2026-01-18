@@ -149,8 +149,8 @@ export class TargetingSystem {
   // Returns whether homing (legacy cone) would be active for current target
   computeHomingState() {
     if (!(this.currentTarget && this.currentTarget.isAlive())) return false;
-  const ship = this.getSpaceship();
-  const spaceshipPos = ship.getPosition();
+    const ship = this.getSpaceship();
+    const spaceshipPos = ship.getPosition();
     const targetPos = this.currentTarget.getPosition();
     const forward = new THREE.Vector3(0, 0, -1);
     forward.applyEuler(ship.getRotation());
@@ -158,9 +158,9 @@ export class TargetingSystem {
     const angle = forward.angleTo(toTarget);
     const maxAngle = Math.PI / 18;
 
-  // Check if target is within angle AND within laser range
+    // Check if target is within angle AND within laser range
     const distance = spaceshipPos.distanceTo(targetPos);
-  return angle <= maxAngle && distance <= LASER_RANGE;
+    return angle <= maxAngle && distance <= LASER_RANGE;
   }
 
   // --- Nav Targeting ---
@@ -445,11 +445,11 @@ export class TargetingSystem {
     // We need to find when: |targetPos + targetVel*t - (spaceshipPos + playerVel*t)| = laserSpeed * t
     // With shooter velocity not applied to projectile, this simplifies to:
     // |relativePos + targetVel*t| = laserSpeed * t
-  // Match the actual laser spawn position (2 units forward from ship)
-  const forward = new THREE.Vector3(0, 0, -1).applyEuler(ship.getRotation());
-  const fireOrigin = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
-  const relativePos = targetPos.clone().sub(fireOrigin);
-  const laserSpeed = LASER_SPEED;
+    // Match the actual laser spawn position (2 units forward from ship)
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(ship.getRotation());
+    const fireOrigin = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
+    const relativePos = targetPos.clone().sub(fireOrigin);
+    const laserSpeed = LASER_SPEED;
 
     // Quadratic equation: a*t^2 + b*t + c = 0
     // where: a = |relativeVel|^2 - laserSpeed^2
