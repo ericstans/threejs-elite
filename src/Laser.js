@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { LASER_SPEED } from './data/constants.js';
 
 export class Laser {
-  constructor(position, direction, speed = LASER_SPEED) {
+  constructor(position, direction, speed = LASER_SPEED, damage = 1, range = 300) {
     this.speed = speed;
-    this.lifetime = 3.0; // 3 seconds
+    this.damage = damage;
+    this.range = range;
+    this.lifetime = range / speed; // Calculate lifetime from range and speed
     this.age = 0;
 
     this.mesh = this.createLaserMesh();
@@ -54,5 +56,9 @@ export class Laser {
 
   getLifetime() {
     return this.lifetime;
+  }
+
+  getDamage() {
+    return this.damage;
   }
 }

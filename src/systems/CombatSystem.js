@@ -57,6 +57,13 @@ export class CombatSystem {
     const ship = this.getSpaceship();
     if (!ship) return;
 
+    // Get weapon stats from equipped weapon
+    const weaponStats = ship.getWeaponStats ? ship.getWeaponStats() : {
+      damage: 1,
+      velocity: 100,
+      range: 300
+    };
+
     // Get spaceship position and forward direction
     const spaceshipPos = ship.getPosition();
     const spaceshipRot = ship.getRotation();
@@ -70,7 +77,13 @@ export class CombatSystem {
 
     const laserStartPos = spaceshipPos.clone().add(forward.clone().multiplyScalar(2));
 
-    const laser = new Laser(laserStartPos, laserDirection);
+    const laser = new Laser(
+      laserStartPos,
+      laserDirection,
+      weaponStats.velocity,
+      weaponStats.damage,
+      weaponStats.range
+    );
     this.lasers.push(laser);
     this.gameEngine.addEntity(laser);
     this.soundManager.playLaserSound();
@@ -145,7 +158,8 @@ export class CombatSystem {
     this._hitFeedback();
     this.gameEngine.removeEntity(laser);
     this.lasers.splice(laserIndex, 1);
-    const wasDestroyed = asteroid.takeDamage(1);
+    const damage = laser.getDamage ? laser.getDamage() : 1;
+    const wasDestroyed = asteroid.takeDamage(damage);
     if (wasDestroyed) {
       const explosion = new Explosion(asteroid.getPosition(), asteroid.getSize() * 2, 1.0);
       this.explosions.push(explosion);
@@ -197,7 +211,8 @@ export class CombatSystem {
       );
     }
 
-    const wasDestroyed = npcShip.takeDamage(1);
+    const damage = laser.getDamage ? laser.getDamage() : 1;
+    const wasDestroyed = npcShip.takeDamage(damage);
 
     if (!wasDestroyed && this.getCurrentTarget?.() && this.getCurrentTarget().getId && this.getCurrentTarget().getId().startsWith('npcship')) {
       this.onRequestTargetInfoUpdate?.();

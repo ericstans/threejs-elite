@@ -8,7 +8,6 @@ export class Controls {
     this.setupEventListeners();
 
     // Laser cooldown system
-    this.laserCooldown = 0.6; // 600ms cooldown
     this.lastLaserTime = 0;
   }
 
@@ -119,7 +118,11 @@ export class Controls {
     // Shooting with cooldown
     if (this.keys['Space']) {
       const currentTime = performance.now() / 1000; // Convert to seconds
-      if (currentTime - this.lastLaserTime >= this.laserCooldown) {
+      // Get weapon cooldown from equipped weapon
+      const weaponStats = this.spaceship.getWeaponStats ? this.spaceship.getWeaponStats() : { cooldown: 0.5 };
+      const cooldown = weaponStats.cooldown || 0.5;
+      
+      if (currentTime - this.lastLaserTime >= cooldown) {
         if (this.onShoot) {
           this.onShoot();
           this.lastLaserTime = currentTime;
