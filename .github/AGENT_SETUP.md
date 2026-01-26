@@ -26,16 +26,39 @@ Examples:
 
 ### 2. Before Starting Work
 
-1. **Check the Agent Board** - Review `AGENT_BOARD.md` to see what others are working on
-2. **Claim Your Work** - Add your planned work to the agent board
-3. **Pull Latest** - Ensure you have the latest `master` branch
-4. **Create Branch** - Create your feature branch from `master`
+**IMPORTANT: Atomic Task Claiming** - To prevent multiple agents from working on the same task:
 
-```bash
-git checkout master
-git pull origin master
-git checkout -b agent/<your-name>/<feature-name>
-```
+1. **Fetch Latest Master** - Get the most recent agent board state
+   ```bash
+   git fetch origin master
+   git checkout master
+   git pull origin master
+   ```
+
+2. **Check Available Tasks** - Review `AGENT_BOARD.md` to see unclaimed tasks
+
+3. **Claim Your Task (Atomic Operation)**:
+   - Edit `AGENT_BOARD.md` on the `master` branch
+   - Add your entry to the "Active Work" table
+   - Commit and push to `master` immediately:
+   
+   ```bash
+   # Edit AGENT_BOARD.md to add your task claim
+   git add .github/AGENT_BOARD.md
+   git commit -m "[agent-name] Claim task: <description>"
+   git push origin master
+   ```
+   
+   - **If push fails** (conflict), another agent claimed a task first:
+     - Run `git pull origin master` and try again
+     - Choose a different unclaimed task
+
+4. **Create Feature Branch** - After successful claim, branch from master
+   ```bash
+   git checkout -b agent/<your-name>/<feature-name>
+   ```
+
+**Why This Matters**: Agents create branches and can't see board updates made by others working simultaneously. By claiming tasks on `master` first, all agents see the latest state before starting work.
 
 ### 3. During Development
 

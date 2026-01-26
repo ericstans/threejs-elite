@@ -1,16 +1,20 @@
 Todo
-[ ] HP and collision
-[ ] Combat
-[ ] Quests
-[X] Music folders system
-[ ] Write more music
-[ ] Map system/fuel
-[ ] Cargo and trade
-[X] Asteroid mining
-[ ] Station services
-    [ ] Repair
-    
+Functionality tasks
+[ ] Ship outfitting
+[ ] Shields
+[ ] Quest system - dynamically inject jobs and conversation branches from pre-written or procedurally generated quests. 
+[ ] Fuel gauge
+[ ] Lose fuel between jumps, update map based on range
+[ ] Ship outfitting
 
-Fixes
-[ ] After getting landing clearance don't allow retargeting with Y
-[ ] ESC still opening options menu when modals already open
+
+Content tasks
+[ ] Write more music
+[ ] Update MIDI player https://github.com/mmontag/chip-player-js?tab=readme-ov-file#midi-stuff
+[ ] Rewrite planet descriptions and dialog
+
+Completed tasks
+[X] Cargo and trade
+[X] Asteroid mining
+[X] Music folders system
+[ ] Repair

@@ -12,28 +12,8 @@ This board tracks what each agent is working on to avoid conflicts and duplicate
 
 ## 📋 Available Tasks
 
-High-priority tasks that need to be claimed:
-
 ### High Priority
 - [ ] Add save/load game functionality
-- [ ] Implement trading economy balancing
-- [ ] Add more ship types and variants
-- [ ] Improve combat AI behavior
-- [ ] Add multiplayer support (experimental)
-
-### Medium Priority
-- [ ] Performance optimization for asteroid fields
-- [ ] Enhanced particle effects
-- [ ] More MIDI tracks for variety
-- [ ] Procedural mission generation
-- [ ] Ship upgrade system
-
-### Low Priority / Polish
-- [ ] Additional UI animations
-- [ ] More conversation variations
-- [ ] Sound effect improvements
-- [ ] Additional sector types
-- [ ] Tutorial improvements
 
 ### Refactoring Needed
 - [ ] Extract UI logic from GameEngine
@@ -56,9 +36,46 @@ High-priority tasks that need to be claimed:
 
 ## 📝 How to Update This Board
 
-### Claiming a Task
+### ⚠️ Claiming a Task (Atomic Operation)
 
-When you start work:
+**CRITICAL**: To prevent conflicts when multiple agents work simultaneously:
+
+1. **Always fetch latest `master` first**:
+   ```bash
+   git fetch origin master
+   git checkout master
+   git pull origin master
+   ```
+
+2. **Add your claim to "Active Work" table** (on `master` branch):
+   ```markdown
+   | agent-1 | agent/agent-1/weapon-heat | Add weapon heat system | Spaceship.js, CombatSystem.js | Claiming | Jan 20 |
+   ```
+
+3. **Commit and push to `master` immediately**:
+   ```bash
+   git add .github/AGENT_BOARD.md
+   git commit -m "[agent-1] Claim task: Add weapon heat system"
+   git push origin master
+   ```
+
+4. **If push fails** (another agent pushed first):
+   - Run `git pull origin master`
+   - Verify your task is still unclaimed
+   - Try again, or pick a different task
+
+5. **Create your feature branch** (after successful claim):
+   ```bash
+   git checkout -b agent/agent-1/weapon-heat
+   ```
+
+**Why**: Agents work in branches and can't see each other's board updates. Claiming on `master` first ensures all agents see the latest state before starting work.
+
+**Automated Agents**: The autonomous agent script (`scripts/autonomous-agent.js`) automatically performs this atomic claim process with retry logic to handle race conditions.
+
+### Updating Status
+
+When you start implementation (after claiming):
 
 ```markdown
 | agent-1 | agent/agent-1/weapon-heat | Add weapon heat system | Spaceship.js, CombatSystem.js | In Progress | Jan 20 |

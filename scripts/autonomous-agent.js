@@ -89,30 +89,35 @@ export class AutonomousAgent {
     return docs;
   }
 
-  // 2. Parse and select task from AGENT_BOARD.md
+  // 2. Parse and select task from AGENT_BOARD.md (with latest master)
   async chooseTask() {
-    this.log('Analyzing available tasks...');
+    this.log('Fetching latest task board...');
+    
+    // PHASE 1: Pre-claim check - get latest state from master
+    if (!this.dryRun) {
+      this.exec('git fetch origin master', { ignoreError: true });
+      this.exec('git checkout master', { ignoreError: true });
+      this.exec('git pull origin master', { ignoreError: true });
+    }
     
     const boardPath = path.join(process.cwd(), '.github/AGENT_BOARD.md');
     const board = fs.readFileSync(boardPath, 'utf8');
 
-    // Parse available tasks (simple regex-based parsing)
-    const taskRegex = /^- \[ \] (.+)$/gm;
-    const tasks = [];
-    let match;
+    // Parse unclaimed tasks only
+    const unclaimedTasks = this.parseUnclaimedTasks(board);
+    const claimedTasks = this.parseClaimedTasks(board);
 
-    while ((match = taskRegex.exec(board)) !== null) {
-      tasks.push(match[1]);
+    if (unclaimedTasks.length === 0) {
+      throw new Error('No unclaimed tasks found in AGENT_BOARD.md');
     }
 
-    if (tasks.length === 0) {
-      throw new Error('No available tasks found in AGENT_BOARD.md');
+    this.log(`Found ${unclaimedTasks.length} unclaimed tasks (${claimedTasks.length} already claimed)`);
+    if (claimedTasks.length > 0) {
+      this.log(`Claimed by: ${claimedTasks.map(c => c.agent).join(', ')}`, 'info');
     }
-
-    this.log(`Found ${tasks.length} available tasks`);
 
     // For now, use simple selection. In production, use AI to choose best task
-    const selectedTask = await this.selectTaskWithAI(tasks, board);
+    const selectedTask = await this.selectTaskWithAI(unclaimedTasks, board);
     
     this.log(`Selected task: ${selectedTask.description}`, 'success');
     return selectedTask;
@@ -153,28 +158,125 @@ export class AutonomousAgent {
     return files.length > 0 ? files : ['src/'];
   }
 
-  // 3. Create feature branch
-  createBranch(taskSlug) {
-    this.log('Creating feature branch...');
+  // Parse claimed and unclaimed tasks from AGENT_BOARD.md
+  parseUnclaimedTasks(boardContent) {
+    const tasks = [];
     
-    const branchName = `agent/${this.agentName}/${taskSlug}`;
-
-    if (this.dryRun) {
-      this.log(`[DRY RUN] Would create branch: ${branchName}`, 'warning');
-      return branchName;
+    // Extract tasks from "Available Tasks" section
+    const taskRegex = /^- \[ \] (.+)$/gm;
+    let match;
+    
+    while ((match = taskRegex.exec(boardContent)) !== null) {
+      tasks.push(match[1]);
     }
+    
+    return tasks;
+  }
+  
+  parseClaimedTasks(boardContent) {
+    const claimed = [];
+    
+    // Extract active work entries
+    const activeWorkRegex = /^\| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|$/gm;
+    let match;
+    
+    while ((match = activeWorkRegex.exec(boardContent)) !== null) {
+      const agent = match[1].trim();
+      const task = match[3].trim();
+      
+      // Skip header row
+      if (agent !== 'Agent' && agent !== '-' && agent !== '') {
+        claimed.push({ agent, task });
+      }
+    }
+    
+    return claimed;
+  }
 
-    // Ensure on master and up to date
-    this.log('Updating master branch...');
-    this.exec('git checkout master');
-    this.exec('git pull origin master');
+  // 3. Claim task on master, then create feature branch
+  claimTaskAndBranch(task) {
+    const branchName = `agent/${this.agentName}/${task.slug}`;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.log(`Claiming task on master (attempt ${attempt}/${maxRetries})...`);
+        
+        if (this.dryRun) {
+          this.log(`[DRY RUN] Would claim task and create branch: ${branchName}`, 'warning');
+          return branchName;
+        }
 
-    // Create and checkout branch
-    this.log(`Creating branch: ${branchName}`);
-    this.exec(`git checkout -b ${branchName}`);
+        // Ensure on master and up to date
+        this.log('Updating master branch...');
+        this.exec('git checkout master');
+        this.exec('git pull origin master');
+        
+        // Read current board to verify task is still available
+        const boardPath = path.join(process.cwd(), '.github/AGENT_BOARD.md');
+        const currentBoard = fs.readFileSync(boardPath, 'utf8');
+        const claimedTasks = this.parseClaimedTasks(currentBoard);
+        
+        // Check if task is already claimed by another agent
+        const alreadyClaimed = claimedTasks.some(claimed => 
+          claimed.task.toLowerCase().includes(task.description.toLowerCase().substring(0, 20))
+        );
+        
+        if (alreadyClaimed) {
+          this.log('Task was claimed by another agent. Will retry with new task.', 'warning');
+          throw new Error('TASK_CLAIMED');
+        }
 
-    this.log(`Branch created: ${branchName}`, 'success');
-    return branchName;
+        // Update board to claim task
+        this.log('Updating AGENT_BOARD to claim task...');
+        const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const entry = `| ${this.agentName} | ${branchName} | ${task.description} | ${task.estimatedFiles.join(', ')} | Claiming | ${date} |`;
+        
+        const updatedBoard = currentBoard.replace(
+          /(\| Agent \| Branch \| Feature \| Files Affected \| Status \| ETA \|\n\|.*?\n)(\|.*\n)?/,
+          `$1${entry}\n`
+        );
+        
+        fs.writeFileSync(boardPath, updatedBoard);
+        
+        // Commit board update
+        this.exec('git add .github/AGENT_BOARD.md');
+        this.exec(`git commit -m "[${this.agentName}] Claim task: ${task.description}"`);
+        
+        // Try to push - this will fail if another agent pushed first
+        this.log('Pushing claim to master...');
+        this.exec('git push origin master');
+        
+        this.log('Task claimed successfully!', 'success');
+        
+        // Now create feature branch from master
+        this.log(`Creating feature branch: ${branchName}`);
+        this.exec(`git checkout -b ${branchName}`);
+        
+        this.log(`Branch created: ${branchName}`, 'success');
+        return branchName;
+        
+      } catch (error) {
+        if (error.message === 'TASK_CLAIMED') {
+          // Task was claimed, need to select a different task
+          throw error; // Propagate to main workflow
+        }
+        
+        // Push failed due to conflict - another agent pushed first
+        if (attempt < maxRetries) {
+          this.log(`Push conflict detected. Retrying...`, 'warning');
+          // Reset any uncommitted changes and retry
+          this.exec('git reset --hard origin/master', { ignoreError: true });
+          this.exec('git checkout master', { ignoreError: true });
+          continue;
+        } else {
+          this.log('Failed to claim task after max retries', 'error');
+          throw error;
+        }
+      }
+    }
+    
+    throw new Error('Failed to claim task and create branch');
   }
 
   // 4. Implement feature (with AI assistance)
@@ -577,13 +679,13 @@ ${errors.build || 'None'}
       const docs = this.readDocumentation();
       this.log(`Read ${Object.keys(docs).length} documentation files`, 'success');
 
-      // Step 2: Choose task
+      // Step 2: Choose task (from latest master)
       const task = await this.chooseTask();
 
-      // Step 3: Create branch
-      const branch = this.createBranch(task.slug);
+      // Step 3: Claim task on master, then create branch (atomic operation)
+      const branch = this.claimTaskAndBranch(task);
 
-      // Step 4: Update board (started)
+      // Step 4: Update board status to In Progress (already claimed)
       this.updateAgentBoard(task, branch, 'In Progress');
 
       // Step 5: Implement feature
