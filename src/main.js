@@ -1283,6 +1283,16 @@ setTimeout(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const skipTutorial = urlParams.get('skiptutorial') === '1';
     const startWithCargo = urlParams.get('startWithCargo') === '1';
+    const cashParam = urlParams.get('cash');
+
+    // Set starting cash if requested
+    if (cashParam !== null) {
+      const cash = parseFloat(cashParam);
+      if (!isNaN(cash) && cash >= 0) {
+        game.spaceship.cash = cash;
+        console.log(`Starting cash set to ${cash} via URL parameter`);
+      }
+    }
 
     // Add test cargo if requested
     if (startWithCargo) {

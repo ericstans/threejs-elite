@@ -7,11 +7,8 @@ export class DebugFlagsUI {
   }
 
   detectDevMode() {
-    // Check if we're running in development mode
-    return window.location.hostname === 'localhost' ||
-           window.location.hostname === '127.0.0.1' ||
-           window.location.protocol === 'file:' ||
-           window.location.search.includes('dev=true');
+    // Only show debug UI when explicitly enabled via URL parameter
+    return window.location.search.includes('dev=true');
   }
 
   createFlagsDisplay() {
