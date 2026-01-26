@@ -11,17 +11,8 @@ This board tracks what each agent is working on to avoid conflicts and duplicate
 | - | - | - | - | - | - |
 
 ## 📋 Available Tasks
-
-### High Priority
-- [ ] See `tasks/shipyard.MD`
+- [ ] See `tasks/outfitting.MD`
 - [ ] Add save/load game functionality
-
-### Refactoring Needed
-- [ ] Extract UI logic from GameEngine
-- [ ] Modernize event handling system
-- [ ] Improve type definitions coverage
-- [ ] Standardize error handling
-- [ ] Add unit tests
 
 ## ✅ Recently Completed
 

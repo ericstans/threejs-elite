@@ -57,5 +57,19 @@ export const SHIP_EQUIPMENT = {
         description: "Heavy hull for protection against serious threats.",
         cost: 5000
     }
-  }
+  },
+  THRUSTERS: {
+    "Basic Thrusters": {
+        thrust: 1.0, // affects acceleration
+        maneuverability: 1.0, // affects turn rate
+        description: "Stock thrusters.",
+        cost: 3000
+    },
+    "Premium Thrusters": {
+        thrust: 1.2,
+        maneuverability: 1.1,
+        description: "Enhanced thrusters.",
+        cost: 7000
+        }
+    }
 }
