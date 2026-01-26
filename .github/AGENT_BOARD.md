@@ -13,6 +13,7 @@ This board tracks what each agent is working on to avoid conflicts and duplicate
 ## 📋 Available Tasks
 
 ### High Priority
+- [ ] See `tasks/shipyard.MD`
 - [ ] Add save/load game functionality
 
 ### Refactoring Needed
