@@ -11,8 +11,8 @@ This board tracks what each agent is working on to avoid conflicts and duplicate
 | - | - | - | - | - | - |
 
 ## 📋 Available Tasks
-- [ ] See `tasks/outfitting.MD`
 - [ ] Add save/load game functionality
+- [ ] Improve test coverage
 
 ## ✅ Recently Completed
 
