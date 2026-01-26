@@ -1088,6 +1088,16 @@ export class UI {
       this.spaceship.equippedThrusters = equipmentName;
     }
 
+    // Apply equipment modifiers to ship stats
+    if (this.spaceship.applyEquipmentModifiers) {
+      this.spaceship.applyEquipmentModifiers();
+    }
+
+    // Update ship health UI if hull was changed
+    if (categoryName === 'HULLS' && this.shipHealthUI) {
+      this.shipHealthUI.update(this.spaceship);
+    }
+
     // Update cash display
     if (this.cashUI) {
       this.cashUI.updateCash(this.spaceship.getCash());

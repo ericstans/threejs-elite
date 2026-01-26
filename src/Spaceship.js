@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { getShipType } from './ShipTypes.js';
+import { SHIP_EQUIPMENT } from './data/ShipEquipmentData.js';
 const DEBUG = false;
 
 export class Spaceship {
@@ -25,14 +26,19 @@ export class Spaceship {
     // Speed history for averaging (reduces erratic display during docking)
     this.speedHistory = [];
     this.speedHistoryMaxLength = 30; // Store the last 30 frames
-    // Movement properties from type
-    this.maxSpeed = typeConfig.stats.maxSpeed;
-    this.acceleration = typeConfig.stats.acceleration;
-    this.rotationSpeed = typeConfig.stats.rotationSpeed;
+    // Base movement properties from type (before equipment modifiers)
+    this.baseMaxSpeed = typeConfig.stats.maxSpeed;
+    this.baseAcceleration = typeConfig.stats.acceleration;
+    this.baseRotationSpeed = typeConfig.stats.rotationSpeed;
+    // Current stats (will be modified by equipment)
+    this.maxSpeed = this.baseMaxSpeed;
+    this.acceleration = this.baseAcceleration;
+    this.rotationSpeed = this.baseRotationSpeed;
     this.throttle = 0;
     this.maxThrottle = 1;
-    // Hull stats
-    this.maxHullStrength = typeof typeConfig.hullStrength === 'number' ? typeConfig.hullStrength : 100;
+    // Base hull stats (before equipment modifiers)
+    this.baseMaxHullStrength = typeof typeConfig.hullStrength === 'number' ? typeConfig.hullStrength : 100;
+    this.maxHullStrength = this.baseMaxHullStrength;
     this.hullStrength = this.maxHullStrength;
     // Docking system
     this.dockingTarget = null;
@@ -61,6 +67,9 @@ export class Spaceship {
     this.equippedWeapon = 'Laser 1';
     this.equippedHull = 'Medium Hull';
     this.equippedThrusters = 'Basic Thrusters';
+
+    // Apply equipment modifiers to stats
+    this.applyEquipmentModifiers();
 
     // Player flags
     this.flags = {
@@ -1193,5 +1202,69 @@ export class Spaceship {
   setCash(amount) {
     this.cash = Math.max(0, amount);
     return this.cash;
+  }
+
+  // Apply equipment modifiers to ship stats
+  applyEquipmentModifiers() {
+    // Start with base stats
+    let speedMultiplier = 1.0;
+    let thrustMultiplier = 1.0;
+    let maneuverabilityMultiplier = 1.0;
+    let armor = 0;
+
+    // Apply hull modifiers
+    if (this.equippedHull && SHIP_EQUIPMENT.HULLS[this.equippedHull]) {
+      const hull = SHIP_EQUIPMENT.HULLS[this.equippedHull];
+      speedMultiplier *= hull.speed || 1.0;
+      maneuverabilityMultiplier *= hull.maneuverability || 1.0;
+      armor = hull.armor || 0;
+    }
+
+    // Apply thruster modifiers
+    if (this.equippedThrusters && SHIP_EQUIPMENT.THRUSTERS[this.equippedThrusters]) {
+      const thrusters = SHIP_EQUIPMENT.THRUSTERS[this.equippedThrusters];
+      thrustMultiplier *= thrusters.thrust || 1.0;
+      maneuverabilityMultiplier *= thrusters.maneuverability || 1.0;
+    }
+
+    // Calculate final stats
+    this.maxSpeed = this.baseMaxSpeed * speedMultiplier;
+    this.acceleration = this.baseAcceleration * thrustMultiplier;
+    this.rotationSpeed = this.baseRotationSpeed * maneuverabilityMultiplier;
+    
+    // Update max hull strength based on armor
+    const previousMaxHull = this.maxHullStrength;
+    this.maxHullStrength = this.baseMaxHullStrength + armor;
+    
+    // If hull strength was at max, keep it at max with new value
+    if (this.hullStrength >= previousMaxHull) {
+      this.hullStrength = this.maxHullStrength;
+    }
+    
+    // Update docking speed to match new max speed
+    this.dockingSpeed = this.maxSpeed * 0.9;
+
+    if (DEBUG) {
+      console.log('Equipment modifiers applied:', {
+        maxSpeed: this.maxSpeed,
+        acceleration: this.acceleration,
+        rotationSpeed: this.rotationSpeed,
+        maxHullStrength: this.maxHullStrength
+      });
+    }
+  }
+
+  // Get current weapon stats
+  getWeaponStats() {
+    if (this.equippedWeapon && SHIP_EQUIPMENT.WEAPONS[this.equippedWeapon]) {
+      return SHIP_EQUIPMENT.WEAPONS[this.equippedWeapon];
+    }
+    // Return default if no weapon equipped
+    return {
+      damage: 1,
+      velocity: 100,
+      cooldown: 0.5,
+      range: 300
+    };
   }
 }
