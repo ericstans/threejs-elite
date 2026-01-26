@@ -232,10 +232,19 @@ export class AutonomousAgent {
         const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const entry = `| ${this.agentName} | ${branchName} | ${task.description} | ${task.estimatedFiles.join(', ')} | Claiming | ${date} |`;
         
-        const updatedBoard = currentBoard.replace(
-          /(\| Agent \| Branch \| Feature \| Files Affected \| Status \| ETA \|\n\|.*?\n)(\|.*\n)?/,
-          `$1${entry}\n`
+        // Replace the placeholder row or add after existing entries
+        let updatedBoard = currentBoard.replace(
+          /(\| Agent \| Branch \| Feature \| Files Affected \| Status \| ETA \|\n\|.*?\n)\| - \| - \| - \| - \| - \| - \|/,
+          `$1${entry}`
         );
+        
+        // If placeholder wasn't found, add after the separator line
+        if (updatedBoard === currentBoard) {
+          updatedBoard = currentBoard.replace(
+            /(\| Agent \| Branch \| Feature \| Files Affected \| Status \| ETA \|\n\|.*?\n)/,
+            `$1${entry}\n`
+          );
+        }
         
         fs.writeFileSync(boardPath, updatedBoard);
         
