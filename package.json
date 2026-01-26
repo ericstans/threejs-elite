@@ -15,6 +15,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "agent:workflow": "node scripts/agent-workflow.js",
+    "agent:autonomous": "node scripts/autonomous-agent.js",
+    "agent:autonomous:dry": "node scripts/autonomous-agent.js --dry-run",
     "agent:checks": "npm run lint && npm run type-check && npm test && npm run build",
     "agent:validate": "node scripts/validate-agent-setup.js",
     "pre-commit": "node scripts/pre-commit.js"

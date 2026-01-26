@@ -5,7 +5,8 @@
  * Run this before committing to ensure code quality
  */
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 function exec(command, options = {}) {
   try {
@@ -33,7 +34,7 @@ let foundConsole = false;
 for (const file of consoleCheck) {
   if (!file) continue;
   try {
-    const content = require('fs').readFileSync(file, 'utf8');
+    const content = fs.readFileSync(file, 'utf8');
     if (content.includes('console.log') && !file.includes('scripts/')) {
       console.log(`   ⚠️  Found console.log in ${file}`);
       foundConsole = true;

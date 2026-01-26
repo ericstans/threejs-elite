@@ -9,10 +9,8 @@
  * - Update agent board
  */
 
-const { execSync } = require('child_process');
-const _fs = require('fs');
-const _path = require('path');
-const readline = require('readline');
+import { execSync } from 'child_process';
+import readline from 'readline';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -161,6 +159,40 @@ async function stats() {
   console.log(`Commits ahead of master: ${commitsAhead}`);
 }
 
+async function runAutomatedAgent() {
+  console.log('\n🤖 Launching Autonomous Agent\n');
+  console.log('This will run a fully automated agent workflow.');
+  console.log('The agent will:');
+  console.log('  1. Read project documentation');
+  console.log('  2. Choose a task from AGENT_BOARD.md');
+  console.log('  3. Create a branch');
+  console.log('  4. Implement the feature (mock mode)');
+  console.log('  5. Run validation checks');
+  console.log('  6. Submit a PR\n');
+
+  const confirm = await question('Continue? (y/n): ');
+  
+  if (confirm.toLowerCase() !== 'y') {
+    console.log('Cancelled.');
+    return;
+  }
+
+  const agentName = await question('Agent name (e.g., auto-agent-1): ');
+  const dryRun = await question('Dry run? (y/n): ');
+
+  console.log('\n🚀 Starting autonomous agent...\n');
+
+  // Import and run the autonomous agent
+  const { AutonomousAgent } = await import('./autonomous-agent.js');
+  const agent = new AutonomousAgent({
+    agentName: agentName || 'auto-agent-1',
+    aiProvider: 'mock', // Use mock for safety
+    dryRun: dryRun.toLowerCase() === 'y'
+  });
+
+  await agent.run();
+}
+
 async function main() {
   console.log('🤖 Agent Workflow Helper\n');
   console.log('Commands:');
@@ -168,7 +200,8 @@ async function main() {
   console.log('  2. Run pre-PR checks');
   console.log('  3. Check for conflicts');
   console.log('  4. Show branch stats');
-  console.log('  5. Exit');
+  console.log('  5. Run autonomous agent (automated workflow)');
+  console.log('  6. Exit');
 
   const choice = await question('\nSelect option: ');
 
@@ -186,6 +219,9 @@ async function main() {
     await stats();
     break;
   case '5':
+    await runAutomatedAgent();
+    break;
+  case '6':
     console.log('👋 Goodbye!');
     break;
   default:

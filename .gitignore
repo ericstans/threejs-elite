@@ -5,6 +5,10 @@
 # ESLint cache
 .eslintcache
 
+# Agent context files
+.agent-context.md
+agent-error-report.md
+
 **/.mscbackup/**
 *.mscz~
 *.mid~

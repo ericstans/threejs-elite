@@ -2,9 +2,9 @@
 // Dynamic SoundFont prefetcher: scans project MIDI files to determine the minimal instrument set.
 // Usage: node scripts/fetch-soundfonts.js [--all] [--midiDir=src/assets/midi]
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+import fs from 'fs';
+import path from 'path';
+import https from 'https';
 
 // Program -> instrument name mapping (subset sufficient for ambient usage)
 const GM_MAP = {
@@ -31,12 +31,9 @@ function parseArgs(){
 async function collectInstruments(midiDir){
   const files = walk(midiDir).filter(f => f.toLowerCase().endsWith('.mid'));
   if (files.length === 0) return new Set(ALWAYS_INCLUDE);
-  let midiMod;
-  try {
-    midiMod = require('@tonejs/midi');
-  } catch {
-    midiMod = await import('@tonejs/midi');
-  }
+  
+  // Import Midi library (ES6 module)
+  const midiMod = await import('@tonejs/midi');
   const Midi = (midiMod && midiMod.Midi)
     || (midiMod && midiMod.default && midiMod.default.Midi)
     || (midiMod && midiMod.default)
