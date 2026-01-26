@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "prebuild": "node scripts/fetch-soundfonts.js",
     "start": "npx vite",

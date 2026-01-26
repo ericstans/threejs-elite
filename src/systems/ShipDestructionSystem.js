@@ -29,9 +29,9 @@ export class ShipDestructionSystem {
     this.scene.add(this.group);
 
     // Hide intact third-person model so debris replacement is visible
-    try { spaceship.thirdPersonGroup.visible = false; } catch (_) {}
+    try { spaceship.thirdPersonGroup.visible = false; } catch (_) { /* ignore errors */ }
     // Also hide cockpit mesh if visible to avoid orphaned geometry in view
-    try { if (spaceship.mesh) spaceship.mesh.visible = false; } catch (_) {}
+    try { if (spaceship.mesh) spaceship.mesh.visible = false; } catch (_) { /* ignore errors */ }
 
     // Collect mesh parts from the third-person model
     const meshes = [];

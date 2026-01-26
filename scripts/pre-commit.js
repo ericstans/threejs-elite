@@ -14,7 +14,7 @@ function exec(command, options = {}) {
       stdio: 'inherit',
       ...options
     });
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -38,7 +38,7 @@ for (const file of consoleCheck) {
       console.log(`   ⚠️  Found console.log in ${file}`);
       foundConsole = true;
     }
-  } catch (e) {
+  } catch (_e) {
     // File might be deleted
   }
 }

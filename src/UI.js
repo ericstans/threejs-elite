@@ -171,8 +171,8 @@ export class UI {
     this.gameOverOverlay = new GameOverOverlay();
     this.gameOverOverlay.setOnQuit(() => {
       // Perform a clean restart back to the Title screen
-      try { this.hideGameOver(); } catch (_) {}
-      try { this.titleOverlay.hide(); } catch (_) {}
+      try { this.hideGameOver(); } catch (_) { /* ignore errors */ }
+      try { this.titleOverlay.hide(); } catch (_) { /* ignore errors */ }
       window.location.reload();
     });
 
@@ -656,7 +656,7 @@ export class UI {
       this._generateJobsForLocation(ctx);
       // Persist generated jobs if API exists
       if (hasGsm && typeof gsm.setJobsAvailableForLocation === 'function') {
-        try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (e) { /* no-op */ }
+        try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (_e) { /* no-op */ }
       }
     }
     if (this.jobsUI) {
@@ -905,13 +905,13 @@ export class UI {
     const gsm = this.game?.gameStateManager;
     const ctx = this._getCurrentDockContext();
     if (gsm && typeof gsm.removeAvailableJob === 'function') {
-      try { gsm.removeAvailableJob(ctx, job.id); } catch (e) { /* ignore */ }
+      try { gsm.removeAvailableJob(ctx, job.id); } catch (_e) { /* ignore */ }
     }
     if (gsm && typeof gsm.addJobInProgress === 'function') {
-      try { gsm.addJobInProgress(job); } catch (e) { /* ignore */ }
+      try { gsm.addJobInProgress(job); } catch (_e) { /* ignore */ }
     }
     if (gsm && typeof gsm.setJobsAvailableForLocation === 'function') {
-      try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (e) { /* ignore */ }
+      try { gsm.setJobsAvailableForLocation(ctx, this._jobsAvailable); } catch (_e) { /* ignore */ }
     }
     this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, this._getCurrentDockContext());
     // Also prevent sale in commodities UI by refreshing its cargo items (will filter later when we add restriction)
@@ -954,7 +954,7 @@ export class UI {
     // Persist (if GameStateManager jobs API present)
     const gsm = this.game?.gameStateManager;
     if (gsm && typeof gsm.removeJobInProgress === 'function') {
-      try { gsm.removeJobInProgress(job.id); } catch (e) { /* ignore */ }
+      try { gsm.removeJobInProgress(job.id); } catch (_e) { /* ignore */ }
     }
     // Refresh UI
     this.jobsUI?.update(this._annotateJobFit(this._jobsAvailable), this._jobsInProgress, ctx);

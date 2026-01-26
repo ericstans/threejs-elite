@@ -364,10 +364,10 @@ export class NPCShip {
           // Update ShipHealthUI if available
           try {
             this._gameEngine?.ui?.shipHealthUI?.update(player);
-          } catch (_) {}
+          } catch (_) { /* ignore errors */ }
         }
         // Screen damage flash
-        try { this._gameEngine?.flashDamage?.(150); } catch (_) {}
+        try { this._gameEngine?.flashDamage?.(150); } catch (_) { /* ignore errors */ }
         // Hit effect sound
         this._gameEngine?.createSpatialLaserHit?.(playerPos.clone());
         // Remove laser immediately
@@ -484,7 +484,7 @@ export class NPCShip {
   // Reset NPC state after player destruction: clear hostility and active lasers
   resetAfterPlayerDestroyed() {
     // Revert to non-hostile behavior
-    try { this.setNPCFlag('isHostile', false); } catch (_) {}
+    try { this.setNPCFlag('isHostile', false); } catch (_) { /* ignore errors */ }
     this._fireTimer = 0;
     // Remove any NPC-fired lasers from the scene/engine
     if (Array.isArray(this.npcLasers) && this.npcLasers.length > 0) {
@@ -496,7 +496,7 @@ export class NPCShip {
           } else if (this.scene && laser?.mesh) {
             this.scene.remove(laser.mesh);
           }
-        } catch (_) {}
+        } catch (_) { /* ignore errors */ }
         this.npcLasers.splice(i, 1);
       }
     }

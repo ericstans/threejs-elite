@@ -258,7 +258,7 @@ export class ThirdPersonCamera {
       this._frozenCamPos.copy(this.gameEngine.camera.position);
       this._frozenCamQuat.copy(this.gameEngine.camera.quaternion);
       // Show Game Over overlay
-      try { this.ui.showGameOver && this.ui.showGameOver(); } catch (_) {}
+      try { this.ui.showGameOver && this.ui.showGameOver(); } catch (_) { /* ignore errors */ }
     }
   }
 

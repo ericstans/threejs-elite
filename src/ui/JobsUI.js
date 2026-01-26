@@ -200,7 +200,7 @@ export class JobsUI {
     this.modal.style.display = 'none';
     this.isVisible = false;
     if (typeof this.onClose === 'function') {
-      try { this.onClose(); } catch (_) { }
+      try { this.onClose(); } catch (_) { /* ignore errors */ }
     }
   }
 

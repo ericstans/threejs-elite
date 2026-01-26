@@ -305,10 +305,10 @@ export class GameEngine {
             }
           }
         }
-      } catch (e) {}
+      } catch (_e) { /* ignore errors */ }
       // Overlay cracks on Target/Nav for first-person even if panels are hidden; keep Radar panel behavior
       if (this.spaceship && this.spaceship.thirdPersonMode === false) {
-        try { this.ui && this.ui.showTargetNavCracksOverlay && this.ui.showTargetNavCracksOverlay(); } catch (_) {}
+        try { this.ui && this.ui.showTargetNavCracksOverlay && this.ui.showTargetNavCracksOverlay(); } catch (_) { /* ignore errors */ }
         // For Radar specifically, still inject into panel (if present) to keep its relative placement
         if (this.ui && this.ui.radarUI && this.ui.radarUI.radarPanel) {
           const el = this.ui.radarUI.radarPanel;
@@ -389,7 +389,7 @@ export class GameEngine {
           osc.stop(ctx.currentTime + 0.6);
           osc.onended = () => ctx.close();
         }
-      } catch (e){}
+      } catch (_e) { /* ignore audio errors */ }
       // Show 3D explosions (asteroid style) at ship position for 3 seconds
       if (!this._shipExplosionLoopActive) {
         this._shipExplosionLoopActive = true;
@@ -419,7 +419,7 @@ export class GameEngine {
                 osc.stop(ctx.currentTime + 0.3);
                 osc.onended = () => ctx.close();
               }
-            } catch (e){}
+            } catch (_e) { /* ignore audio errors */ }
             loopTime += 0.18;
             setTimeout(spawnExplosion, 180);
           } else {
@@ -433,7 +433,7 @@ export class GameEngine {
         if (this.spaceship && this.spaceship.thirdPersonLoaded && this.spaceship.thirdPersonGroup) {
           this.shipDestructionSystem.start(this.spaceship);
         }
-      } catch (_) {}
+      } catch (_) { /* ignore errors */ }
     }
     this.entities.forEach(entity => {
       if (entity.update) {
@@ -519,7 +519,7 @@ export class GameEngine {
               osc.stop(ctx.currentTime + 0.2);
               osc.onended = () => ctx.close();
             }
-          } catch (e) { /* ignore audio errors */ }
+          } catch (_e) { /* ignore audio errors */ }
 
           // --- Flash screen red ---
           this.flashDamage(180);
@@ -699,7 +699,7 @@ export class GameEngine {
           osc.stop(ctx.currentTime + 0.2);
           osc.onended = () => ctx.close();
         }
-      } catch (e) { /* ignore audio errors */ }
+      } catch (_e) { /* ignore audio errors */ }
 
       // --- Flash screen red ---
       this.flashDamage(180);

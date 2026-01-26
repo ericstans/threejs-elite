@@ -310,14 +310,14 @@ export function generateSectorMap(sectors, options = {}) {
 
 // Helper function to check if a point is approximately between two other points
 function isPointBetween(a, b, point, tolerance = 10) {
-  const dist_ab = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
-  const dist_ap = Math.sqrt((point.x - a.x) ** 2 + (point.y - a.y) ** 2);
-  const dist_pb = Math.sqrt((b.x - point.x) ** 2 + (b.y - point.y) ** 2);
+  const distAB = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+  const distAP = Math.sqrt((point.x - a.x) ** 2 + (point.y - a.y) ** 2);
+  const distPB = Math.sqrt((b.x - point.x) ** 2 + (b.y - point.y) ** 2);
 
   // Point is between a and b if the sum of distances is approximately equal to the distance from a to b
-  return Math.abs(dist_ap + dist_pb - dist_ab) < tolerance &&
-         dist_ap < dist_ab &&
-         dist_pb < dist_ab;
+  return Math.abs(distAP + distPB - distAB) < tolerance &&
+         distAP < distAB &&
+         distPB < distAB;
 }
 
 // Get all sectors directly connected to the specified sector

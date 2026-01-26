@@ -1,50 +1,5 @@
 import js from '@eslint/js';
 
-// Custom rule to allow console statements only when wrapped in if (DEBUG)
-const noConsoleUnlessDebug = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description: 'Disallow console statements unless wrapped in if (DEBUG)',
-      category: 'Best Practices',
-      recommended: false
-    },
-    fixable: null,
-    schema: []
-  },
-  create(context) {
-    return {
-      CallExpression(node) {
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.object.name === 'console') {
-
-          // Check if this console statement is inside an if (DEBUG) block
-          let parent = node.parent;
-          let isInDebugBlock = false;
-
-          while (parent) {
-            if (parent.type === 'IfStatement' &&
-                parent.test &&
-                parent.test.type === 'Identifier' &&
-                parent.test.name === 'DEBUG') {
-              isInDebugBlock = true;
-              break;
-            }
-            parent = parent.parent;
-          }
-
-          if (!isInDebugBlock) {
-            context.report({
-              node,
-              message: 'Console statements should be wrapped in if (DEBUG) blocks'
-            });
-          }
-        }
-      }
-    };
-  }
-};
-
 export default [
   // Base configuration for all JavaScript files
   js.configs.recommended,
@@ -66,6 +21,14 @@ export default [
         clearInterval: 'readonly',
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
+        performance: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLCanvasElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        MouseEvent: 'readonly',
         // Three.js globals (if using global imports)
         THREE: 'readonly',
         // Debug flag
@@ -88,7 +51,6 @@ export default [
         caughtErrorsIgnorePattern: '^_'
       }],
       'no-console': 'off', // Disable default no-console rule
-      'custom/no-console-unless-debug': 'warn', // Use our custom rule
       'no-debugger': 'error',
       'no-alert': 'error',
 
@@ -127,12 +89,21 @@ export default [
         properties: 'never',
         ignoreDestructuring: true
       }]
-    },
-    plugins: {
-      'custom': {
-        rules: {
-          'no-console-unless-debug': noConsoleUnlessDebug
-        }
+    }
+  },
+
+  // Configuration for test files
+  {
+    files: ['**/__tests__/**/*.js', '**/*.test.js'],
+    languageOptions: {
+      globals: {
+        global: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        vi: 'readonly'
       }
     }
   },

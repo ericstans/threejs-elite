@@ -684,9 +684,9 @@ class Game {
     if (playerJustDestroyed) {
       this._handledPlayerDeath = true;
       // Stop any music instantly (no fade)
-      try { this.audioManager?.musicManager?.stopTrack(); } catch (_) {}
+      try { this.audioManager?.musicManager?.stopTrack(); } catch (_) { /* ignore errors */ }
       // Clear combat flag
-      try { this.spaceship.flags.isInCombat = false; } catch (_) {}
+      try { this.spaceship.flags.isInCombat = false; } catch (_) { /* ignore errors */ }
       // Reset all NPCs to previous status (non-hostile) and clear their active lasers
       try {
         if (Array.isArray(this.npcShips)) {
@@ -698,7 +698,7 @@ class Game {
             }
           }
         }
-      } catch (_) {}
+      } catch (_) { /* ignore errors */ }
     }
 
     // Update camera to follow spaceship position and rotation exactly
@@ -1238,7 +1238,7 @@ setTimeout(() => {
     if (DEBUG) console.log('Switching to Aridus Prime soundtracks');
     const mm = game.audioManager?.musicManager;
     // Mark game as started so subsequent startMusic() calls don't re-select title
-    try { game.gameStateManager?.setGlobalFlag('gameStarted', true); } catch (_) {}
+    try { game.gameStateManager?.setGlobalFlag('gameStarted', true); } catch (_) { /* ignore errors */ }
     if (mm) {
       // Hard stop any current playback (title queue, notes, timeouts)
       if (typeof mm.stopTrack === 'function') mm.stopTrack();

@@ -312,7 +312,7 @@ export class CommoditiesUI {
     // Return moved items to cargo bay
     this.returnItemsToCargo();
     if (typeof this.onClose === 'function') {
-      try { this.onClose(); } catch (_) {}
+      try { this.onClose(); } catch (_) { /* ignore errors */ }
     }
   }
 

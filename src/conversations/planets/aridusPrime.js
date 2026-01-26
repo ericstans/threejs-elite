@@ -3,7 +3,7 @@ export const aridusPrimeConversation = {
   conversationTree: {
     information: {
       response: 'Aridus Prime is a small outpost established in GY166, and the base of operations for mining operations in the Aridus system.',
-      options: (playerFlags) => [
+      options: (_playerFlags) => [
         { id: 'mining', text: 'Tell me more about mining.' },
         { id: 'planet', text: 'Tell me more about Aridus Prime.' },
         { id: 'system', text: 'Tell me more about the Aridus system.' },
