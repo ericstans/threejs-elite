@@ -57,6 +57,11 @@ export class Spaceship {
     // Player cash
     this.cash = 0;
 
+    // Ship Equipment (default starting loadout)
+    this.equippedWeapon = 'Laser 1';
+    this.equippedHull = 'Medium Hull';
+    this.equippedThrusters = 'Basic Thrusters';
+
     // Player flags
     this.flags = {
       firingEnabled: true,

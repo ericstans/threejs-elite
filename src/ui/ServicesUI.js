@@ -6,6 +6,7 @@ export class ServicesUI {
     this.onCommoditiesClick = null; // Callback for commodities service
     this.onRefuelRepairClick = null; // Callback for refuel & repair service
     this.onJobsClick = null; // Callback for jobs service
+    this.onOutfittingClick = null; // Callback for outfitting service
     this.availableServices = []; // Track available services for number key mapping
     this._ignoreEscUntil = 0; // timestamp to temporarily ignore ESC after (re)show
     this._escSuppressed = false; // true when we should ignore ESC until keyup
@@ -111,7 +112,7 @@ export class ServicesUI {
     const serviceDefinitions = {
       'refuel+repair': { name: 'Refuel & Repair', description: 'Refuel your ship and repair hull damage', icon: '🔧', implemented: true },
       'shipyard': { name: 'Shipyard', description: 'Buy, sell, and upgrade ships', icon: '🚀', implemented: false },
-      'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️', implemented: false },
+      'outfitting': { name: 'Outfitting', description: 'Install and upgrade ship equipment', icon: '⚙️', implemented: true },
       'commodities': { name: 'Commodities', description: 'Buy and sell trade goods', icon: '📦', implemented: true },
       'rumors': { name: 'Rumors', description: 'Gather information and rumors', icon: '💬', implemented: false },
       'jobs': { name: 'Jobs', description: 'Find work and missions', icon: '📋', implemented: true }
@@ -213,6 +214,10 @@ export class ServicesUI {
           console.log('Calling jobs callback');
           this.hideServices();
           this.onJobsClick();
+        } else if (serviceId === 'outfitting' && this.onOutfittingClick) {
+          console.log('Calling outfitting callback');
+          this.hideServices();
+          this.onOutfittingClick();
         } else {
           console.log(`Selected service: ${serviceId}`);
           // TODO: Implement other service functionality
@@ -266,6 +271,10 @@ export class ServicesUI {
 
   setOnJobsClick(callback) {
     this.onJobsClick = callback;
+  }
+
+  setOnOutfittingClick(callback) {
+    this.onOutfittingClick = callback;
   }
 
   // Cleanup method to remove event listeners

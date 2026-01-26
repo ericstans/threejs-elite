@@ -10,6 +10,7 @@ import { CommoditiesUI } from './ui/CommoditiesUI.js';
 import { ServicesUI } from './ui/ServicesUI.js';
 import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
 import { JobsUI } from './ui/JobsUI.js';
+import { OutfittingUI } from './ui/OutfittingUI.js';
 import { enumerateJobsServiceLocations } from './systems/serialization/JobDestinationResolver.js';
 import { getShortestPath } from './util/mapGraphGenerator.js';
 import { getTradeableItems } from './data/CargoItemsData.js';
@@ -109,6 +110,7 @@ export class UI {
     this.servicesUI = new ServicesUI(this.uiContainer);
     this.refuelRepairUI = new RefuelRepairUI(this.uiContainer);
     this.jobsUI = new JobsUI(this.uiContainer);
+    this.outfittingUI = new OutfittingUI(this.uiContainer);
 
     // Jobs state (simple in-memory store for now)
     this._jobsAvailable = [];
@@ -125,6 +127,10 @@ export class UI {
     // Set up jobs callback
     this.servicesUI.onJobsClick = () => {
       this.showJobs();
+    };
+    // Set up outfitting callback
+    this.servicesUI.onOutfittingClick = () => {
+      this.showOutfitting();
     };
 
     // Wire refuel/repair UI callbacks
@@ -165,6 +171,18 @@ export class UI {
     this.commoditiesUI.onBuyItems = (itemsToBuy, totalCost) => {
       this.handleCommoditiesPurchase(itemsToBuy, totalCost);
     };
+
+    // Set up outfitting callbacks
+    this.outfittingUI.onPurchase = (categoryName, equipmentName, finalCost, tradeInCredit) => {
+      this.handleEquipmentPurchase(categoryName, equipmentName, finalCost, tradeInCredit);
+    };
+    this.outfittingUI.onClose = () => {
+      // When Outfitting closes (via X or ESC), return to Services if context exists
+      if (this._lastServicesContext) {
+        this._returnToServices();
+      }
+    };
+
     this.titleOverlay = new TitleOverlay();
     this.tutorialOverlay = new TutorialOverlay();
     this.tutorialOverlay.setUIInstance(this);
@@ -1027,6 +1045,87 @@ export class UI {
     // Update this modal
     this.refuelRepairUI?.setStatus(`Repaired ${missing} hull for $${cost.toLocaleString()}.`);
     this.updateRefuelRepair();
+  }
+
+  // Outfitting UI methods
+  showOutfitting() {
+    if (!this.outfittingUI) return;
+    this._returnToServicesOnSubClose = true;
+    const equippedWeapon = this.spaceship?.equippedWeapon || 'Laser 1';
+    const equippedHull = this.spaceship?.equippedHull || 'Medium Hull';
+    const equippedThrusters = this.spaceship?.equippedThrusters || 'Basic Thrusters';
+    const cash = this.spaceship?.getCash ? this.spaceship.getCash() : 0;
+    this.outfittingUI.show(equippedWeapon, equippedHull, equippedThrusters, cash);
+    this.debugFlagsUI.minimize();
+  }
+
+  hideOutfitting() {
+    if (!this.outfittingUI) return;
+    this.outfittingUI.hide();
+    this.debugFlagsUI.restore();
+    if (this._returnToServicesOnSubClose && this._lastServicesContext) {
+      this._returnToServices();
+    }
+  }
+
+  handleEquipmentPurchase(categoryName, equipmentName, finalCost, tradeInCredit) {
+    if (!this.spaceship) return;
+    const currentCash = this.spaceship.getCash ? this.spaceship.getCash() : 0;
+    if (currentCash < finalCost) {
+      console.log('Not enough cash to purchase equipment');
+      return;
+    }
+
+    // Deduct final cost (already includes trade-in credit)
+    this.spaceship.removeCash(finalCost);
+
+    // Equip the item
+    if (categoryName === 'WEAPONS') {
+      this.spaceship.equippedWeapon = equipmentName;
+    } else if (categoryName === 'HULLS') {
+      this.spaceship.equippedHull = equipmentName;
+    } else if (categoryName === 'THRUSTERS') {
+      this.spaceship.equippedThrusters = equipmentName;
+    }
+
+    // Update cash display
+    if (this.cashUI) {
+      this.cashUI.updateCash(this.spaceship.getCash());
+    }
+
+    // Update outfitting UI
+    this.outfittingUI.equippedWeapon = this.spaceship.equippedWeapon;
+    this.outfittingUI.equippedHull = this.spaceship.equippedHull;
+    this.outfittingUI.equippedThrusters = this.spaceship.equippedThrusters;
+    this.outfittingUI.updateCash(this.spaceship.getCash());
+    this.outfittingUI.updateDisplay();
+
+    if (tradeInCredit > 0) {
+      console.log(`Purchased and equipped ${equipmentName} for $${finalCost} (with $${tradeInCredit} trade-in credit)`);
+    } else {
+      console.log(`Purchased and equipped ${equipmentName} for $${finalCost}`);
+    }
+  }
+
+  handleEquipmentSell(_categoryName, equipmentName, sellPrice) {
+    if (!this.spaceship) return;
+
+    // Add cash
+    this.spaceship.addCash(sellPrice);
+
+    // Note: We're selling currently equipped item, so we don't actually unequip it
+    // (The player can't fly without equipment, so this is just for cash)
+    // In a full implementation, you might want to prevent selling if it's the only item
+
+    // Update cash display
+    if (this.cashUI) {
+      this.cashUI.updateCash(this.spaceship.getCash());
+    }
+
+    // Update outfitting UI
+    this.outfittingUI.updateCash(this.spaceship.getCash());
+
+    console.log(`Sold ${equipmentName} for $${sellPrice}`);
   }
 
   showTitle() {

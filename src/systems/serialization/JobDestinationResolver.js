@@ -69,10 +69,11 @@ export function computePlanetServicesForSeed(pSeed, weights) {
   const rng = mulberry32(pSeed);
   const services = [];
   // Baseline defaults
-  const w = weights || { 'refuel+repair': 1, commodities: 0.5, jobs: 0.35 };
+  const w = weights || { 'refuel+repair': 1, commodities: 0.5, jobs: 0.35, outfitting: 0.6 };
   if (rng() < (w['refuel+repair'] ?? 1)) services.push('refuel+repair');
   if (rng() < (w['commodities'] ?? 0)) services.push('commodities');
   if (rng() < (w['jobs'] ?? 0)) services.push('jobs');
+  if (rng() < (w['outfitting'] ?? 0)) services.push('outfitting');
   return services.length ? services : ['refuel+repair'];
 }
 
