@@ -67,7 +67,8 @@ describe('CombatSystem', () => {
       getAsteroids: () => mockAsteroids,
       onHitFeedback: callbacks.onHitFeedback,
       onNPCShipHit: callbacks.onNPCShipHit,
-      onNPCShipDestroyed: callbacks.onNPCShipDestroyed
+      onNPCShipDestroyed: callbacks.onNPCShipDestroyed,
+      environmentSystem: null
     });
   });
 
@@ -553,7 +554,10 @@ describe('CombatSystem', () => {
         onRequestTargetInfoUpdate: callbacks.onRequestTargetInfoUpdate,
         getNPCShips: () => mockNPCShips,
         getAsteroids: () => mockAsteroids,
-        onHitFeedback: null // No callback
+        onHitFeedback: null,
+        onNPCShipHit: vi.fn(),
+        onNPCShipDestroyed: vi.fn(),
+        environmentSystem: null
       });
       
       systemWithoutCallback._hitFeedback();
@@ -576,8 +580,8 @@ describe('CombatSystem', () => {
         onRequestTargetInfoUpdate: callbacks.onRequestTargetInfoUpdate,
         getNPCShips: () => mockNPCShips,
         getAsteroids: () => mockAsteroids,
-        onHitFeedback: callbacks.onHitFeedback,
-        environmentSystem: mockEnvironmentSystem
+        onHitFeedback: callbacks.onHitFeedback,        onNPCShipHit: vi.fn(),
+        onNPCShipDestroyed: vi.fn(),        environmentSystem: mockEnvironmentSystem
       });
       
       const mockAsteroid = {

@@ -188,7 +188,7 @@ describe('SectorManager', () => {
     beforeEach(() => {
       sectorManager.registerSerializer('asteroid', {
         save: (obj) => ({ mass: obj.mass }),
-        load: (state, context) => ({
+        load: (state, _context) => ({
           type: 'asteroid',
           mass: state.mass,
           mesh: { parent: null },
@@ -250,7 +250,7 @@ describe('SectorManager', () => {
   });
 
   describe('switch sector', () => {
-    let mockAsteroid1, mockAsteroid2, mockAsteroid3;
+    let mockAsteroid1, mockAsteroid2;
 
     beforeEach(() => {
       mockAsteroid1 = {
@@ -262,11 +262,6 @@ describe('SectorManager', () => {
         getType: () => 'asteroid',
         mass: 200,
         mesh: { parent: mockGameEngine.scene }
-      };
-      mockAsteroid3 = {
-        getType: () => 'asteroid',
-        mass: 300,
-        mesh: { parent: null }
       };
 
       sectorManager.registerSerializer('asteroid', {

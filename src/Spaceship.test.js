@@ -478,7 +478,6 @@ describe('Spaceship', () => {
   describe('physics integration', () => {
     it('should apply acceleration based on throttle', () => {
       spaceship.setThrottle(1.0);
-      const initialSpeed = spaceship.getSpeed();
       
       // Simulate several update frames
       for (let i = 0; i < 10; i++) {
