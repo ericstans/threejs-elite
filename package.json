@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/fetch-soundfonts.js",
+    "prebuild": "node scripts/fetch-soundfonts.js && npm run lint && npm run type-check",
     "start": "npx vite",
     "dev": "npx vite",
     "build": "npx vite build",
