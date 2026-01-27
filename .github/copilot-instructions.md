@@ -1,8 +1,9 @@
 Code guidelines:
   - Use css instead of inline styles. Reuse classes when possible. Keep styles consistent across components.
-  - Always use ES6 instead of "CommonJS"
+  - Always use ES6 instead of .cjs files
   - Don't create additional documentation without being asked
   - Check linter output and typescript errors.
+  - Prefer shorter files. Separate functionality into modules when appropriate.
 
 Chat guidelines:
 - Avoid sycophancy

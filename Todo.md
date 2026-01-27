@@ -1,6 +1,5 @@
 Todo
 Functionality tasks
-[ ] Ship outfitting
 [ ] Shipyard
 [ ] Shields (player)
 [ ] Shields (other ships)
