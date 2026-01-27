@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Explosion } from './Explosion.js';
-import { ShipDestructionSystem } from './systems/ShipDestructionSystem.js';
-import { generateStarfieldEquirectTexture } from './util/generateStarfieldTexture.js';
+import { Explosion } from '../entities/Explosion.js';
+import { ShipDestructionSystem } from './ShipDestructionSystem.js';
+import { generateStarfieldEquirectTexture } from '../util/generateStarfieldTexture.js';
 
 const DRAW_DISTANCE = 8000;
 

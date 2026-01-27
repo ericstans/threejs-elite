@@ -1,5 +1,5 @@
-import { genericProceduralConversation } from './conversations/planets/genericProcedural.js';
-import { genericProceduralShipConversation } from './conversations/ships/genericProceduralShip.js';
+import { genericProceduralConversation } from '../conversations/planets/genericProcedural.js';
+import { genericProceduralShipConversation } from '../conversations/ships/genericProceduralShip.js';
 
 export class ConversationSystem {
   constructor() {

@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import './assets/fonts/peaberry.css';
 import './styles/main.css';
 import { LASER_RANGE } from './data/constants.js';
-import { GameEngine } from './GameEngine.js';
-import { Spaceship } from './Spaceship.js';
-import { Planet } from './Planet.js';
-import { Controls } from './Controls.js';
-import { UI } from './UI.js';
+import { GameEngine } from './systems/GameEngine.js';
+import { Spaceship } from './entities/Spaceship.js';
+import { Planet } from './entities/Planet.js';
+import { Controls } from './systems/Controls.js';
+import { UI } from './ui/UI.js';
 // import { Asteroid } from './Asteroid.js';
 import { CombatSystem } from './systems/CombatSystem.js';
 import { TargetingSystem } from './systems/TargetingSystem.js';
@@ -24,11 +24,11 @@ import { hashSeed } from './util/seedUtils.js';
 import { computePlanetServicesForSeed } from './systems/serialization/JobDestinationResolver.js';
 
 // import { NPCShip } from './NPCShip.js';
-import { EngineParticles } from './EngineParticles.js';
-import { ConversationSystem } from './ConversationSystem.js';
-import { SpaceStation } from './SpaceStation.js';
-import { Laser } from './Laser.js';
-import { PortalSystem } from './PortalSystem.js';
+import { EngineParticles } from './entities/EngineParticles.js';
+import { ConversationSystem } from './systems/ConversationSystem.js';
+import { SpaceStation } from './entities/SpaceStation.js';
+import { Laser } from './entities/Laser.js';
+import { PortalSystem } from './systems/PortalSystem.js';
 
 const DEBUG = false;
 

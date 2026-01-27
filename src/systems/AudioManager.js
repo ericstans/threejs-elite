@@ -5,8 +5,8 @@
  * - Audio state management
  * - Integration with MusicManager and SoundManager
  */
-import { SoundManager } from '../SoundManager.js';
-import { MusicManager } from '../MusicManager.js';
+import { SoundManager } from '../audio/SoundManager.js';
+import { MusicManager } from '../audio/MusicManager.js';
 
 export class AudioManager {
   constructor(game, spaceship, gameStateManager) {

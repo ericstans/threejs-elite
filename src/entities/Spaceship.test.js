@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Spaceship } from './Spaceship.js';
+import { Spaceship } from './entities/Spaceship.js';
 import * as THREE from 'three';
 
 describe('Spaceship', () => {

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Asteroid } from '../../Asteroid.js';
-import { NPCShip } from '../../NPCShip.js';
-import { Planet } from '../../Planet.js';
-import { SpaceStation } from '../../SpaceStation.js';
+import { Asteroid } from '../../entities/Asteroid.js';
+import { NPCShip } from '../../entities/NPCShip.js';
+import { Planet } from '../../entities/Planet.js';
+import { SpaceStation } from '../../entities/SpaceStation.js';
 
 export function registerDefaultSerializers(sectorManager) {
   // Asteroid

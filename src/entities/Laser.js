@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { LASER_SPEED } from './data/constants.js';
+import { LASER_SPEED } from '../data/constants.js';
 
 export class Laser {
   constructor(position, direction, speed = LASER_SPEED, damage = 1, range = 300) {

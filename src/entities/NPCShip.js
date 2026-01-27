@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import { getShipType } from './ShipTypes.js';
-import { replaceCockpitMaterials } from './util/shipMaterialUtils.js';
+import { getShipType } from '../data/ShipTypes.js';
+import { replaceCockpitMaterials } from '../util/shipMaterialUtils.js';
 import { Laser } from './Laser.js';
-import { LASER_SPEED } from './data/constants.js';
+import { LASER_SPEED } from '../data/constants.js';
 
 const DEBUG = false;
 

@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
-import { getShipType } from './ShipTypes.js';
-import { SHIP_EQUIPMENT } from './data/ShipEquipmentData.js';
+import { getShipType } from '../data/ShipTypes.js';
+import { SHIP_EQUIPMENT } from '../data/ShipEquipmentData.js';
 const DEBUG = false;
 
 export class Spaceship {

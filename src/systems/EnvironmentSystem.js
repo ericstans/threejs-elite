@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Asteroid } from '../Asteroid.js';
-import { SpaceStation } from '../SpaceStation.js';
-import { Planet } from '../Planet.js';
-import { NPCShip } from '../NPCShip.js';
+import { Asteroid } from '../entities/Asteroid.js';
+import { SpaceStation } from '../entities/SpaceStation.js';
+import { Planet } from '../entities/Planet.js';
+import { NPCShip } from '../entities/NPCShip.js';
 import { hashSeed } from '../util/seedUtils.js';
 import { computePlanetServicesForSeed, computeStationServicesForSeed } from './serialization/JobDestinationResolver.js';
 import { getSectorDefinition } from './serialization/sectorDefinitions.js';

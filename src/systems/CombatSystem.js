@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Laser } from '../Laser.js';
+import { Laser } from '../entities/Laser.js';
 import { LASER_SPEED } from '../data/constants.js';
-import { Explosion } from '../Explosion.js';
-import { Resource } from '../Resource.js';
+import { Explosion } from '../entities/Explosion.js';
+import { Resource } from '../entities/Resource.js';
 // Note: laser speed/range are centralized in data/constants if needed in future here
 
 /**

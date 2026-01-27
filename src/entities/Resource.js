@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getRandomMineableItem } from './data/CargoItemsData.js';
+import { getRandomMineableItem } from '../data/CargoItemsData.js';
 
 export class Resource {
   constructor(position, cargoItemData = null) {

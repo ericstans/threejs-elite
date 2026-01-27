@@ -1,26 +1,26 @@
-import { ThrottleUI } from './ui/ThrottleUI.js';
-import { DebugFlagsUI } from './ui/DebugFlagsUI.js';
-import { ControlsUI } from './ui/ControlsUI.js';
-import { TargetUI } from './ui/TargetUI.js';
-import { NavTargetUI } from './ui/NavTargetUI.js';
-import { OptionsUI } from './ui/OptionsUI.js';
-import { CargoUI } from './ui/CargoUI.js';
-import { CashUI } from './ui/CashUI.js';
-import { CommoditiesUI } from './ui/CommoditiesUI.js';
-import { ServicesUI } from './ui/ServicesUI.js';
-import { RefuelRepairUI } from './ui/RefuelRepairUI.js';
-import { JobsUI } from './ui/JobsUI.js';
-import { OutfittingUI } from './ui/OutfittingUI.js';
-import { enumerateJobsServiceLocations } from './systems/serialization/JobDestinationResolver.js';
-import { getShortestPath } from './util/mapGraphGenerator.js';
-import { getTradeableItems } from './data/CargoItemsData.js';
-import { TitleOverlay } from './ui/TitleOverlay.js';
-import { TutorialOverlay } from './ui/TutorialOverlay.js';
-import { GameOverOverlay } from './ui/GameOverOverlay.js';
-import cockpitImageSrc from './assets/png/cockpit.png';
+import { ThrottleUI } from './ThrottleUI.js';
+import { DebugFlagsUI } from './DebugFlagsUI.js';
+import { ControlsUI } from './ControlsUI.js';
+import { TargetUI } from './TargetUI.js';
+import { NavTargetUI } from './NavTargetUI.js';
+import { OptionsUI } from './OptionsUI.js';
+import { CargoUI } from './CargoUI.js';
+import { CashUI } from './CashUI.js';
+import { CommoditiesUI } from './CommoditiesUI.js';
+import { ServicesUI } from './ServicesUI.js';
+import { RefuelRepairUI } from './RefuelRepairUI.js';
+import { JobsUI } from './JobsUI.js';
+import { OutfittingUI } from './OutfittingUI.js';
+import { enumerateJobsServiceLocations } from '../systems/serialization/JobDestinationResolver.js';
+import { getShortestPath } from '../util/mapGraphGenerator.js';
+import { getTradeableItems } from '../data/CargoItemsData.js';
+import { TitleOverlay } from './TitleOverlay.js';
+import { TutorialOverlay } from './TutorialOverlay.js';
+import { GameOverOverlay } from './GameOverOverlay.js';
+import cockpitImageSrc from '../assets/png/cockpit.png';
 import * as THREE from 'three';
-import { ShipHealthUI } from './ui/ShipHealthUI.js';
-import { MapUI } from './ui/MapUI.js';
+import { ShipHealthUI } from './ShipHealthUI.js';
+import { MapUI } from './MapUI.js';
 
 export class UI {
   constructor(conversationSystem = null) {
