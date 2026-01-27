@@ -1231,16 +1231,16 @@ export class Spaceship {
     this.maxSpeed = this.baseMaxSpeed * speedMultiplier;
     this.acceleration = this.baseAcceleration * thrustMultiplier;
     this.rotationSpeed = this.baseRotationSpeed * maneuverabilityMultiplier;
-    
+
     // Update max hull strength based on armor
     const previousMaxHull = this.maxHullStrength;
     this.maxHullStrength = this.baseMaxHullStrength + armor;
-    
+
     // If hull strength was at max, keep it at max with new value
     if (this.hullStrength >= previousMaxHull) {
       this.hullStrength = this.maxHullStrength;
     }
-    
+
     // Update docking speed to match new max speed
     this.dockingSpeed = this.maxSpeed * 0.9;
 

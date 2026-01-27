@@ -68,7 +68,7 @@ describe('Planet', () => {
     it('should calculate mass based on radius', () => {
       // mass = radius^3 * 1000
       expect(planet.getMass()).toBe(1000000); // 10^3 * 1000
-      
+
       const smallPlanet = new Planet(5);
       expect(smallPlanet.getMass()).toBe(125000); // 5^3 * 1000
     });
@@ -160,26 +160,26 @@ describe('Planet', () => {
   describe('update and rotation', () => {
     it('should update rotation based on deltaTime', () => {
       const initialRotation = planet.currentRotation;
-      
+
       planet.update(1.0);
-      
+
       expect(planet.currentRotation).not.toBe(initialRotation);
       expect(planet.currentRotation).toBe(0.1); // rotationSpeed * deltaTime
     });
 
     it('should apply rotation to mesh', () => {
       planet.update(1.0);
-      
+
       expect(planet.mesh.rotation.y).toBe(planet.currentRotation);
     });
 
     it('should accumulate rotation over multiple updates', () => {
       planet.update(1.0);
       const rotationAfter1 = planet.currentRotation;
-      
+
       planet.update(1.0);
       const rotationAfter2 = planet.currentRotation;
-      
+
       expect(rotationAfter2).toBe(rotationAfter1 + 0.1);
     });
 
@@ -187,17 +187,17 @@ describe('Planet', () => {
       const planet1 = new Planet();
       const planet2 = new Planet();
       planet2.rotationSpeed = planet1.rotationSpeed; // Ensure same speed
-      
+
       planet1.update(1.0);
       planet2.update(0.5);
-      
+
       expect(planet1.currentRotation).toBeCloseTo(planet2.currentRotation * 2, 5);
     });
 
     it('should handle custom rotation speed', () => {
       planet.rotationSpeed = 0.5;
       planet.update(1.0);
-      
+
       expect(planet.currentRotation).toBe(0.5);
     });
   });
@@ -258,7 +258,7 @@ describe('Planet', () => {
   describe('serialization', () => {
     it('should serialize state', () => {
       const state = planet.serializeState();
-      
+
       expect(state.id).toBe(planet.getId());
       expect(state.name).toBe('Test Planet');
       expect(state.radius).toBe(10);
@@ -274,7 +274,7 @@ describe('Planet', () => {
     it('should serialize dockable property', () => {
       planet.dockable = false;
       const state = planet.serializeState();
-      
+
       expect(state.dockable).toBe(false);
     });
   });
@@ -283,7 +283,7 @@ describe('Planet', () => {
     it('should allow setting moon', () => {
       const moon = new Planet(2, new THREE.Vector3(120, 200, 300), 0xCCCCCC, 'Test Moon');
       planet.moon = moon;
-      
+
       expect(planet.moon).toBe(moon);
       expect(planet.moon.getName()).toBe('Test Moon');
     });
@@ -291,7 +291,7 @@ describe('Planet', () => {
     it('should serialize without moon reference', () => {
       const moon = new Planet(2);
       planet.moon = moon;
-      
+
       const state = planet.serializeState();
       // Moon is not included in serialization
       expect(state.moon).toBeUndefined();

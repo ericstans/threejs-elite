@@ -121,7 +121,7 @@ export class Controls {
       // Get weapon cooldown from equipped weapon
       const weaponStats = this.spaceship.getWeaponStats ? this.spaceship.getWeaponStats() : { cooldown: 0.5 };
       const cooldown = weaponStats.cooldown || 0.5;
-      
+
       if (currentTime - this.lastLaserTime >= cooldown) {
         if (this.onShoot) {
           this.onShoot();

@@ -106,7 +106,7 @@ describe('CombatSystem', () => {
     it('should fire laser in forward direction', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
-      
+
       // Forward direction should be roughly (0, 0, -1) when no rotation
       expect(laser.direction.z).toBeLessThan(0);
       expect(Math.abs(laser.direction.x)).toBeLessThan(0.1);
@@ -116,7 +116,7 @@ describe('CombatSystem', () => {
     it('should fire laser from offset position in front of ship', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
-      
+
       // Laser should start slightly ahead of ship (z = -2 for forward offset)
       expect(laser.position.z).toBeLessThan(0);
     });
@@ -125,7 +125,7 @@ describe('CombatSystem', () => {
       mockSpaceship.getRotation = vi.fn(() => new THREE.Euler(0, Math.PI / 2, 0));
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
-      
+
       // When rotated 90 degrees, should fire to the side
       expect(Math.abs(laser.direction.x)).toBeGreaterThan(0.9);
     });
@@ -137,12 +137,12 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser1 = combatSystem.lasers[0];
       const laser2 = combatSystem.lasers[1];
-      
+
       vi.spyOn(laser1, 'update').mockReturnValue(false);
       vi.spyOn(laser2, 'update').mockReturnValue(false);
-      
+
       combatSystem.updateLasers(0.016);
-      
+
       expect(laser1.update).toHaveBeenCalledWith(0.016);
       expect(laser2.update).toHaveBeenCalledWith(0.016);
     });
@@ -151,9 +151,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       vi.spyOn(laser, 'update').mockReturnValue(true); // Should destroy
-      
+
       combatSystem.updateLasers(0.016);
-      
+
       expect(combatSystem.lasers.length).toBe(0);
       expect(mockGameEngine.removeEntity).toHaveBeenCalledWith(laser);
     });
@@ -162,9 +162,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       vi.spyOn(laser, 'update').mockReturnValue(false); // Should not destroy
-      
+
       combatSystem.updateLasers(0.016);
-      
+
       expect(combatSystem.lasers.length).toBe(1);
       expect(mockGameEngine.removeEntity).not.toHaveBeenCalled();
     });
@@ -178,10 +178,10 @@ describe('CombatSystem', () => {
       const mockExplosion2 = {
         update: vi.fn().mockReturnValue(false)
       };
-      
+
       combatSystem.explosions.push(mockExplosion1, mockExplosion2);
       combatSystem.updateExplosions(0.016);
-      
+
       expect(mockExplosion1.update).toHaveBeenCalledWith(0.016);
       expect(mockExplosion2.update).toHaveBeenCalledWith(0.016);
     });
@@ -190,10 +190,10 @@ describe('CombatSystem', () => {
       const mockExplosion = {
         update: vi.fn().mockReturnValue(true) // Should destroy
       };
-      
+
       combatSystem.explosions.push(mockExplosion);
       combatSystem.updateExplosions(0.016);
-      
+
       expect(combatSystem.explosions.length).toBe(0);
       expect(mockGameEngine.removeEntity).toHaveBeenCalledWith(mockExplosion);
     });
@@ -216,9 +216,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10); // Same position as asteroid
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockAsteroid.takeDamage).toHaveBeenCalledWith(1);
       expect(combatSystem.lasers.length).toBe(0); // Laser removed
     });
@@ -227,9 +227,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(100, 100, 100); // Far from asteroid
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockAsteroid.takeDamage).not.toHaveBeenCalled();
       expect(combatSystem.lasers.length).toBe(1); // Laser still exists
     });
@@ -238,22 +238,22 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(combatSystem.explosions.length).toBe(1);
       expect(mockGameEngine.createSpatialLaserHit).toHaveBeenCalled();
     });
 
     it('should create large explosion when asteroid is destroyed', () => {
       mockAsteroid.takeDamage.mockReturnValue(true); // Destroyed
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(combatSystem.explosions.length).toBe(1);
       expect(mockGameEngine.createSpatialExplosion).toHaveBeenCalled();
       expect(mockGameEngine.removeEntity).toHaveBeenCalledWith(mockAsteroid);
@@ -261,14 +261,14 @@ describe('CombatSystem', () => {
 
     it('should spawn resources when asteroid is destroyed', () => {
       mockAsteroid.takeDamage.mockReturnValue(true); // Destroyed
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       const initialEntityCount = mockGameEngine.addEntity.mock.calls.length;
       combatSystem.checkCollisions();
-      
+
       // Should add at least explosion (might add 0-4 resources)
       expect(mockGameEngine.addEntity.mock.calls.length).toBeGreaterThanOrEqual(initialEntityCount);
     });
@@ -277,21 +277,21 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(callbacks.onHitFeedback).toHaveBeenCalled();
     });
 
     it('should skip dead asteroids', () => {
       mockAsteroid.isAlive.mockReturnValue(false);
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockAsteroid.takeDamage).not.toHaveBeenCalled();
     });
   });
@@ -315,9 +315,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockNPCShip.takeDamage).toHaveBeenCalledWith(1);
       expect(combatSystem.lasers.length).toBe(0);
     });
@@ -326,9 +326,9 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockNPCShip.setNPCFlag).toHaveBeenCalledWith('isHostile', true);
     });
 
@@ -336,45 +336,45 @@ describe('CombatSystem', () => {
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(callbacks.onNPCShipHit).toHaveBeenCalled();
     });
 
     it('should skip unloaded NPCs', () => {
       mockNPCShip.loaded = false;
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockNPCShip.takeDamage).not.toHaveBeenCalled();
     });
 
     it('should skip dead NPCs', () => {
       mockNPCShip.isAlive.mockReturnValue(false);
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(mockNPCShip.takeDamage).not.toHaveBeenCalled();
     });
 
     it('should create explosion when NPC is destroyed', () => {
       mockNPCShip.takeDamage.mockReturnValue(true); // Destroyed
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(combatSystem.explosions.length).toBe(1);
       expect(mockGameEngine.createSpatialExplosion).toHaveBeenCalled();
     });
@@ -384,13 +384,13 @@ describe('CombatSystem', () => {
         getId: () => 'npcship-0'
       };
       mockNPCShip.takeDamage.mockReturnValue(true); // Destroyed
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(callbacks.onNPCShipDestroyed).toHaveBeenCalled();
     });
 
@@ -398,13 +398,13 @@ describe('CombatSystem', () => {
       mockCurrentTarget = {
         getId: () => 'npcship-0'
       };
-      
+
       combatSystem.shootLaser();
       const laser = combatSystem.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       combatSystem.checkCollisions();
-      
+
       expect(callbacks.onRequestTargetInfoUpdate).toHaveBeenCalled();
     });
   });
@@ -440,7 +440,7 @@ describe('CombatSystem', () => {
         getPosition: () => new THREE.Vector3(10, 0, 0),
         velocity: new THREE.Vector3(0, 0, 0)
       };
-      
+
       const result = combatSystem.calculateLeadTarget(target, new THREE.Vector3(0, 0, 0));
       expect(result.x).toBe(10);
       expect(result.y).toBe(0);
@@ -452,9 +452,9 @@ describe('CombatSystem', () => {
         getPosition: () => new THREE.Vector3(10, 0, 0),
         velocity: new THREE.Vector3(5, 0, 0) // Moving in +X direction
       };
-      
+
       const result = combatSystem.calculateLeadTarget(target, new THREE.Vector3(0, 0, 0));
-      
+
       // Lead position should be ahead of current position
       expect(result.x).toBeGreaterThan(10);
     });
@@ -464,9 +464,9 @@ describe('CombatSystem', () => {
         getPosition: () => new THREE.Vector3(10, 0, 0),
         getVelocity: () => new THREE.Vector3(5, 0, 0)
       };
-      
+
       const result = combatSystem.calculateLeadTarget(target, new THREE.Vector3(0, 0, 0));
-      
+
       expect(result.x).toBeGreaterThan(10);
     });
 
@@ -475,9 +475,9 @@ describe('CombatSystem', () => {
         getPosition: () => new THREE.Vector3(10, 0, 0),
         velocity: new THREE.Vector3(0.05, 0, 0) // Very slow
       };
-      
+
       const result = combatSystem.calculateLeadTarget(target, new THREE.Vector3(0, 0, 0));
-      
+
       // Should return current position for very slow targets
       expect(result.x).toBeCloseTo(10, 1);
     });
@@ -487,9 +487,9 @@ describe('CombatSystem', () => {
         getPosition: () => new THREE.Vector3(10, 5, -3),
         velocity: new THREE.Vector3(2, 1, -1)
       };
-      
+
       const result = combatSystem.calculateLeadTarget(target, new THREE.Vector3(0, 0, 0));
-      
+
       expect(result).toBeInstanceOf(THREE.Vector3);
       expect(isNaN(result.x)).toBe(false);
       expect(isNaN(result.y)).toBe(false);
@@ -500,20 +500,20 @@ describe('CombatSystem', () => {
   describe('spawnResources', () => {
     it('should spawn 0-4 resources', () => {
       const position = new THREE.Vector3(10, 5, -3);
-      
+
       // Test multiple times due to randomness
       let minResources = Infinity;
       let maxResources = 0;
-      
+
       for (let i = 0; i < 50; i++) {
         mockGameEngine.addEntity.mockClear();
         combatSystem.spawnResources(position);
-        
+
         const resourceCount = mockGameEngine.addEntity.mock.calls.length;
         minResources = Math.min(minResources, resourceCount);
         maxResources = Math.max(maxResources, resourceCount);
       }
-      
+
       expect(minResources).toBeGreaterThanOrEqual(0);
       expect(maxResources).toBeLessThanOrEqual(4);
     });
@@ -521,16 +521,16 @@ describe('CombatSystem', () => {
     it('should spawn resources near asteroid position', () => {
       const position = new THREE.Vector3(10, 5, -3);
       combatSystem.spawnResources(position);
-      
+
       // Check that resources are added
       const addedResources = mockGameEngine.addEntity.mock.calls
         .map(call => call[0])
         .filter(entity => entity && entity.getType && entity.getType() === 'resource');
-      
+
       addedResources.forEach(resource => {
         const resourcePos = resource.getPosition();
         const distance = resourcePos.distanceTo(position);
-        
+
         // Should be within 4 units (offset range is -2 to +2 on each axis)
         expect(distance).toBeLessThan(7); // sqrt(4^2 * 3) ≈ 6.9
       });
@@ -559,7 +559,7 @@ describe('CombatSystem', () => {
         onNPCShipDestroyed: vi.fn(),
         environmentSystem: null
       });
-      
+
       systemWithoutCallback._hitFeedback();
       expect(mockUI.blinkCrosshairRed).toHaveBeenCalled();
     });
@@ -570,7 +570,7 @@ describe('CombatSystem', () => {
       const mockEnvironmentSystem = {
         markAsteroidDestroyed: vi.fn()
       };
-      
+
       const systemWithEnv = new CombatSystem({
         gameEngine: mockGameEngine,
         soundManager: mockSoundManager,
@@ -583,7 +583,7 @@ describe('CombatSystem', () => {
         onHitFeedback: callbacks.onHitFeedback,        onNPCShipHit: vi.fn(),
         onNPCShipDestroyed: vi.fn(),        environmentSystem: mockEnvironmentSystem
       });
-      
+
       const mockAsteroid = {
         isAlive: vi.fn(() => true),
         getPosition: vi.fn(() => new THREE.Vector3(0, 0, -10)),
@@ -591,13 +591,13 @@ describe('CombatSystem', () => {
         takeDamage: vi.fn(() => true) // Destroyed
       };
       mockAsteroids.push(mockAsteroid);
-      
+
       systemWithEnv.shootLaser();
       const laser = systemWithEnv.lasers[0];
       laser.position.set(0, 0, -10);
-      
+
       systemWithEnv.checkCollisions();
-      
+
       expect(mockEnvironmentSystem.markAsteroidDestroyed).toHaveBeenCalledWith(mockAsteroid);
     });
   });

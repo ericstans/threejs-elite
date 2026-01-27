@@ -47,7 +47,7 @@ describe('Asteroid', () => {
     it('should calculate mass based on size', () => {
       // mass = size^3
       expect(asteroid.getMass()).toBe(8); // 2^3
-      
+
       const smallAsteroid = new Asteroid(testPosition, 3);
       expect(smallAsteroid.getMass()).toBe(27); // 3^3
     });
@@ -123,9 +123,9 @@ describe('Asteroid', () => {
         y: asteroid.currentRotation.y,
         z: asteroid.currentRotation.z
       };
-      
+
       asteroid.update(1.0);
-      
+
       expect(asteroid.currentRotation.x).not.toBe(initialRotation.x);
       expect(asteroid.currentRotation.y).not.toBe(initialRotation.y);
       expect(asteroid.currentRotation.z).not.toBe(initialRotation.z);
@@ -133,7 +133,7 @@ describe('Asteroid', () => {
 
     it('should apply rotation to mesh', () => {
       asteroid.update(1.0);
-      
+
       expect(asteroid.mesh.rotation.x).toBe(asteroid.currentRotation.x);
       expect(asteroid.mesh.rotation.y).toBe(asteroid.currentRotation.y);
       expect(asteroid.mesh.rotation.z).toBe(asteroid.currentRotation.z);
@@ -142,10 +142,10 @@ describe('Asteroid', () => {
     it('should accumulate rotation over multiple updates', () => {
       asteroid.update(1.0);
       const rotationAfter1 = asteroid.currentRotation.x;
-      
+
       asteroid.update(1.0);
       const rotationAfter2 = asteroid.currentRotation.x;
-      
+
       expect(rotationAfter2).not.toBe(rotationAfter1);
     });
 
@@ -154,10 +154,10 @@ describe('Asteroid', () => {
       const asteroid2 = new Asteroid(testPosition);
       // Force same rotation speed for comparison
       asteroid2.rotationSpeed.copy(asteroid1.rotationSpeed);
-      
+
       asteroid1.update(1.0);
       asteroid2.update(0.5);
-      
+
       // asteroid1 should rotate twice as much
       expect(Math.abs(asteroid1.currentRotation.x)).toBeCloseTo(Math.abs(asteroid2.currentRotation.x) * 2, 5);
     });
@@ -202,7 +202,7 @@ describe('Asteroid', () => {
       asteroid.takeDamage(3);
       asteroid.takeDamage(4);
       expect(asteroid.getHealth()).toBe(3);
-      
+
       const destroyed = asteroid.takeDamage(3);
       expect(destroyed).toBe(true);
     });
@@ -266,7 +266,7 @@ describe('Asteroid', () => {
     it('should serialize state', () => {
       asteroid.takeDamage(3);
       const state = asteroid.serializeState();
-      
+
       expect(state.id).toBe(asteroid.getId());
       expect(state.position.x).toBe(10);
       expect(state.position.y).toBe(20);
@@ -278,7 +278,7 @@ describe('Asteroid', () => {
     it('should include damaged health in serialization', () => {
       asteroid.takeDamage(5);
       const state = asteroid.serializeState();
-      
+
       expect(state.health).toBe(5);
     });
   });

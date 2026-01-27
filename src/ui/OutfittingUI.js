@@ -203,7 +203,7 @@ export class OutfittingUI {
     // Equipment items
     for (const [equipmentName, equipmentData] of Object.entries(categoryData)) {
       const isEquipped = this.isEquipped(categoryName, equipmentName);
-      
+
       const itemDiv = document.createElement('div');
       itemDiv.className = 'outfitting-equipment-item';
       itemDiv.style.padding = '10px';

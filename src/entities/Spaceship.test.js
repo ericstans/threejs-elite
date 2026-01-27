@@ -144,9 +144,9 @@ describe('Spaceship', () => {
     it('should reset speed history', () => {
       spaceship.speedHistory = [1, 2, 3, 4, 5];
       spaceship.calculatedSpeed = 10;
-      
+
       spaceship.resetSpeedHistory();
-      
+
       expect(spaceship.speedHistory).toEqual([]);
       expect(spaceship.calculatedSpeed).toBe(0);
     });
@@ -321,9 +321,9 @@ describe('Spaceship', () => {
       spaceship.flags.isDocking = true;
       spaceship.flags.isDocked = true;
       spaceship.flags.firingEnabled = false;
-      
+
       spaceship.completeTakeoff();
-      
+
       expect(spaceship.flags.isDocking).toBe(false);
       expect(spaceship.flags.isDocked).toBe(false);
       expect(spaceship.flags.firingEnabled).toBe(true);
@@ -349,9 +349,9 @@ describe('Spaceship', () => {
       spaceship._controlsDisabled = true;
       spaceship.velocity.set(10, 10, 10);
       spaceship.angularVelocity.set(1, 1, 1);
-      
+
       spaceship.update(0.016);
-      
+
       expect(spaceship.velocity.x).toBe(0);
       expect(spaceship.velocity.y).toBe(0);
       expect(spaceship.velocity.z).toBe(0);
@@ -363,9 +363,9 @@ describe('Spaceship', () => {
     it('should set throttle to zero when controls disabled', () => {
       spaceship._controlsDisabled = true;
       spaceship.throttle = 0.8;
-      
+
       spaceship.update(0.016);
-      
+
       expect(spaceship.throttle).toBe(0);
     });
   });
@@ -374,7 +374,7 @@ describe('Spaceship', () => {
     it('should enable third person mode with model', () => {
       const mockModel = new THREE.Group();
       spaceship.enableThirdPerson(mockModel, true);
-      
+
       expect(spaceship.thirdPersonMode).toBe(true);
       expect(spaceship.thirdPersonLoaded).toBe(true);
     });
@@ -382,7 +382,7 @@ describe('Spaceship', () => {
     it('should preload model without activating third person', () => {
       const mockModel = new THREE.Group();
       spaceship.enableThirdPerson(mockModel, false);
-      
+
       expect(spaceship.thirdPersonMode).toBe(false);
       expect(spaceship.thirdPersonLoaded).toBe(true);
     });
@@ -398,7 +398,7 @@ describe('Spaceship', () => {
       spaceship.enableThirdPerson(mockModel, true);
       spaceship.syncThirdPerson();
       expect(spaceship.thirdPersonGroup.visible).toBe(true);
-      
+
       spaceship.disableThirdPerson();
       spaceship.syncThirdPerson();
       expect(spaceship.thirdPersonGroup.visible).toBe(false);
@@ -429,7 +429,7 @@ describe('Spaceship', () => {
     it('should lock to station landing vector', () => {
       spaceship.position.set(110, 0, 0);
       spaceship.lockToStation(mockStation);
-      
+
       expect(spaceship.flags.landingVectorLocked).toBe(true);
       expect(spaceship.dockingTarget).toBe(mockStation);
       expect(spaceship.landingVectorStation).toBe(mockStation);
@@ -438,7 +438,7 @@ describe('Spaceship', () => {
     it('should freeze velocity when locked to station', () => {
       spaceship.velocity.set(10, 5, -3);
       spaceship.lockToStation(mockStation);
-      
+
       expect(spaceship.velocity.x).toBe(0);
       expect(spaceship.velocity.y).toBe(0);
       expect(spaceship.velocity.z).toBe(0);
@@ -447,7 +447,7 @@ describe('Spaceship', () => {
     it('should freeze angular velocity when locked to station', () => {
       spaceship.angularVelocity.set(1, 1, 1);
       spaceship.lockToStation(mockStation);
-      
+
       expect(spaceship.angularVelocity.x).toBe(0);
       expect(spaceship.angularVelocity.y).toBe(0);
       expect(spaceship.angularVelocity.z).toBe(0);
@@ -464,11 +464,11 @@ describe('Spaceship', () => {
     it('should have different stats for different ship types', () => {
       const flea = new Spaceship('Flea');
       const cobra = new Spaceship('Cobra Mk III');
-      
+
       // Different ships should have different characteristics
       const fleaSpeed = flea.maxSpeed;
       const cobraSpeed = cobra.maxSpeed;
-      
+
       expect(fleaSpeed).toBeGreaterThan(0);
       expect(cobraSpeed).toBeGreaterThan(0);
       // They may or may not be different, but both should be valid
@@ -478,12 +478,12 @@ describe('Spaceship', () => {
   describe('physics integration', () => {
     it('should apply acceleration based on throttle', () => {
       spaceship.setThrottle(1.0);
-      
+
       // Simulate several update frames
       for (let i = 0; i < 10; i++) {
         spaceship.update(0.016);
       }
-      
+
       // Speed should increase (unless docking/special state)
       // Note: Actual physics depends on update() implementation
       expect(spaceship.maxSpeed).toBeGreaterThan(0);
@@ -492,9 +492,9 @@ describe('Spaceship', () => {
     it('should maintain zero speed when throttle is zero', () => {
       spaceship.setThrottle(0);
       spaceship.velocity.set(0, 0, 0);
-      
+
       spaceship.update(0.016);
-      
+
       // Velocity should remain zero or decay
       const speed = spaceship.getSpeed();
       expect(speed).toBeLessThanOrEqual(0.1);

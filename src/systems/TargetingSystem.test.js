@@ -113,7 +113,7 @@ describe('TargetingSystem', () => {
 
     it('should target nearest combat target to crosshair', () => {
       targetingSystem.targetNearestCombat();
-      
+
       expect(targetingSystem.currentTarget).toBe(mockAsteroid);
       expect(mockAsteroid.setTargeted).toHaveBeenCalledWith(true);
       expect(mockSoundManager.playTargetSelectedSound).toHaveBeenCalled();
@@ -145,14 +145,14 @@ describe('TargetingSystem', () => {
     it('should not target when no spaceship', () => {
       targetingSystem.getSpaceship = () => null;
       targetingSystem.targetNearestCombat();
-      
+
       expect(targetingSystem.currentTarget).toBeNull();
     });
 
     it('should skip dead asteroids', () => {
       mockAsteroid.isAlive.mockReturnValue(false);
       targetingSystem.targetNearestCombat();
-      
+
       expect(targetingSystem.currentTarget).toBeNull();
     });
 
@@ -196,7 +196,7 @@ describe('TargetingSystem', () => {
 
     it('should target nearest nav target to crosshair', () => {
       targetingSystem.targetNearestNav();
-      
+
       expect(targetingSystem.currentNavTarget).toBeDefined();
       expect(targetingSystem.currentNavTarget.getId()).toBe('planet-1');
       expect(mockPlanet.setNavTargeted).toHaveBeenCalledWith(true);
@@ -226,35 +226,35 @@ describe('TargetingSystem', () => {
     it('should not target when no spaceship', () => {
       targetingSystem.getSpaceship = () => null;
       targetingSystem.targetNearestNav();
-      
+
       expect(targetingSystem.currentNavTarget).toBeNull();
     });
 
     it('should block targeting when docked', () => {
       mockSpaceship.flags.isDocked = true;
       targetingSystem.targetNearestNav();
-      
+
       expect(targetingSystem.currentNavTarget).toBeNull();
     });
 
     it('should block targeting when docking', () => {
       mockSpaceship.flags.isDocking = true;
       targetingSystem.targetNearestNav();
-      
+
       expect(targetingSystem.currentNavTarget).toBeNull();
     });
 
     it('should block targeting when landing vector locked', () => {
       mockSpaceship.flags.landingVectorLocked = true;
       targetingSystem.targetNearestNav();
-      
+
       expect(targetingSystem.currentNavTarget).toBeNull();
     });
 
     it('should allow targeting when blockIfDockingFlags is false', () => {
       mockSpaceship.flags.isDocked = true;
       targetingSystem.targetNearestNav({ blockIfDockingFlags: false });
-      
+
       expect(targetingSystem.currentNavTarget).toBeDefined();
       expect(targetingSystem.currentNavTarget.getId()).toBe('planet-1');
     });
@@ -279,7 +279,7 @@ describe('TargetingSystem', () => {
     it('should update target info when target exists', () => {
       targetingSystem.currentTarget = mockAsteroid;
       targetingSystem.updateTargetInfo();
-      
+
       expect(mockUI.updateTargetInfo).toHaveBeenCalled();
       const callArgs = mockUI.updateTargetInfo.mock.calls[0][0];
       expect(callArgs.id).toBe('asteroid-1');
@@ -291,7 +291,7 @@ describe('TargetingSystem', () => {
     it('should calculate distance to target', () => {
       targetingSystem.currentTarget = mockAsteroid;
       targetingSystem.updateTargetInfo();
-      
+
       const callArgs = mockUI.updateTargetInfo.mock.calls[0][0];
       expect(callArgs.distance).toBeCloseTo(10, 1);
     });
@@ -299,9 +299,9 @@ describe('TargetingSystem', () => {
     it('should clear target info when target is dead', () => {
       mockAsteroid.isAlive.mockReturnValue(false);
       targetingSystem.currentTarget = mockAsteroid;
-      
+
       targetingSystem.updateTargetInfo();
-      
+
       expect(mockUI.clearTargetInfo).toHaveBeenCalled();
       expect(targetingSystem.currentTarget).toBeNull();
     });
@@ -309,7 +309,7 @@ describe('TargetingSystem', () => {
     it('should clear target info when no target', () => {
       targetingSystem.currentTarget = null;
       targetingSystem.updateTargetInfo();
-      
+
       expect(mockUI.clearTargetInfo).toHaveBeenCalled();
     });
   });
@@ -335,7 +335,7 @@ describe('TargetingSystem', () => {
     it('should update nav target info', () => {
       targetingSystem.currentNavTarget = mockPlanet;
       targetingSystem.updateNavTargetInfo();
-      
+
       expect(mockUI.updateNavTargetInfo).toHaveBeenCalled();
       const callArgs = mockUI.updateNavTargetInfo.mock.calls[0][0];
       expect(callArgs.id).toBe('planet-1');
@@ -346,7 +346,7 @@ describe('TargetingSystem', () => {
     it('should calculate surface distance for planets', () => {
       targetingSystem.currentNavTarget = mockPlanet;
       targetingSystem.updateNavTargetInfo();
-      
+
       const callArgs = mockUI.updateNavTargetInfo.mock.calls[0][0];
       // Distance should be 100 - 5 (radius) = 95
       expect(callArgs.distance).toBe(95);
@@ -364,10 +364,10 @@ describe('TargetingSystem', () => {
         size: 10,
         getServices: null
       };
-      
+
       targetingSystem.currentNavTarget = mockStation;
       targetingSystem.updateNavTargetInfo();
-      
+
       const callArgs = mockUI.updateNavTargetInfo.mock.calls[0][0];
       // Distance should be 100 - 10 (size) = 90
       expect(callArgs.distance).toBe(90);
@@ -377,10 +377,10 @@ describe('TargetingSystem', () => {
       mockSpaceship.flags.isDocked = true;
       mockSpaceship.flags.dockContext = 'planet';
       mockSpaceship.flags.docketPlanetId = 'planet-1';
-      
+
       targetingSystem.currentNavTarget = mockPlanet;
       targetingSystem.updateNavTargetInfo();
-      
+
       const callArgs = mockUI.updateNavTargetInfo.mock.calls[0][0];
       expect(callArgs.isDockedWithTarget).toBe(true);
     });
@@ -397,14 +397,14 @@ describe('TargetingSystem', () => {
         size: 10,
         getServices: null
       };
-      
+
       mockSpaceship.flags.isDocked = true;
       mockSpaceship.flags.dockContext = 'station';
       mockSpaceship.flags.dockedStationId = 'station-1';
-      
+
       targetingSystem.currentNavTarget = mockStation;
       targetingSystem.updateNavTargetInfo();
-      
+
       const callArgs = mockUI.updateNavTargetInfo.mock.calls[0][0];
       expect(callArgs.isDockedWithTarget).toBe(true);
     });
@@ -412,7 +412,7 @@ describe('TargetingSystem', () => {
     it('should clear nav target info when no target', () => {
       targetingSystem.currentNavTarget = null;
       targetingSystem.updateNavTargetInfo();
-      
+
       expect(mockUI.clearNavTargetInfo).toHaveBeenCalled();
     });
   });
@@ -456,7 +456,7 @@ describe('TargetingSystem', () => {
 
     it('should build combat target cycle sorted by distance', () => {
       targetingSystem.buildCombatTargetCycle();
-      
+
       expect(targetingSystem.combatTargetCycle.length).toBe(3);
       // Closest to crosshair should be first (asteroid1 at x=0)
       expect(targetingSystem.combatTargetCycle[0].getId()).toBe('asteroid-1');
@@ -465,10 +465,10 @@ describe('TargetingSystem', () => {
     it('should cycle through targets', () => {
       targetingSystem.cycleCombatTarget();
       expect(targetingSystem.currentTarget.getId()).toBe('asteroid-1');
-      
+
       targetingSystem.cycleCombatTarget();
       expect(targetingSystem.currentTarget.getId()).toBe('asteroid-3');
-      
+
       targetingSystem.cycleCombatTarget();
       expect(targetingSystem.currentTarget.getId()).toBe('asteroid-2');
     });
@@ -478,7 +478,7 @@ describe('TargetingSystem', () => {
       targetingSystem.cycleCombatTarget();
       targetingSystem.cycleCombatTarget();
       // Cycled through all 3
-      
+
       targetingSystem.cycleCombatTarget();
       // Should wrap to first
       expect(targetingSystem.currentTarget.getId()).toBe('asteroid-1');
@@ -487,20 +487,20 @@ describe('TargetingSystem', () => {
     it('should clear previous target when cycling', () => {
       targetingSystem.cycleCombatTarget();
       const firstTarget = targetingSystem.currentTarget;
-      
+
       targetingSystem.cycleCombatTarget();
-      
+
       expect(firstTarget.setTargeted).toHaveBeenCalledWith(false);
     });
 
     it('should reset cycle after timeout', () => {
       targetingSystem.cycleCombatTarget();
       expect(targetingSystem.combatCycleIndex).toBe(0);
-      
+
       // Simulate timeout
       targetingSystem.lastTargetTime = Date.now() - 4000;
       targetingSystem.cycleCombatTarget();
-      
+
       // Should rebuild and start from beginning
       expect(targetingSystem.combatCycleIndex).toBe(0);
     });
@@ -551,7 +551,7 @@ describe('TargetingSystem', () => {
 
     it('should build nav target cycle sorted by distance', () => {
       targetingSystem.buildNavTargetCycle();
-      
+
       expect(targetingSystem.navTargetCycle.length).toBe(3);
       // Station is closest (x=1)
       expect(targetingSystem.navTargetCycle[0].getId()).toBe('station-1');
@@ -560,7 +560,7 @@ describe('TargetingSystem', () => {
     it('should cycle through nav targets', () => {
       targetingSystem.cycleNavTarget();
       expect(targetingSystem.currentNavTarget.getId()).toBe('station-1');
-      
+
       targetingSystem.cycleNavTarget();
       expect(targetingSystem.currentNavTarget.getId()).toBe('planet-1');
     });
@@ -628,7 +628,7 @@ describe('TargetingSystem', () => {
         velocity: new THREE.Vector3(0, 0, 0)
       };
       targetingSystem.currentTarget = mockAsteroid;
-      
+
       const lead = targetingSystem.calculateLeadTarget();
       expect(lead.x).toBeCloseTo(10, 1);
       expect(lead.y).toBeCloseTo(0, 1);
@@ -642,7 +642,7 @@ describe('TargetingSystem', () => {
         velocity: new THREE.Vector3(5, 0, 0) // Moving in +X
       };
       targetingSystem.currentTarget = mockTarget;
-      
+
       const lead = targetingSystem.calculateLeadTarget();
       // Lead position should be ahead of current position
       expect(lead.x).toBeGreaterThan(10);
@@ -655,7 +655,7 @@ describe('TargetingSystem', () => {
         velocity: new THREE.Vector3(2, 1, -1)
       };
       targetingSystem.currentTarget = mockTarget;
-      
+
       const lead = targetingSystem.calculateLeadTarget();
       expect(lead).toBeInstanceOf(THREE.Vector3);
       expect(isNaN(lead.x)).toBe(false);
@@ -670,7 +670,7 @@ describe('TargetingSystem', () => {
         getVelocity: () => new THREE.Vector3(5, 0, 0)
       };
       targetingSystem.currentTarget = mockTarget;
-      
+
       const lead = targetingSystem.calculateLeadTarget();
       expect(lead.x).toBeGreaterThan(10);
     });
@@ -718,7 +718,7 @@ describe('TargetingSystem', () => {
       mockNPCShips.push(mockNPC);
 
       targetingSystem.targetNearestCombat();
-      
+
       expect(targetingSystem.currentTarget).toBeDefined();
       expect(targetingSystem.currentTarget.getId()).toBe('npcship-0');
     });
@@ -732,7 +732,7 @@ describe('TargetingSystem', () => {
       mockNPCShips.push(mockNPC);
 
       targetingSystem.targetNearestCombat();
-      
+
       expect(targetingSystem.currentTarget).toBeNull();
     });
   });

@@ -31,7 +31,7 @@ function parseArgs(){
 async function collectInstruments(midiDir){
   const files = walk(midiDir).filter(f => f.toLowerCase().endsWith('.mid'));
   if (files.length === 0) return new Set(ALWAYS_INCLUDE);
-  
+
   // Import Midi library (ES6 module)
   const midiMod = await import('@tonejs/midi');
   const Midi = (midiMod && midiMod.Midi)

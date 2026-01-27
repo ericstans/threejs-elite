@@ -53,7 +53,7 @@ describe('SectorManager', () => {
   describe('sector creation and retrieval', () => {
     it('should create sector on first access', () => {
       const sector = sectorManager._ensureSector('sector-1');
-      
+
       expect(sector).toBeDefined();
       expect(sector.id).toBe('sector-1');
       expect(sector.dynamic).toEqual({ entities: [] });
@@ -63,9 +63,9 @@ describe('SectorManager', () => {
     it('should return existing sector on subsequent access', () => {
       const sector1 = sectorManager._ensureSector('sector-1');
       sector1.customData = 'test';
-      
+
       const sector2 = sectorManager._ensureSector('sector-1');
-      
+
       expect(sector2.customData).toBe('test');
       expect(sector2).toBe(sector1);
     });
@@ -73,7 +73,7 @@ describe('SectorManager', () => {
     it('should track multiple sectors independently', () => {
       const sector1 = sectorManager._ensureSector('sector-1');
       const sector2 = sectorManager._ensureSector('sector-2');
-      
+
       expect(sector1.id).toBe('sector-1');
       expect(sector2.id).toBe('sector-2');
       expect(sectorManager.sectors.size).toBe(2);
@@ -86,19 +86,19 @@ describe('SectorManager', () => {
         save: vi.fn(),
         load: vi.fn()
       };
-      
+
       sectorManager.registerSerializer('asteroid', handlers);
-      
+
       expect(sectorManager.registry._map.get('asteroid')).toBe(handlers);
     });
 
     it('should allow multiple serializer registrations', () => {
       const asteroidsHandlers = { save: vi.fn(), load: vi.fn() };
       const planetsHandlers = { save: vi.fn(), load: vi.fn() };
-      
+
       sectorManager.registerSerializer('asteroid', asteroidsHandlers);
       sectorManager.registerSerializer('planet', planetsHandlers);
-      
+
       expect(sectorManager.registry._map.size).toBe(2);
     });
   });
@@ -122,9 +122,9 @@ describe('SectorManager', () => {
         { getType: () => 'asteroid', mass: 100, position: [10, 20, 30] },
         { getType: () => 'planet', name: 'Earth', radius: 50 }
       ];
-      
+
       sectorManager.saveCurrent(entities);
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.dynamic.entities).toHaveLength(2);
       expect(sector.dynamic.entities[0].type).toBe('asteroid');
@@ -139,9 +139,9 @@ describe('SectorManager', () => {
         { getType: () => 'asteroid', mass: 100 },
         { mass: 50 } // No getType
       ];
-      
+
       sectorManager.saveCurrent(entities);
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.dynamic.entities).toHaveLength(1);
     });
@@ -152,9 +152,9 @@ describe('SectorManager', () => {
         { getType: () => 'asteroid', mass: 100 },
         { getType: () => 'unknown-type', data: 'test' }
       ];
-      
+
       sectorManager.saveCurrent(entities);
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.dynamic.entities).toHaveLength(1);
       expect(sector.dynamic.entities[0].type).toBe('asteroid');
@@ -165,7 +165,7 @@ describe('SectorManager', () => {
       const entities = [
         { getType: () => 'asteroid', mass: 100 }
       ];
-      
+
       expect(() => sectorManager.saveCurrent(entities)).not.toThrow();
       expect(sectorManager.sectors.size).toBe(0);
     });
@@ -174,10 +174,10 @@ describe('SectorManager', () => {
       sectorManager.currentSectorId = 'sector-1';
       const entities1 = [{ getType: () => 'asteroid', mass: 100 }];
       const entities2 = [{ getType: () => 'asteroid', mass: 200 }];
-      
+
       sectorManager.saveCurrent(entities1);
       sectorManager.saveCurrent(entities2);
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.dynamic.entities).toHaveLength(1);
       expect(sector.dynamic.entities[0].mass).toBe(200);
@@ -203,9 +203,9 @@ describe('SectorManager', () => {
         { type: 'asteroid', mass: 100 },
         { type: 'asteroid', mass: 200 }
       ];
-      
+
       const entities = sectorManager.loadSector('sector-1', {});
-      
+
       expect(entities).toHaveLength(2);
       expect(entities[0].mass).toBe(100);
       expect(entities[1].mass).toBe(200);
@@ -213,13 +213,13 @@ describe('SectorManager', () => {
 
     it('should set current sector id', () => {
       sectorManager.loadSector('sector-1', {});
-      
+
       expect(sectorManager.currentSectorId).toBe('sector-1');
     });
 
     it('should return empty array for new sector', () => {
       const entities = sectorManager.loadSector('sector-new', {});
-      
+
       expect(entities).toEqual([]);
     });
 
@@ -227,24 +227,24 @@ describe('SectorManager', () => {
       const sector = sectorManager._ensureSector('sector-1');
       sector.asteroidField = { density: 0.5, radius: 100 };
       const onAsteroidFieldState = vi.fn();
-      
+
       sectorManager.loadSector('sector-1', { onAsteroidFieldState });
-      
+
       expect(onAsteroidFieldState).toHaveBeenCalledWith({ density: 0.5, radius: 100 });
     });
 
     it('should not call callback if no asteroid field', () => {
       const onAsteroidFieldState = vi.fn();
-      
+
       sectorManager.loadSector('sector-1', { onAsteroidFieldState });
-      
+
       expect(onAsteroidFieldState).not.toHaveBeenCalled();
     });
 
     it('should handle missing context', () => {
       const sector = sectorManager._ensureSector('sector-1');
       sector.dynamic.entities = [{ type: 'asteroid', mass: 100 }];
-      
+
       expect(() => sectorManager.loadSector('sector-1')).not.toThrow();
     });
   });
@@ -278,9 +278,9 @@ describe('SectorManager', () => {
     it('should save current sector entities', () => {
       sectorManager.currentSectorId = 'sector-1';
       const gatherEntities = vi.fn(() => [mockAsteroid1, mockAsteroid2]);
-      
+
       sectorManager.switchSector('sector-2', {}, [], gatherEntities);
-      
+
       expect(gatherEntities).toHaveBeenCalled();
       const sector1 = sectorManager.sectors.get('sector-1');
       expect(sector1.dynamic.entities).toHaveLength(2);
@@ -289,9 +289,9 @@ describe('SectorManager', () => {
     it('should remove current sector entities from engine', () => {
       sectorManager.currentSectorId = 'sector-1';
       const gatherEntities = vi.fn(() => [mockAsteroid1, mockAsteroid2]);
-      
+
       sectorManager.switchSector('sector-2', {}, [mockAsteroid1, mockAsteroid2], gatherEntities);
-      
+
       expect(mockGameEngine.removeEntity).toHaveBeenCalledWith(mockAsteroid1);
       expect(mockGameEngine.removeEntity).toHaveBeenCalledWith(mockAsteroid2);
     });
@@ -301,18 +301,18 @@ describe('SectorManager', () => {
       const removeSpy = vi.fn();
       mockAsteroid1.mesh.parent.remove = removeSpy;
       const gatherEntities = vi.fn(() => [mockAsteroid1]);
-      
+
       sectorManager.switchSector('sector-2', {}, [mockAsteroid1], gatherEntities);
-      
+
       expect(removeSpy).toHaveBeenCalledWith(mockAsteroid1.mesh);
     });
 
     it('should load target sector entities', () => {
       const sector2 = sectorManager._ensureSector('sector-2');
       sector2.dynamic.entities = [{ type: 'asteroid', mass: 500 }];
-      
+
       const entities = sectorManager.switchSector('sector-2', {}, [], () => []);
-      
+
       expect(entities).toHaveLength(1);
       expect(entities[0].mass).toBe(500);
     });
@@ -323,26 +323,26 @@ describe('SectorManager', () => {
         { type: 'asteroid', mass: 500 },
         { type: 'asteroid', mass: 600 }
       ];
-      
+
       sectorManager.switchSector('sector-2', {}, [], () => []);
-      
+
       expect(mockGameEngine.addEntity).toHaveBeenCalledTimes(2);
     });
 
     it('should add meshes to scene', () => {
       const sector2 = sectorManager._ensureSector('sector-2');
       sector2.dynamic.entities = [{ type: 'asteroid', mass: 500 }];
-      
+
       sectorManager.switchSector('sector-2', {}, [], () => []);
-      
+
       expect(mockGameEngine.scene.add).toHaveBeenCalled();
     });
 
     it('should update current sector id', () => {
       sectorManager.currentSectorId = 'sector-1';
-      
+
       sectorManager.switchSector('sector-2', {}, [], () => []);
-      
+
       expect(sectorManager.currentSectorId).toBe('sector-2');
     });
 
@@ -350,9 +350,9 @@ describe('SectorManager', () => {
       sectorManager.currentSectorId = null;
       const sector1 = sectorManager._ensureSector('sector-1');
       sector1.dynamic.entities = [{ type: 'asteroid', mass: 100 }];
-      
+
       const entities = sectorManager.switchSector('sector-1', {}, [], () => []);
-      
+
       expect(entities).toHaveLength(1);
     });
 
@@ -360,7 +360,7 @@ describe('SectorManager', () => {
       sectorManager.currentSectorId = 'sector-1';
       const entityWithoutMesh = { getType: () => 'asteroid', mass: 100 };
       const gatherEntities = vi.fn(() => [entityWithoutMesh]);
-      
+
       expect(() => sectorManager.switchSector('sector-2', {}, [entityWithoutMesh], gatherEntities)).not.toThrow();
     });
 
@@ -368,7 +368,7 @@ describe('SectorManager', () => {
       delete mockGameEngine.removeEntity;
       sectorManager.currentSectorId = 'sector-1';
       const gatherEntities = vi.fn(() => [mockAsteroid1]);
-      
+
       expect(() => sectorManager.switchSector('sector-2', {}, [mockAsteroid1], gatherEntities)).not.toThrow();
     });
 
@@ -376,7 +376,7 @@ describe('SectorManager', () => {
       delete mockGameEngine.addEntity;
       const sector2 = sectorManager._ensureSector('sector-2');
       sector2.dynamic.entities = [{ type: 'asteroid', mass: 500 }];
-      
+
       expect(() => sectorManager.switchSector('sector-2', {}, [], () => [])).not.toThrow();
     });
   });
@@ -385,9 +385,9 @@ describe('SectorManager', () => {
     it('should save asteroid field state for current sector', () => {
       sectorManager.currentSectorId = 'sector-1';
       const fieldState = { density: 0.5, radius: 100, seed: 42 };
-      
+
       sectorManager.saveAsteroidFieldState(fieldState);
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.asteroidField).toEqual(fieldState);
     });
@@ -395,7 +395,7 @@ describe('SectorManager', () => {
     it('should not save if no current sector', () => {
       sectorManager.currentSectorId = null;
       const fieldState = { density: 0.5 };
-      
+
       expect(() => sectorManager.saveAsteroidFieldState(fieldState)).not.toThrow();
       expect(sectorManager.sectors.size).toBe(0);
     });
@@ -403,10 +403,10 @@ describe('SectorManager', () => {
     it('should create a copy of field state', () => {
       sectorManager.currentSectorId = 'sector-1';
       const fieldState = { density: 0.5, radius: 100 };
-      
+
       sectorManager.saveAsteroidFieldState(fieldState);
       fieldState.density = 0.8;
-      
+
       const sector = sectorManager.sectors.get('sector-1');
       expect(sector.asteroidField.density).toBe(0.5);
     });
@@ -415,9 +415,9 @@ describe('SectorManager', () => {
       sectorManager.currentSectorId = 'sector-1';
       const fieldState = { density: 0.5, radius: 100 };
       sectorManager.saveAsteroidFieldState(fieldState);
-      
+
       const retrieved = sectorManager.getAsteroidFieldState();
-      
+
       expect(retrieved).toEqual(fieldState);
     });
 
@@ -425,15 +425,15 @@ describe('SectorManager', () => {
       sectorManager.currentSectorId = 'sector-1';
       const sector2 = sectorManager._ensureSector('sector-2');
       sector2.asteroidField = { density: 0.7, radius: 150 };
-      
+
       const retrieved = sectorManager.getAsteroidFieldState('sector-2');
-      
+
       expect(retrieved.density).toBe(0.7);
     });
 
     it('should return null for sector without asteroid field', () => {
       const retrieved = sectorManager.getAsteroidFieldState('sector-new');
-      
+
       expect(retrieved).toBeNull();
     });
   });
