@@ -1,6 +1,8 @@
 import { genericProceduralConversation } from '../conversations/planets/genericProcedural.js';
 import { genericProceduralShipConversation } from '../conversations/ships/genericProceduralShip.js';
 
+const DEBUG = false;
+
 export class ConversationSystem {
   constructor() {
     this.conversations = {};

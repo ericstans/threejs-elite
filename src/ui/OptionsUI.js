@@ -4,6 +4,10 @@ export class OptionsUI {
     this.game = null; // Will be set by the game instance
     this.onClose = null; // Callback for when options are closed
 
+    // Volume slider references (will be set in createVolumeControl)
+    this.musicVolume = null;
+    this.soundVolume = null;
+
     this.createUI();
     this.setupEventListeners();
   }
@@ -119,8 +123,8 @@ export class OptionsUI {
     // Custom slider styling
     slider.style.background = `linear-gradient(to right, #00ff00 0%, #00ff00 ${defaultValue * 100}%, #333 ${defaultValue * 100}%, #333 100%)`;
 
-    slider.addEventListener('input', (e) => {
-      const value = parseFloat(e.target.value);
+    slider.addEventListener('input', () => {
+      const value = parseFloat(slider.value);
       valueDisplay.textContent = Math.round(value * 100) + '%';
 
       // Update slider background

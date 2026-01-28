@@ -54,7 +54,7 @@ export class AudioManager {
     if (spaceship.flags.isDocked) {
       if (spaceship.flags.stationDocked) {
         isActuallyDocked = true;
-      } else if (spaceship.flags.dockContext === 'planet' && spaceship.dockingTarget && spaceship.dockingTarget.getPosition && !spaceship.takeoffActive) {
+      } else if (spaceship.flags.dockContext === 'planet' && spaceship.dockingSystem.dockingTarget && spaceship.dockingSystem.dockingTarget.getPosition && !spaceship.dockingSystem.takeoffActive) {
         isActuallyDocked = true;
       }
     }

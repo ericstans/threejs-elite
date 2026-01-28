@@ -2,8 +2,8 @@ export const genericProceduralConversation = {
   greeting: 'Automated relay online. State your query.',
   conversationTree: {
     initial: {
-      response: (playerFlags, planet) => `Automated services node for ${planet.name}. Limited liaison personnel available.`,
-      options: (playerFlags, planet) => [
+      response: (_playerFlags, planet) => `Automated services node for ${planet.name}. Limited liaison personnel available.`,
+      options: (_playerFlags, planet) => [
         { id: 'information', text: `Request ${planet.name} information` },
         planet.dockable ? { id: 'docking', text: 'Request docking clearance' } : { id: 'docking_unavailable', text: 'Request docking clearance' },
         { id: 'end', text: 'Goodbye. (End conversation)' }
@@ -38,7 +38,7 @@ export const genericProceduralConversation = {
       ]
     },
     information: {
-      response: (playerFlags, planet, planetEntity, station, _stationEntity) => {
+      response: (playerFlags, planet, _planetEntity, station, _stationEntity) => {
         let base = 'Surface telemetry nominal.';
         if (planet.hasRings) base += ' Orbital ring debris monitoring active.';
         if (planet.hasMoon) base += ' Auxiliary lunar relay synchronized.';
@@ -48,7 +48,7 @@ export const genericProceduralConversation = {
         }
         return base;
       },
-      options: (playerFlags, planet, station) => [
+      options: (_playerFlags, planet, station) => [
         { id: 'resources', text: 'Ask about known resources' },
         station ? { id: 'station_ops', text: 'Inquire about orbital station' } : null,
         planet.dockable ? { id: 'docking', text: 'Proceed to docking channel' } : null,
@@ -56,15 +56,15 @@ export const genericProceduralConversation = {
       ].filter(o => o)
     },
     station_ops: {
-      response: (playerFlags, planet, planetEntity, station) => station ? `Orbital facility ${station.name}: orbit radius ${Math.round(station.orbitRadius)}, rotation period stable. Provides navigation relay & limited cargo buffering.` : 'No registered orbital facility.',
-      options: (playerFlags, planet, station) => [
+      response: (_playerFlags, _planet, _planetEntity, station) => station ? `Orbital facility ${station.name}: orbit radius ${Math.round(station.orbitRadius)}, rotation period stable. Provides navigation relay & limited cargo buffering.` : 'No registered orbital facility.',
+      options: (_playerFlags, _planet, station) => [
         { id: 'information', text: 'Back to planetary status' },
         station ? { id: 'docking', text: 'Open docking channel' } : null,
         { id: 'end', text: 'Conclude (End conversation)' }
       ].filter(o => o)
     },
     resources: {
-      response: (playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${(planet.radius || 0).toFixed(0)} sample profiles.`,
+      response: (_playerFlags, planet) => `Survey data: trace metals, volatiles, minor organics. Geological variance correlates with radius ${(planet.radius || 0).toFixed(0)} sample profiles.`,
       options: [
         { id: 'back_information', text: 'Back to information' },
         { id: 'end', text: 'Goodbye. (End conversation)' }

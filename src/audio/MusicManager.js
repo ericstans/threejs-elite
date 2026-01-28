@@ -72,6 +72,7 @@ function sanitizeInstrumentName(name){
 
 async function getSoundfont(ctx) {
   if (!_soundfontModulePromise) {
+    // @ts-ignore - soundfont-player is loaded dynamically
     _soundfontModulePromise = import('soundfont-player').then(mod => mod.default || mod);
   }
   const SoundfontCtor = await _soundfontModulePromise;

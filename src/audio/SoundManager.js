@@ -19,6 +19,7 @@ export class SoundManager {
   initAudioContext() {
     try {
       // Create audio context
+      // @ts-ignore - webkitAudioContext is a vendor prefix fallback
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
       if (DEBUG) console.warn('Web Audio API not supported:', error);

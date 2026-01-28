@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { generateStarfieldTexture } from './generateStarfieldTexture.js';
 
-export function generateStarfieldCubeMap(renderer, size = 1024, starCount = 2000) {
+export function generateStarfieldCubeMap(size = 1024, starCount = 2000) {
   // Use generateStarfieldTexture to create each face as a CanvasTexture
   const faces = [];
   for (let i = 0; i < 6; i++) {
-    faces.push(generateStarfieldTexture(renderer, size, starCount));
+    faces.push(generateStarfieldTexture(size, starCount));
   }
   // Extract the .image (canvas) from each CanvasTexture for CubeTexture
   const cubeTexture = new THREE.CubeTexture(faces.map(tex => tex.image));

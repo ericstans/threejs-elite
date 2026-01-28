@@ -30,10 +30,10 @@ export function generateStarfieldEquirectTexture(size = 2048, starCount = 4000) 
   return texture;
 }
 // Generates a simple starfield image (1px white dots on black) for use as a skybox or background
-// Usage: import and call generateStarfieldTexture(renderer)
+// Usage: import and call generateStarfieldTexture()
 import * as THREE from 'three';
 
-export function generateStarfieldTexture(renderer, size = 1024, starCount = 2000) {
+export function generateStarfieldTexture(size = 1024, starCount = 2000) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');

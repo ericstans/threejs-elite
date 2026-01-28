@@ -572,16 +572,16 @@ class Game {
 
     // If docking or taking off, calculate actual movement speed based on position changes
     // This handles the case where ship is being moved directly rather than through velocity
-    if (this.spaceship.flags.isDocking || this.spaceship.takeoffActive) {
+    if (this.spaceship.flags.isDocking || this.spaceship.dockingSystem.takeoffActive) {
       // Calculate actual speed from position changes (now averaged over the last 30 frames)
       const actualSpeed = this.spaceship.calculateActualSpeed();
 
       // During approach phase, show a speed value appropriate for the phase
-      if (this.spaceship.landingPhase === 'approach') {
+      if (this.spaceship.dockingSystem.landingPhase === 'approach') {
         // Use the smoothed average speed, but keep a minimum value for visibility
         // During approach, we want to show higher speeds
-        currentSpeed = Math.max(actualSpeed, this.spaceship.dockingSpeed * 0.5);
-      } else if (this.spaceship.takeoffActive) {
+        currentSpeed = Math.max(actualSpeed, this.spaceship.dockingSystem.dockingSpeed * 0.5);
+      } else if (this.spaceship.dockingSystem.takeoffActive) {
         // During takeoff, use the smoothed speed
         // But ensure it's not too small to be visible
         currentSpeed = Math.max(actualSpeed, 0.1);
@@ -1058,7 +1058,7 @@ class Game {
   initiatePlanetTakeoff() {
     // Only proceed if currently docked to a planet
     if (!this.spaceship.flags.isDocked || this.spaceship.flags.stationDocked) return;
-    const planet = this.spaceship.dockingTarget;
+    const planet = this.spaceship.dockingSystem.dockingTarget;
     if (!planet) return;
     // Use smooth takeoff sequence (keeps isDocked true until ascent completes)
     if (this.spaceship.startPlanetTakeoff) {
@@ -1069,7 +1069,7 @@ class Game {
   initiateStationTakeoff() {
     // Only proceed if currently docked to a station
     if (!this.spaceship.flags.isDocked || !this.spaceship.flags.stationDocked) return;
-    const station = this.spaceship.dockedStation;
+    const station = this.spaceship.dockingSystem.dockedStation;
     if (!station) return;
     // Use smooth takeoff sequence (keeps isDocked true until ascent completes)
     if (this.spaceship.startStationTakeoff) {

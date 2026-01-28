@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Spaceship } from './entities/Spaceship.js';
+import { Spaceship } from './Spaceship.js';
 import * as THREE from 'three';
 
 describe('Spaceship', () => {
@@ -303,7 +303,7 @@ describe('Spaceship', () => {
       spaceship.startDocking(mockPlanet);
       expect(spaceship.flags.isDocking).toBe(true);
       expect(spaceship.flags.firingEnabled).toBe(false);
-      expect(spaceship.dockingTarget).toBe(mockPlanet);
+      expect(spaceship.dockingSystem.dockingTarget).toBe(mockPlanet);
     });
 
     it('should reset speed history on docking start', () => {
@@ -314,7 +314,7 @@ describe('Spaceship', () => {
 
     it('should have docking progress start at 0', () => {
       spaceship.startDocking(mockPlanet);
-      expect(spaceship.dockingProgress).toBe(0);
+      expect(spaceship.dockingSystem.dockingProgress).toBe(0);
     });
 
     it('should complete takeoff', () => {
@@ -431,8 +431,8 @@ describe('Spaceship', () => {
       spaceship.lockToStation(mockStation);
 
       expect(spaceship.flags.landingVectorLocked).toBe(true);
-      expect(spaceship.dockingTarget).toBe(mockStation);
-      expect(spaceship.landingVectorStation).toBe(mockStation);
+      expect(spaceship.dockingSystem.dockingTarget).toBe(mockStation);
+      expect(spaceship.dockingSystem.landingVectorStation).toBe(mockStation);
     });
 
     it('should freeze velocity when locked to station', () => {

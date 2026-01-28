@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Planet } from './entities/Planet.js';
+import { Planet } from './Planet.js';
 import * as THREE from 'three';
 
 describe('Planet', () => {

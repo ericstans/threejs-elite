@@ -328,6 +328,7 @@ export class TutorialOverlay {
 
   findUIElement(elementId) {
     // Use stored UI instance or try to get from global scope
+    // @ts-ignore - game and ui may be attached to window at runtime
     const uiInstance = this.uiInstance || window.game?.ui || window.ui;
     if (!uiInstance) {
       if (DEBUG) {

@@ -14,7 +14,7 @@ export class SpaceStation {
     this.id = Math.random().toString(36).substr(2, 9);
     this.mass = this.size * this.size * this.size * 500; // arbitrary large mass vs player
     this.isNavTargeted = false;
-    this.isCommable = true;
+    this._isCommable = true;
 
     this.mesh = this.createStationMesh();
     // Landing vector animation state
@@ -168,7 +168,7 @@ export class SpaceStation {
   setNavTargeted(v) { this.isNavTargeted = v; }
   isNavTarget() { return this.isNavTargeted; }
   getPosition() { return this.position.clone(); }
-  isCommable() { return this.isCommable; }
+  isCommable() { return this._isCommable; }
   getGreeting() { return `This is ${this.name}. State your business.`; }
 
   getServices() {

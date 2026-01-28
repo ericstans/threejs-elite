@@ -15,7 +15,7 @@ export class Planet {
     this.id = Math.random().toString(36).substr(2, 9); // Generate unique ID
     this.mass = radius * radius * radius * 1000; // Much larger mass than asteroids
     this.isNavTargeted = false;
-    this.isCommable = true;
+    this._isCommable = true;
     this.dockable = true; // default; procedural generation may override
     this.moon = null; // Optional moon object
 
@@ -23,12 +23,19 @@ export class Planet {
     this.mesh.position.copy(this.position);
 
     // Add custom properties to mesh for navigation targeting
+    // @ts-ignore - dynamically adding properties to mesh
     this.mesh.getId = () => this.getId();
+    // @ts-ignore
     this.mesh.getName = () => this.getName();
+    // @ts-ignore
     this.mesh.getMass = () => this.getMass();
+    // @ts-ignore
     this.mesh.setNavTargeted = (targeted) => this.setNavTargeted(targeted);
+    // @ts-ignore
     this.mesh.isNavTarget = () => this.isNavTarget();
+    // @ts-ignore
     this.mesh.getPosition = () => this.getPosition();
+    // @ts-ignore
     this.mesh.getType = () => this.getType();
   }
 
@@ -91,7 +98,7 @@ export class Planet {
   }
 
   isCommable() {
-    return this.isCommable;
+    return this._isCommable;
   }
 
   getGreeting() {

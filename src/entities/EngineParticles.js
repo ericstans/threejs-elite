@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 const SHOW_ENGINE_PARTICLE_DEBUG_UI = false;
+const DEBUG = false;
 
 export class EngineParticles {
   constructor(scene, spaceship) {
@@ -168,8 +169,8 @@ export class EngineParticles {
     cameraCheckbox.id = 'disableCameraRecenter';
     cameraCheckbox.checked = false; // Default to enabled re-centering
     cameraCheckbox.style.marginRight = '8px';
-    cameraCheckbox.onchange = (e) => {
-      this.disableCameraRecenter = e.target.checked;
+    cameraCheckbox.onchange = () => {
+      this.disableCameraRecenter = cameraCheckbox.checked;
       if (DEBUG) console.log('Camera re-centering disabled:', this.disableCameraRecenter);
     };
     cameraCheckboxDiv.appendChild(cameraCheckbox);
@@ -224,10 +225,9 @@ export class EngineParticles {
     });
 
     materialSelect.value = 'global';
-    materialSelect.onchange = (e) => {
-      this.materialApproach = e.target.value;
+    materialSelect.onchange = () => {
+      this.materialApproach = materialSelect.value;
       if (DEBUG) console.log('Material approach changed to:', this.materialApproach);
-      this.applyMaterialApproach();
     };
     materialSelectDiv.appendChild(materialSelect);
 
@@ -251,14 +251,14 @@ export class EngineParticles {
 
     const slider = document.createElement('input');
     slider.type = 'range';
-    slider.min = min;
-    slider.max = max;
-    slider.step = 0.1;
-    slider.value = initialValue;
+    slider.min = String(min);
+    slider.max = String(max);
+    slider.step = '0.1';
+    slider.value = String(initialValue);
     slider.style.flex = '1';
     slider.style.margin = '0 5px';
-    slider.oninput = (e) => {
-      const value = parseFloat(e.target.value);
+    slider.oninput = () => {
+      const value = parseFloat(slider.value);
       valueEl.textContent = value.toFixed(1);
       onChange(value);
     };
