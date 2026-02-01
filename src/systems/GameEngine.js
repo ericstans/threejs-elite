@@ -466,7 +466,8 @@ export class GameEngine {
         const dist = shipPos.distanceTo(entityPos);
 
         // Prevent bounce/collision if ship is in landing animation phase
-        const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
+        const isLanding = this.spaceship.dockingSystem?.landingPhase === 'approach' || 
+                          this.spaceship.dockingSystem?.landingPhase === 'descent';
 
         // Check if landing vector is being used for station docking or if ship is already docked inside station
         const isStationDocking = entity.getType && entity.getType() === 'station' &&
@@ -476,8 +477,11 @@ export class GameEngine {
                                 this.spaceship.flags.isDocked ||
                                 this.spaceship.flags.stationDocked);
 
+        // Skip planet collisions during planet docking
+        const isPlanetDocking = entity.getType && entity.getType() === 'planet' && isLanding;
+
         if (dist < collisionRadius + 1.5 && this.spaceship._planetBounceCooldown <= 0 &&
-            !isLanding && !isStationDocking) { // 1.5 = ship radius fudge
+            !isPlanetDocking && !isStationDocking) { // 1.5 = ship radius fudge
 
           // Collision! Bounce off
           const normal = shipPos.clone().sub(entityPos).normalize();
@@ -559,7 +563,8 @@ export class GameEngine {
     const stationPos = station.getPosition();
 
     // Prevent collision if ship is in landing animation or docking
-    const isLanding = this.spaceship.landingPhase === 'approach' || this.spaceship.landingPhase === 'descent';
+    const isLanding = this.spaceship.dockingSystem?.landingPhase === 'approach' || 
+                      this.spaceship.dockingSystem?.landingPhase === 'descent';
     const isStationDocking = this.spaceship.flags &&
                            (this.spaceship.flags.dockingAuthorized ||
                             this.spaceship.flags.landingVectorLocked ||

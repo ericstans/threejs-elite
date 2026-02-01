@@ -173,7 +173,7 @@ export class OutfittingUI {
     this.cashDisplay.className = 'outfitting-cash-display';
     this.cashDisplay.style.fontSize = '18px';
     this.cashDisplay.style.fontWeight = 'bold';
-    this.cashDisplay.textContent = 'Cash: $0';
+    this.cashDisplay.textContent = 'Cash: ¤0';
     this.bottomPanel.appendChild(this.cashDisplay);
   }
 
@@ -232,7 +232,7 @@ export class OutfittingUI {
       itemCost.className = 'outfitting-item-cost';
       itemCost.style.fontSize = '16px';
       itemCost.style.color = '#ffff00';
-      itemCost.textContent = `$${equipmentData.cost}`;
+      itemCost.textContent = `¤${equipmentData.cost}`;
       itemHeader.appendChild(itemCost);
 
       // Item description
@@ -328,7 +328,7 @@ export class OutfittingUI {
     // Trade-in value display
     const tradeInLabel = document.createElement('div');
     tradeInLabel.className = 'outfitting-tradein-label';
-    tradeInLabel.textContent = `Trade-in: $${tradeInValue}`;
+    tradeInLabel.textContent = `Trade-in: ¤${tradeInValue}`;
     tradeInLabel.style.fontSize = '14px';
     tradeInLabel.style.color = '#ffff00';
     tradeInLabel.style.alignSelf = 'center';
@@ -428,14 +428,14 @@ export class OutfittingUI {
   }
 
   updateDisplay() {
-    this.cashDisplay.textContent = `Cash: $${this.currentCash}`;
+    this.cashDisplay.textContent = `Cash: ¤${this.currentCash}`;
     this.renderEquipmentList();
     this.renderEquippedItems();
   }
 
   updateCash(cash) {
     this.currentCash = cash;
-    this.cashDisplay.textContent = `Cash: $${this.currentCash}`;
+    this.cashDisplay.textContent = `Cash: ¤${this.currentCash}`;
   }
 
   destroy() {

@@ -309,7 +309,7 @@ export class JobsUI {
       card.appendChild(line('DISTANCE', 'Unknown'));
     }
 
-    card.appendChild(line('REWARD', `$${job.reward.toLocaleString()}`));
+    card.appendChild(line('REWARD', `¤${job.reward.toLocaleString()}`));
 
     const btn = document.createElement('button');
     btn.type = 'button';

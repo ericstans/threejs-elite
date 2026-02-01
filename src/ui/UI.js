@@ -1043,7 +1043,7 @@ export class UI {
       this.cashUI.updateCash(this.spaceship.getCash());
     }
     // Update this modal
-    this.refuelRepairUI?.setStatus(`Repaired ${missing} hull for $${cost.toLocaleString()}.`);
+    this.refuelRepairUI?.setStatus(`Repaired ${missing} hull for ¤${cost.toLocaleString()}.`);
     this.updateRefuelRepair();
   }
 

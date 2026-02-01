@@ -117,11 +117,11 @@ export class RefuelRepairUI {
     this.content.appendChild(costRow);
 
     this.costText = document.createElement('div');
-    this.costText.textContent = 'Cost to full: $0';
+    this.costText.textContent = 'Cost to full: ¤0';
     costRow.appendChild(this.costText);
 
     this.cashText = document.createElement('div');
-    this.cashText.textContent = 'Cash: $0';
+    this.cashText.textContent = 'Cash: ¤0';
     this.cashText.style.fontWeight = 'bold';
     costRow.appendChild(this.cashText);
 
@@ -133,7 +133,7 @@ export class RefuelRepairUI {
     this.content.appendChild(buttons);
 
     this.repairBtn = document.createElement('button');
-    this.repairBtn.textContent = 'Repair to 100 ($0)';
+    this.repairBtn.textContent = 'Repair to 100 (¤0)';
     this.repairBtn.style.background = 'rgba(0, 255, 0, 0.2)';
     this.repairBtn.style.border = '1px solid #00ff00';
     this.repairBtn.style.color = '#00ff00';
@@ -201,9 +201,9 @@ export class RefuelRepairUI {
     this.hullValue.textContent = `${clampedHull} / ${this.maxHull}`;
     const pct = this.maxHull > 0 ? (clampedHull / this.maxHull) * 100 : 0;
     this.progressInner.style.width = `${pct}%`;
-    this.costText.textContent = `Cost to full: $${cost.toLocaleString()}`;
-    this.cashText.textContent = `Cash: $${this.cash.toLocaleString()}`;
-    this.repairBtn.textContent = `Repair to ${this.maxHull} ($${cost.toLocaleString()})`;
+    this.costText.textContent = `Cost to full: ¤${cost.toLocaleString()}`;
+    this.cashText.textContent = `Cash: ¤${this.cash.toLocaleString()}`;
+    this.repairBtn.textContent = `Repair to ${this.maxHull} (¤${cost.toLocaleString()})`;
     const canRepair = missing > 0 && this.cash >= cost;
     this.repairBtn.disabled = !canRepair;
     this.repairBtn.style.opacity = canRepair ? '1' : '0.5';

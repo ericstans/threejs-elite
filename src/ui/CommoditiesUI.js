@@ -236,7 +236,7 @@ export class CommoditiesUI {
     this.cashDisplay = document.createElement('div');
     this.cashDisplay.style.fontSize = '18px';
     this.cashDisplay.style.fontWeight = 'bold';
-    this.cashDisplay.textContent = 'Cash: $0';
+    this.cashDisplay.textContent = 'Cash: ¤0';
     leftSide.appendChild(this.cashDisplay);
 
     // Buy total
@@ -244,7 +244,7 @@ export class CommoditiesUI {
     this.buyTotal.style.fontSize = '16px';
     this.buyTotal.style.fontWeight = 'bold';
     this.buyTotal.style.color = '#00ff00';
-    this.buyTotal.textContent = 'Buy Total: $0';
+    this.buyTotal.textContent = 'Buy Total: ¤0';
     leftSide.appendChild(this.buyTotal);
 
     // Sell total
@@ -252,7 +252,7 @@ export class CommoditiesUI {
     this.sellTotal.style.fontSize = '16px';
     this.sellTotal.style.fontWeight = 'bold';
     this.sellTotal.style.color = '#ffff00';
-    this.sellTotal.textContent = 'Sell Total: $0';
+    this.sellTotal.textContent = 'Sell Total: ¤0';
     leftSide.appendChild(this.sellTotal);
 
     this.bottomPanel.appendChild(leftSide);
@@ -430,7 +430,7 @@ export class CommoditiesUI {
 
       // Right side - price
       const price = document.createElement('span');
-      price.textContent = `$${commodity.buyPrice.toFixed(0)}`;
+      price.textContent = `¤${commodity.buyPrice.toFixed(0)}`;
       price.style.color = '#ffff00';
       price.style.minWidth = '80px';
       price.style.textAlign = 'right';
@@ -555,7 +555,7 @@ export class CommoditiesUI {
 
       // Right side - sell price
       const price = document.createElement('span');
-      price.textContent = `$${commodity.sellPrice.toFixed(0)}`;
+      price.textContent = `¤${commodity.sellPrice.toFixed(0)}`;
       price.style.color = '#ffff00';
       price.style.minWidth = '80px';
       price.style.textAlign = 'right';
@@ -572,7 +572,7 @@ export class CommoditiesUI {
 
   updateCash(cashAmount) {
     this.currentCash = cashAmount;
-    this.cashDisplay.textContent = `Cash: $${cashAmount.toLocaleString()}`;
+    this.cashDisplay.textContent = `Cash: ¤${cashAmount.toLocaleString()}`;
     // Update button states when cash changes
     this.updateAllButtonStates();
   }
@@ -732,7 +732,7 @@ export class CommoditiesUI {
 
   updateBuyTotal() {
     const buyTotal = this.calculateBuyTotal();
-    this.buyTotal.textContent = `Buy Total: $${buyTotal.toFixed(0)}`;
+    this.buyTotal.textContent = `Buy Total: ¤${buyTotal.toFixed(0)}`;
   }
 
   updateSellTotal() {
@@ -747,7 +747,7 @@ export class CommoditiesUI {
         }
       }
     });
-    this.sellTotal.textContent = `Sell Total: $${total.toFixed(0)}`;
+    this.sellTotal.textContent = `Sell Total: ¤${total.toFixed(0)}`;
   }
 
   // Get quantity of a commodity in cargo

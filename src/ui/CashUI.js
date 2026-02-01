@@ -31,19 +31,19 @@ export class CashUI {
     this.cashAmount.style.fontSize = '14px';
     this.cashAmount.style.fontWeight = 'bold';
     this.cashAmount.style.fontFamily = 'PeaberryMono, monospace';
-    this.cashAmount.textContent = '$0';
+    this.cashAmount.textContent = '¤0';
     this.cashPanel.appendChild(this.cashAmount);
   }
 
   // Method to update cash display
   updateCash(amount) {
     if (this.cashAmount) {
-      this.cashAmount.textContent = `$${amount.toLocaleString()}`;
+      this.cashAmount.textContent = `¤${amount.toLocaleString()}`;
     }
   }
 
   // Method to get current cash display value
   getCashDisplay() {
-    return this.cashAmount ? this.cashAmount.textContent : '$0';
+    return this.cashAmount ? this.cashAmount.textContent : '¤0';
   }
 }
