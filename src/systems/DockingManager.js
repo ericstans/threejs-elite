@@ -58,17 +58,14 @@ export class DockingManager {
     if (ship.getFlag('rotationLockAcquired') && this.ui.dockingStatus.textContent !== 'ROTATION LOCK ACQUIRED') {
       this.ui.updateDockingStatus('ROTATION LOCK ACQUIRED');
     }
-    if (ship.flags.stationDocked && this.ui.dockingStatus.textContent !== 'DOCKING COMPLETE') {
+    // Docking completion for both stations and planets
+    if ((ship.flags.stationDocked || (ship.flags.isDocked && ship.dockingSystem.dockingProgress === 1)) && this.ui.dockingStatus.textContent !== 'DOCKING COMPLETE') {
       this.ui.updateDockingStatus('DOCKING COMPLETE');
+      this.ui.hideDockingStatus();
     }
     // Fail-safe vector visibility
     if (ship.getFlag('dockingAuthorized') && !ship.getFlag('landingAlignmentLocked') && nav && nav.setLandingVectorVisible) {
       nav.setLandingVectorVisible(true);
-    }
-    // Docking completion
-    if (ship.flags.isDocked && ship.dockingProgress === 1) {
-      this.ui.updateDockingStatus('DOCKING COMPLETE');
-      this.ui.hideDockingStatus();
     }
   }
 }

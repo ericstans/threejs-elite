@@ -92,6 +92,11 @@ import { Midi } from '@tonejs/midi';
 // @ts-ignore - import.meta.glob is a Vite-specific feature
 const soundtrackModules = import.meta.glob('../assets/midi/*/*.mid', { eager: true, query: '?url', import: 'default' });
 
+// Log available MIDI files for debugging
+if (DEBUG) {
+  console.log('MusicManager: Available MIDI files from glob:', Object.keys(soundtrackModules));
+}
+
 // Helper function to get MIDI files for specific soundtracks
 function getMidiFilesForSoundtracks(soundtracks) {
   const files = [];
@@ -102,6 +107,7 @@ function getMidiFilesForSoundtracks(soundtracks) {
       files.push(url);
     }
   }
+  if (DEBUG) console.log('MusicManager: getMidiFilesForSoundtracks(' + JSON.stringify(soundtracks) + ') returned', files.length, 'files');
   return files;
 }
 
@@ -280,6 +286,7 @@ export class MusicManager {
       'ambient': 1000,    // 1 second default
       'combat': 250,      // 0.25 seconds for combat tracks
       'docking': 500,     // 0.5 seconds for docking tracks
+      'cowboy': 800,      // 0.8 seconds for cowboy tracks
       'default': 1000     // fallback for unknown folders
     };
 
@@ -349,14 +356,14 @@ export class MusicManager {
   // Playback API (compatible with existing usage)
   playTrack(name) {
     if (!this.isInitialized) return;
-    
+
     // Ensure AudioContext is resumed (required by browser for audio playback)
     if (this._audioCtx && this._audioCtx.state === 'suspended') {
       this._audioCtx.resume().catch(e => {
         if (DEBUG) console.warn('MusicManager: Failed to resume AudioContext:', e);
       });
     }
-    
+
     // Force-stop any currently playing MIDI track
     this._cancelCurrentPlayback();
 

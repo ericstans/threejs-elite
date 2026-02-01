@@ -10,6 +10,8 @@ export class TutorialOverlay {
     this.onPause = null;
     this.onResume = null;
     this.spotlightCutout = null;
+    this.uiInstance = null;
+    this.previousSoundtracks = null;
     this.tutorialSteps = [
       {
         id: 'welcome',
@@ -128,15 +130,79 @@ export class TutorialOverlay {
     this.overlay.style.display = 'block';
     this.updateTutorialStep();
 
+    if (DEBUG) console.log('TutorialOverlay: show() called');
+    if (DEBUG) console.log('TutorialOverlay: uiInstance:', this.uiInstance);
+    if (DEBUG) console.log('TutorialOverlay: game:', this.uiInstance?.game);
+
+    // Save current soundtracks and switch to cowboy BEFORE pausing the game
+    if (this.uiInstance && this.uiInstance.game) {
+      const musicManager = this.uiInstance.game.audioManager?.musicManager;
+      const gameStateManager = this.uiInstance.game.gameStateManager;
+
+      if (DEBUG) console.log('TutorialOverlay: Found musicManager and gameStateManager');
+      if (DEBUG) console.log('TutorialOverlay: musicManager:', musicManager);
+      if (DEBUG) console.log('TutorialOverlay: musicManager.isPlaying:', musicManager?.isPlaying);
+
+      if (musicManager && gameStateManager) {
+        // Store previous soundtracks
+        this.previousSoundtracks = gameStateManager.getCurrentSoundtracks();
+        if (DEBUG) console.log('TutorialOverlay: Stored previous soundtracks:', this.previousSoundtracks);
+
+        // Set soundtracks to cowboy
+        gameStateManager.setSoundtracks(['cowboy']);
+        if (DEBUG) console.log('TutorialOverlay: Set soundtracks to cowboy');
+
+        // If music is not playing, start it now BEFORE pausing
+        if (!musicManager.isPlaying) {
+          if (DEBUG) console.log('TutorialOverlay: Music not playing, starting playTrack(ambient)');
+          musicManager.playTrack('ambient');
+        } else {
+          // Music is already playing, just restart with new soundtracks
+          if (DEBUG) console.log('TutorialOverlay: Music already playing, restarting playTrack(ambient)');
+          musicManager.stopTrack();
+          musicManager.playTrack('ambient');
+        }
+      } else {
+        if (DEBUG) console.log('TutorialOverlay: Missing musicManager or gameStateManager');
+      }
+    } else {
+      if (DEBUG) console.log('TutorialOverlay: Missing uiInstance or game');
+      if (DEBUG) console.log('TutorialOverlay: audioManager:', this.uiInstance?.game?.audioManager);
+    }
+
     // Pause the game
     if (this.onPause) {
       this.onPause();
+    }
+
+    // Resume the cowboy music AFTER pausing the game (pause() suspends it)
+    if (this.uiInstance && this.uiInstance.game) {
+      const musicManager = this.uiInstance.game.audioManager?.musicManager;
+      if (musicManager && musicManager.resumeTrack) {
+        if (DEBUG) console.log('TutorialOverlay: Resuming cowboy music after game pause');
+        musicManager.resumeTrack();
+      }
     }
   }
 
   hide() {
     this.isVisible = false;
     this.overlay.style.display = 'none';
+
+    // Restore previous soundtracks
+    if (this.uiInstance && this.uiInstance.game && this.previousSoundtracks) {
+      const musicManager = this.uiInstance.game.audioManager?.musicManager;
+      const gameStateManager = this.uiInstance.game.gameStateManager;
+
+      if (musicManager && gameStateManager) {
+        if (DEBUG) console.log('TutorialOverlay: Restoring previous soundtracks:', this.previousSoundtracks);
+        gameStateManager.setSoundtracks(this.previousSoundtracks);
+        musicManager.stopTrack();
+        musicManager.playTrack('ambient');
+      }
+
+      this.previousSoundtracks = null;
+    }
 
     // Resume the game
     if (this.onResume) {
