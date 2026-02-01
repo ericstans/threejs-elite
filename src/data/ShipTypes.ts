@@ -1,0 +1,47 @@
+// ShipTypes.ts
+// Central registry for all ship types
+
+interface ShipStats {
+  maxSpeed: number;
+  acceleration: number;
+  rotationSpeed: number;
+}
+
+interface ShipType {
+  name: string;
+  model: string;
+  scale: number;
+  exhaust: string;
+  hullStrength?: number;
+  stats: ShipStats;
+}
+
+export const ShipTypes: Record<string, ShipType> = {
+  Flea: {
+    name: 'Flea',
+    model: 'ship2.fbx',
+    scale: 1.0, // can be adjusted if needed
+    exhaust: 'default', // placeholder for exhaust config
+    hullStrength: 100,
+    stats: {
+      maxSpeed: 10,
+      acceleration: 2,
+      rotationSpeed: 1
+    }
+  },
+  Arrow: {
+    name: 'Arrow',
+    model: 'ship1.fbx',
+    scale: 1.0,
+    exhaust: 'default',
+    stats: {
+      maxSpeed: 10,
+      acceleration: 2,
+      rotationSpeed: 1
+    }
+  }
+};
+
+export function getShipType(typeName: string): ShipType {
+  return ShipTypes[typeName] || ShipTypes.Flea;
+}

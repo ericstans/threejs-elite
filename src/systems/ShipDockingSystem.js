@@ -173,6 +173,14 @@ export class ShipDockingSystem {
     this.stationDocking.landingVectorHoldOffset = value;
   }
 
+  get landingVectorLocalOffset() {
+    return this.stationDocking.landingVectorLocalOffset;
+  }
+
+  set landingVectorLocalOffset(value) {
+    this.stationDocking.landingVectorLocalOffset = value;
+  }
+
   /**
    * Complete the takeoff sequence
    */
