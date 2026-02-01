@@ -29,15 +29,11 @@ export class AudioManager {
     this.musicStarted = false;
     this._lastEngineDocked = false;
 
-    // Initialize the music manager
+    // Initialize the music manager (but don't play yet - wait for user gesture)
     if (this._musicManager && this._musicManager.init) {
       await this._musicManager.init();
-
-      // Start playing ambient music
-      if (this._musicManager.playTrack) {
-        this._musicManager.playTrack('ambient');
-        this.musicStarted = true;
-      }
+      // Don't call playTrack here - AudioContext is suspended until user interaction
+      // Controls.startMusic() will handle starting playback after user gestures
     }
   }
 

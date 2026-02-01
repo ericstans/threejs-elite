@@ -90,14 +90,14 @@ import { Midi } from '@tonejs/midi';
 
 // Dynamic MIDI file discovery - automatically imports all .mid files from soundtrack folders
 // @ts-ignore - import.meta.glob is a Vite-specific feature
-const soundtrackModules = import.meta.glob('./assets/midi/*/*.mid', { eager: true, query: '?url', import: 'default' });
+const soundtrackModules = import.meta.glob('../assets/midi/*/*.mid', { eager: true, query: '?url', import: 'default' });
 
 // Helper function to get MIDI files for specific soundtracks
 function getMidiFilesForSoundtracks(soundtracks) {
   const files = [];
   for (const [path, url] of Object.entries(soundtrackModules)) {
-    // Extract folder name from path (e.g., './assets/midi/ambient/file.mid' -> 'ambient')
-    const folderMatch = path.match(/\.\/assets\/midi\/([^/]+)\//);
+    // Extract folder name from path (e.g., '../assets/midi/ambient/file.mid' -> 'ambient')
+    const folderMatch = path.match(/\.\.\/assets\/midi\/([^/]+)\//);
     if (folderMatch && soundtracks.includes(folderMatch[1])) {
       files.push(url);
     }
@@ -349,6 +349,14 @@ export class MusicManager {
   // Playback API (compatible with existing usage)
   playTrack(name) {
     if (!this.isInitialized) return;
+    
+    // Ensure AudioContext is resumed (required by browser for audio playback)
+    if (this._audioCtx && this._audioCtx.state === 'suspended') {
+      this._audioCtx.resume().catch(e => {
+        if (DEBUG) console.warn('MusicManager: Failed to resume AudioContext:', e);
+      });
+    }
+    
     // Force-stop any currently playing MIDI track
     this._cancelCurrentPlayback();
 
@@ -605,7 +613,7 @@ export class MusicManager {
     let currentSoundtrackFolder = 'default';
     for (const [path, url] of Object.entries(soundtrackModules)) {
       if (url === src) {
-        const folderMatch = path.match(/\.\/assets\/midi\/([^/]+)\//);
+        const folderMatch = path.match(/\.\.\/assets\/midi\/([^/]+)\//);
         if (folderMatch) {
           currentSoundtrackFolder = folderMatch[1];
           break;
