@@ -145,11 +145,11 @@ export class Spaceship {
     // Capture current relative local offset so we preserve exact position at lock moment (no teleport)
     this.dockingSystem.landingVectorHoldOffset = 0;
     const worldPosAtLock = this.position.clone();
-    this.landingVectorLocalOffset = station.mesh.worldToLocal(worldPosAtLock.clone());
+    this.dockingSystem.landingVectorLocalOffset = station.mesh.worldToLocal(worldPosAtLock.clone());
     // Store along-axis distance to maintain longitudinal placement
     const start = station.getLandingVectorStartWorld();
     const dir = station.getLandingVectorDirectionWorld();
-    this.landingVectorAlongDistance = worldPosAtLock.clone().sub(start).dot(dir);
+    this.dockingSystem.landingVectorAlongDistance = worldPosAtLock.clone().sub(start).dot(dir);
     // Direction data for orientation
     // (dir already defined)
     // Orientation: align ship forward (-Z) with station slot normal (invert dir so facing down toward slot)
